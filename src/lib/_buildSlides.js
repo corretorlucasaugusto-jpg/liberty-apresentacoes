@@ -1,8 +1,25 @@
 // Auto-generated — do not edit
 // Regenerar: node extract-slides.js liberty_gerador_v2.html
 
+if (typeof window !== 'undefined' && !window.e) {
+  window.e = function(s) {
+    if (s === undefined || s === null) return '';
+    return String(s)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  };
+}
+
 export function buildSlides(d, slides=[]){
-  // Defensive defaults — prevents crash on empty form
+  // ── HTML escaper (local function) ──
+  function e(s){
+    if(s === undefined || s === null) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  
+  // ── Defensive defaults ──
   if(!d) d={};
   if(!d.residencial) d.residencial='Residencial';
   if(!d.nome)        d.nome='Proprietário';
@@ -21,8 +38,8 @@ export function buildSlides(d, slides=[]){
   if(!d.pos)         d.pos=[];
   if(!d.neg)         d.neg=[];
   if(!d.comps)       d.comps=[];
-  if(!d.posEnriched) d.posEnriched=d.pos.map(t=>({t,d:''}));
-  if(!d.negEnriched) d.negEnriched=d.neg.map(t=>({t,d:''}));
+  if(!d.posEnriched) d.posEnriched=d.pos.map(function(t){return{t:t,d:''};});
+  if(!d.negEnriched) d.negEnriched=d.neg.map(function(t){return{t:t,d:''};});
   const rp=(d.residencial||'Residencial').split(' ');
   const r1=rp.slice(0,2).join(' '), r2=rp.slice(2).join(' ');
 

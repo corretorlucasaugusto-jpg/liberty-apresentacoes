@@ -3,11 +3,31 @@ import { NAVJS }       from './_navjs.js'
 import { BMODAL_HTML, VMODAL1_HTML, VMODAL2_HTML } from './_modals.js'
 import { buildSlides } from './_buildSlides.js'
 
+function e(s) {
+  if (s === undefined || s === null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 const VIDEO_PRODUCAO = import.meta.env.VITE_VIDEO_PRODUCAO_URL || 'liberty_video.mp4'
 const VIDEO_TRAFEGO  = import.meta.env.VITE_VIDEO_TRAFEGO_URL  || 'liberty_trafego.mov'
 
 export function buildHTML(d) {
   const lastSlides = []
+  if (typeof window !== 'undefined' && !window.e) {
+    window.e = function(s) {
+      if (s === undefined || s === null) return '';
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    };
+  }
+
   try { buildSlides(d, lastSlides) } catch(e) { console.error('buildSlides:', e) }
 
   const slideDivs = lastSlides.map((s, i) => {
