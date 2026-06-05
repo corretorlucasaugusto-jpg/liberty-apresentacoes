@@ -51,9 +51,14 @@ export default function Gerador() {
       const enrichedData = data?.enriched || rawData
       const html = buildHTML(enrichedData)
       // Salva no banco
-      await supabase.from('apresentacoes').insert({
-        user_id: user.id, cliente: rawData.nome, residencial: rawData.residencial, bairro: rawData.bairro, html
+      const { error: saveError } = await supabase.from('apresentacoes').insert({
+        user_id: user.id,
+        cliente: rawData.nome,
+        residencial: rawData.residencial,
+        bairro: rawData.bairro,
+        html
       })
+      if (saveError) console.warn('Erro ao salvar histórico:', saveError.message)
       // Download automático
       const blob = new Blob([html], { type: 'text/html' })
       const a = document.createElement('a')
