@@ -1,10 +1,80 @@
 // Auto-generated — do not edit
 // Regenerar: node extract-slides.js liberty_gerador_v2.html
 
+export function buildS5(d){
+  var e2 = function(v){ return v ? String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''; };
+  
+  // Vendidos rows
+  var vRows = '';
+  (d.v||[]).forEach(function(r,i){
+    vRows += '<div class="s5-row s5-row-v">' +
+      '<div class="s5-td"><strong>' + e2(r.n || (r.c ? r.c.split('·')[0].trim() : 'Imóvel '+(i+1))) + '</strong></div>' +
+      '<div class="s5-td">' + e2(r.a||'—') + '</div>' +
+      '<div class="s5-td carac">' + e2(r.c||'—') + '</div>' +
+      '<div class="s5-td val">' + e2(r.v||'—') + '</div>' +
+    '</div>';
+  });
+  if(!vRows) vRows = '<div style="padding:12px 16px;font-size:.75rem;color:#a1a1a6">Nenhum vendido cadastrado</div>';
+
+  // NV rows
+  var nvRows = '';
+  (d.nv||[]).forEach(function(r,i){
+    var badge = r.d ? '<span class="s5-badge s5-badge-r">' + e2(r.d) + '</span>' : '—';
+    var verBtn = r.url ? '<button onclick="openAnuncio(this.dataset.url)" data-url="' + (r.url||'').replace(/"/g,'&quot;') + '" style="background:#1266CD;border:none;color:#fff;border-radius:6px;padding:4px 8px;font-size:.6rem;font-weight:700;cursor:pointer">Ver ↗</button>' : '';
+    var aiRow = r.ai ? '<div style="padding:6px 16px 10px;background:#fff0f0;border-top:1px solid #ffc0c0;font-size:.68rem;color:#c0392b;font-style:italic">' + e2(r.ai) + '</div>' : '';
+    nvRows += '<div style="display:grid;grid-template-columns:1.6fr .55fr 2fr .85fr .85fr .4fr;align-items:center;padding:10px 16px;background:#ffd6d6;border-top:1px solid #e8e8ed">' +
+      '<div class="s5-td"><strong>' + e2(r.n || (r.c ? r.c.split('·')[0].trim() : 'Imóvel '+(i+1))) + '</strong></div>' +
+      '<div class="s5-td">' + e2(r.a||'—') + '</div>' +
+      '<div class="s5-td carac">' + e2(r.c||'—') + '</div>' +
+      '<div class="s5-td val-r">' + e2(r.v||'—') + '</div>' +
+      '<div class="s5-td">' + badge + '</div>' +
+      '<div class="s5-td">' + verBtn + '</div>' +
+    '</div>' + aiRow;
+  });
+  if(!nvRows) nvRows = '<div style="padding:12px 16px;font-size:.75rem;color:#a1a1a6">Nenhum comparável cadastrado</div>';
+
+  // AI insight
+  var lastV = (d.v&&d.v.length) ? d.v[d.v.length-1] : null;
+  var lastNV = (d.nv&&d.nv.length) ? d.nv[0] : null;
+  var insight = '';
+  if(lastV && lastNV) {
+    insight = 'Os imóveis que venderam fecharam em ' + e2(lastV.v) + ' — os que estão parados há semanas foram anunciados acima da realidade. O preço certo é a diferença entre vender e não vender.';
+  } else {
+    insight = 'Leitura do mercado: imóveis bem precificados desde o primeiro dia vendem mais rápido e com menor deságio.';
+  }
+
+  return '<div class="slide" id="s5">' +
+    '<div class="s-head"><div><div class="s-tag s-tag-blue">Inteligência de Mercado</div><div class="s-title">Análise de ofertas comparativas</div></div></div>' +
+    '<div class="s5-body">' +
+      '<div>' +
+        '<div class="s5-sec-lbl s5-lbl-g"><span class="dot"></span>Vendidos — preço real de fechamento</div>' +
+        '<div class="s5-tbl">' +
+          '<div class="s5-hdr s5-hdr-v"><div class="s5-th">Imóvel</div><div class="s5-th">Área</div><div class="s5-th">Características</div><div class="s5-th">Valor negociado</div></div>' +
+          vRows +
+        '</div>' +
+      '</div>' +
+      '<div>' +
+        '<div class="s5-sec-lbl s5-lbl-r"><span class="dot"></span>Não vendidos — ainda à venda</div>' +
+        '<div class="s5-tbl">' +
+          '<div class="s5-hdr" style="display:grid;grid-template-columns:1.6fr .55fr 2fr .85fr .85fr .4fr;padding:8px 16px;background:#f5f5f7">' +
+            '<div class="s5-th">Imóvel</div><div class="s5-th">Área</div><div class="s5-th">Características</div><div class="s5-th">Valor anunciado</div><div class="s5-th">Parado há</div><div class="s5-th"></div>' +
+          '</div>' +
+          nvRows +
+        '</div>' +
+      '</div>' +
+      '<div class="s5-insight">' +
+        '<div class="s5-insight-ico"><svg viewBox="0 0 12 12"><path d="M6 1L1 11h10L6 1z"/><path d="M6 5v3M6 9.5v.5"/></svg></div>' +
+        '<div class="s5-insight-txt"><strong>Leitura do mercado:</strong> ' + insight + '</div>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+
 export function buildSlides(d, slides=[]){
-  // ── HTML escaper (was global in generator, needs to be local in module) ──
+  // e() — HTML escaper (needs to be local in ES module context)
   function e(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-  // ── Defensive defaults ──
+  // Defensive defaults
   if(!d) d={};
   if(!d.residencial) d.residencial='Residencial';
   if(!d.nome)        d.nome='Proprietário';
@@ -294,82 +364,14 @@ export function buildSlides(d, slides=[]){
 <!-- ═══ S5 ANÁLISE DE OFERTAS ═══ -->`);
 
   // S5 OFERTAS
-  const hasV=(d.v||[]).length>0,hasNV=(d.nv||[]).length>0;
-  const rn=(d.residencial||'').split(' ')[0]||'Boulevard';
+  const hasV=d.v.length>0,hasNV=d.nv.length>0;
+  const rn=d.residencial.split(' ')[0]||'Boulevard';
   let ofHTML='<div class="of-wrap">';
   if(hasV){ofHTML+=`<div><div class="of-lbl green">Vendidos</div><div class="tbl"><div class="th-v"><div class="th">Imóvel</div><div class="th">Área</div><div class="th">Características</div><div class="th">Valor negociado</div></div>`;d.v.forEach(r=>{ofHTML+=`<div class="tr-v"><div class="td"><strong>${e(rn)}</strong></div><div class="td">${e(r.a)}</div><div class="td" style="font-size:.74rem">${e(r.c)}</div><div class="td val">${e(r.v)}</div></div>`;});ofHTML+=`</div></div>`;}
   if(hasNV){ofHTML+=`<div><div class="of-lbl red">Não vendidos — ainda à venda</div><div class="tbl"><div class="th-nv"><div class="th">Imóvel</div><div class="th">Área</div><div class="th">Características</div><div class="th">Valor anunciado</div><div class="th">Publicado há</div></div>`;d.nv.forEach(r=>{ofHTML+=`<div class="tr-nv"><div class="td"><strong>${e(rn)}</strong></div><div class="td">${e(r.a)}</div><div class="td" style="font-size:.74rem">${e(r.c)}</div><div class="td val-r">${e(r.v)}</div><div class="td"><span class="badge red">${e(r.d)}</span></div></div>`;});ofHTML+=`</div></div>`;}
   if(!hasV&&!hasNV)ofHTML+=`<div style="padding:32px;text-align:center;color:var(--light);font-size:.82rem">Nenhum comparável informado</div>`;
   if(hasV&&hasNV){const last=d.v[d.v.length-1];ofHTML+=`<div class="insight"><div class="insight-lbl">Leitura do mercado</div><div class="insight-txt">O que efetivamente vendeu saiu a <strong>${e(last.v)}</strong>. A precificação adequada é a variável mais crítica para velocidade e resultado.</div></div>`;}
   ofHTML+=`</div>`;
-  function buildS5(d) {
-    const hasV = (d.v || []).length > 0;
-    const hasNV = (d.nv || []).length > 0;
-    const rn = (d.residencial || '').split(' ')[0] || 'Boulevard';
-    let ofHTML = '';
-    if (hasV) {
-      ofHTML += `Vendidos
-Imóvel
-Área
-Características
-Valor negociado
-
-`;
-      d.v.forEach(r => {
-        ofHTML += `**${e(rn)}**
-${e(r.a)}
-${e(r.c)}
-${e(r.v)}
-
-`;
-      });
-      ofHTML += `
-
-`;
-    }
-    if (hasNV) {
-      ofHTML += `Não vendidos — ainda à venda
-Imóvel
-Área
-Características
-Valor anunciado
-Publicado há
-
-`;
-      d.nv.forEach(r => {
-        ofHTML += `**${e(rn)}**
-${e(r.a)}
-${e(r.c)}
-${e(r.v)}
-${e(r.d)}
-
-`;
-      });
-      ofHTML += `
-
-`;
-    }
-    if (!hasV && !hasNV) {
-      ofHTML += `Nenhum comparável informado
-`;
-    }
-    if (hasV && hasNV) {
-      const last = d.v[d.v.length - 1];
-      ofHTML += `Leitura do mercado
-O que efetivamente vendeu saiu a **${e(last.v)}**. A precificação adequada é a variável mais crítica para velocidade e resultado.
-
-`;
-    }
-    ofHTML += `
-`;
-    return `Ofertas
-Análise de mercado
-
-Comparativo com imóveis similares
-
-${ofHTML}
-`;
-  }
   slides.push(buildS5(d));
 
   // S6 SOBRE
@@ -1307,75 +1309,6 @@ slides.push(`<div class="slide" id="s11">
     </div>
   </div>
 </div>`);
-
-  function buildS5(d) {
-    const hasV = (d.v || []).length > 0;
-    const hasNV = (d.nv || []).length > 0;
-    const rn = (d.residencial || '').split(' ')[0] || 'Boulevard';
-    let ofHTML = '';
-    if (hasV) {
-      ofHTML += `Vendidos
-Imóvel
-Área
-Características
-Valor negociado
-
-`;
-      d.v.forEach(r => {
-        ofHTML += `**${e(rn)}**
-${e(r.a)}
-${e(r.c)}
-${e(r.v)}
-
-`;
-      });
-      ofHTML += `
-
-`;
-    }
-    if (hasNV) {
-      ofHTML += `Não vendidos — ainda à venda
-Imóvel
-Área
-Características
-Valor anunciado
-Publicado há
-
-`;
-      d.nv.forEach(r => {
-        ofHTML += `**${e(rn)}**
-${e(r.a)}
-${e(r.c)}
-${e(r.v)}
-${e(r.d)}
-
-`;
-      });
-      ofHTML += `
-
-`;
-    }
-    if (!hasV && !hasNV) {
-      ofHTML += `Nenhum comparável informado
-`;
-    }
-    if (hasV && hasNV) {
-      const last = d.v[d.v.length - 1];
-      ofHTML += `Leitura do mercado
-O que efetivamente vendeu saiu a **${e(last.v)}**. A precificação adequada é a variável mais crítica para velocidade e resultado.
-
-`;
-    }
-    ofHTML += `
-`;
-    return `Ofertas
-Análise de mercado
-
-Comparativo com imóveis similares
-
-${ofHTML}
-`;
-  }
 
   return slides;
 }
