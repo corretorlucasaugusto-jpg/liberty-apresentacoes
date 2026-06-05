@@ -22,7 +22,6 @@ export default function Gerador() {
   const gv = (name) => { const el = formRef.current?.elements[name]; return el ? el.value.trim() : '' }
   const sv = (name, val) => { const el = formRef.current?.elements[name]; if (el) el.value = val }
 
-  // Extract data from pasted content using AI
   const extractFromContent = async (type, idx) => {
     const contentKey = type === 'nv' ? `nv_content_${idx}` : `v_content_${idx}`
     const content = gv(contentKey)
@@ -32,19 +31,9 @@ export default function Gerador() {
     setExtracting(prev => ({ ...prev, [idx]: true }))
 
     try {
-      const prompt = `Extraia os dados deste anúncio imobiliário e responda APENAS com JSON válido:
-${type === 'nv'
-  ? '{"nome":"nome do condomínio/empreendimento","area":"XXm²","carac":"NQ · NS · NV · características principais","valor":"R$ XXX.XXX","dias":"número de dias parado (se houver)"}'
-  : '{"nome":"nome do condomínio","area":"XXm²","carac":"NQ · NS · NV · características","valor":"R$ XXX.XXX"}'
-}
-
-Anúncio:
-${content.slice(0, 2000)}`
-
       const { data, error } = await supabase.functions.invoke('gerar-apresentacao', {
-        body: { data: { _extract: true, prompt, content } }
+        body: { data: { _extract: true, type, content } }
       })
-
       if (!error && data?.extracted) {
         const ex = data.extracted
         if (type === 'nv') {
@@ -63,7 +52,6 @@ ${content.slice(0, 2000)}`
     } catch (err) {
       console.warn('Extração falhou:', err.message)
     }
-
     setExtracting(prev => ({ ...prev, [idx]: false }))
   }
 
@@ -98,7 +86,6 @@ ${content.slice(0, 2000)}`
       let enrichedData = rawData
       try {
         const { data, error } = await supabase.functions.invoke('gerar-apresentacao', { body: { data: rawData } })
-        console.log('Edge function response:', JSON.stringify(data)?.slice(0, 300))
         if (!error && data?.enriched && data.enriched.residencial) {
           enrichedData = {
             ...rawData,
@@ -107,19 +94,15 @@ ${content.slice(0, 2000)}`
             comps:       data.enriched.comps?.length ? data.enriched.comps : rawData.comps,
             nv:          data.enriched.nv || rawData.nv,
           }
-        } else if (error) {
-          console.warn('Edge function error:', error.message)
         }
       } catch (edgeErr) {
         console.warn('Edge function indisponível:', edgeErr.message)
       }
-
       if (!enrichedData.posEnriched) enrichedData.posEnriched = (enrichedData.pos||[]).map(t=>({t,d:''}))
       if (!enrichedData.negEnriched) enrichedData.negEnriched = (enrichedData.neg||[]).map(t=>({t,d:''}))
       if (!enrichedData.comps?.length) enrichedData.comps = [1,2,3,4].map(i=>({t:gv(`c${i}t`),d:''})).filter(c=>c.t)
 
       const html = buildHTML(enrichedData)
-
       if (user?.id) {
         supabase.from('apresentacoes').insert({
           user_id: user.id, cliente: rawData.nome,
@@ -128,7 +111,6 @@ ${content.slice(0, 2000)}`
           if (saveError) console.warn('Histórico não salvo:', saveError.message)
         })
       }
-
       const blob = new Blob([html], { type: 'text/html' })
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
@@ -136,9 +118,7 @@ ${content.slice(0, 2000)}`
       a.click()
       setStatus('done')
     } catch (err) {
-      console.error(err)
-      setErrorMsg(err.message || 'Erro ao gerar.')
-      setStatus('error')
+      setErrorMsg(err.message || 'Erro ao gerar.'); setStatus('error')
     }
   }
 
@@ -183,7 +163,7 @@ ${content.slice(0, 2000)}`
           <div className="flex items-center justify-between">
             <div>
               <p className="section-title mb-0">Concorrentes ativos</p>
-              <p className="text-xs text-gray-400 mt-0.5">Cole o anúncio e a IA extrai os dados</p>
+              <p className="text-xs text-gray-400 mt-0.5">Link para o modal + cole o conteúdo para a IA extrair os dados</p>
             </div>
             {nvCount < MAX_NV && (
               <button type="button" onClick={() => setNvCount(n=>n+1)}
@@ -197,14 +177,14 @@ ${content.slice(0, 2000)}`
               extracting={!!extractingNV[i+1]}
             />
           ))}
-          <p className="text-xs text-gray-300 text-right">{nvCount}/{MAX_NV} concorrentes</p>
+          <p className="text-xs text-gray-300 text-right">{nvCount}/{MAX_NV}</p>
         </section>
 
         <section className="card p-6 space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="section-title mb-0">Histórico de vendas reais</p>
-              <p className="text-xs text-gray-400 mt-0.5">Cole o anúncio e a IA extrai os dados</p>
+              <p className="text-xs text-gray-400 mt-0.5">Cole o conteúdo para a IA extrair os dados</p>
             </div>
             {vCount < MAX_V && (
               <button type="button" onClick={() => setVCount(n=>n+1)}
@@ -218,7 +198,7 @@ ${content.slice(0, 2000)}`
               extracting={!!extractingV[i+1]}
             />
           ))}
-          <p className="text-xs text-gray-300 text-right">{vCount}/{MAX_V} vendidos</p>
+          <p className="text-xs text-gray-300 text-right">{vCount}/{MAX_V}</p>
         </section>
 
         <section className="card p-6 space-y-4">
@@ -258,7 +238,7 @@ ${content.slice(0, 2000)}`
           {[1,2,3,4].map(i => <PerfilRow key={i} idx={i} />)}
         </section>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 pb-8">
           <button type="submit" className="btn-primary flex items-center gap-2" disabled={status==='loading'}>
             {status==='loading' ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>Gerando...</> : '✦ Gerar Apresentação'}
           </button>
