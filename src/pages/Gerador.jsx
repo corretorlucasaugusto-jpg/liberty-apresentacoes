@@ -50,6 +50,7 @@ export default function Gerador() {
       let enrichedData = rawData
       try {
         const { data, error } = await supabase.functions.invoke('gerar-apresentacao', { body: { data: rawData } })
+        console.log('Edge function response:', JSON.stringify(data).slice(0, 200))
         if (!error && data?.enriched && data.enriched.residencial) {
           // Merge: keep all rawData fields, only add AI-generated descriptions
           enrichedData = {
