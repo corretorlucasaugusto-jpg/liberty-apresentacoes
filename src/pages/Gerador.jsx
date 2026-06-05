@@ -50,8 +50,15 @@ export default function Gerador() {
       let enrichedData = rawData
       try {
         const { data, error } = await supabase.functions.invoke('gerar-apresentacao', { body: { data: rawData } })
-        if (!error && data?.enriched) {
-          enrichedData = data.enriched
+        if (!error && data?.enriched && data.enriched.residencial) {
+          // Merge: keep all rawData fields, only add AI-generated descriptions
+          enrichedData = {
+            ...rawData,
+            posEnriched: data.enriched.posEnriched || rawData.pos.map(t=>({t,d:''})),
+            negEnriched: data.enriched.negEnriched || rawData.neg.map(t=>({t,d:''})),
+            comps:       data.enriched.comps?.length ? data.enriched.comps : rawData.comps,
+            nv:          data.enriched.nv || rawData.nv,
+          }
         } else if (error) {
           console.warn('Edge function error (usando dados sem IA):', error.message)
         }
