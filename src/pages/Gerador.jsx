@@ -4,53 +4,37 @@ import { Field, Input, NVRow, VRow, PerfilRow } from '../components/FormFields.j
 import { buildHTML } from '../lib/buildHTML.js'
 import { useAuth } from '../hooks/useAuth.js'
 
-const SELIC_DEFAULT = '14,50%'
-
 export default function Gerador() {
   const { user } = useAuth()
   const formRef = useRef(null)
-
   const [nvCount,  setNvCount]  = useState(2)
   const [vCount,   setVCount]   = useState(1)
   const [posItems, setPosItems] = useState(['', ''])
   const [negItems, setNegItems] = useState([''])
-  const [status,   setStatus]   = useState(null) // null | 'loading' | 'done' | 'error'
+  const [status,   setStatus]   = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
 
-  const gv = (name) => {
-    const el = formRef.current?.elements[name]
-    return el ? el.value.trim() : ''
-  }
+  const gv = (name) => { const el = formRef.current?.elements[name]; return el ? el.value.trim() : '' }
 
   const collectData = () => {
     const d = {
-      nome:       gv('p_nome')       || 'Proprietário',
-      corretor:   gv('p_corretor')   || 'Corretor Liberty',
-      residencial:gv('p_residencial')|| 'Residencial',
-      endereco:   gv('p_endereco')   || '',
-      bairro:     gv('p_bairro')     || '',
-      quartos:    gv('p_quartos')    || '—',
-      vagas:      gv('p_vagas')      || '—',
-      area:       gv('p_area')       || '—',
-      andar:      gv('p_andar')      || '—',
-      selic:      gv('selic')        || SELIC_DEFAULT,
-      vl_div:     gv('vl_div')       || '—',
-      vl_fec:     gv('vl_fec')       || '—',
-      vl_med:     gv('vl_med')       || '—',
-      nv: [],
-      v:  [],
+      nome: gv('p_nome')||'Proprietário', corretor: gv('p_corretor')||'Corretor Liberty',
+      residencial: gv('p_residencial')||'Residencial', endereco: gv('p_endereco')||'',
+      bairro: gv('p_bairro')||'', quartos: gv('p_quartos')||'—', vagas: gv('p_vagas')||'—',
+      area: gv('p_area')||'—', andar: gv('p_andar')||'—', selic: gv('selic')||'14,50%',
+      vl_div: gv('vl_div')||'—', vl_fec: gv('vl_fec')||'—', vl_med: gv('vl_med')||'—',
+      nv: [], v: [],
       pos: posItems.filter(Boolean),
       neg: negItems.filter(Boolean),
       comps: [1,2,3,4].map(i => ({ t: gv(`c${i}t`), d: '' })).filter(c => c.t),
     }
     for (let i = 1; i <= nvCount; i++) {
-      const n=gv(`nv_n_${i}`), a=gv(`nv_a_${i}`), c=gv(`nv_c_${i}`),
-            v=gv(`nv_v_${i}`), dd=gv(`nv_d_${i}`), url=gv(`lk_${i}`)
-      if (a || c || v) d.nv.push({ n, a, c, v, d: dd, url })
+      const n=gv(`nv_n_${i}`),a=gv(`nv_a_${i}`),c=gv(`nv_c_${i}`),v=gv(`nv_v_${i}`),dd=gv(`nv_d_${i}`),url=gv(`lk_${i}`)
+      if (a||c||v) d.nv.push({n,a,c,v,d:dd,url})
     }
     for (let i = 1; i <= vCount; i++) {
-      const n=gv(`v_n_${i}`), a=gv(`v_a_${i}`), c=gv(`v_c_${i}`), v=gv(`v_v_${i}`)
-      if (a || c || v || n) d.v.push({ n, a, c, v })
+      const n=gv(`v_n_${i}`),a=gv(`v_a_${i}`),c=gv(`v_c_${i}`),v=gv(`v_v_${i}`)
+      if (a||c||v||n) d.v.push({n,a,c,v})
     }
     return d
   }
@@ -59,39 +43,23 @@ export default function Gerador() {
     e.preventDefault()
     setStatus('loading')
     setErrorMsg('')
-
     try {
       const rawData = collectData()
-
-      // Call Edge Function — AI runs server-side, no key needed on client
-      const { data, error } = await supabase.functions.invoke('gerar-apresentacao', {
-        body: { data: rawData }
-      })
-
+      // Chama Edge Function para enriquecer com IA
+      const { data, error } = await supabase.functions.invoke('gerar-apresentacao', { body: { data: rawData } })
       if (error) throw new Error(error.message)
-
-      const enrichedData = data.enriched || rawData
+      const enrichedData = data?.enriched || rawData
       const html = buildHTML(enrichedData)
-
-      // Save to Supabase
+      // Salva no banco
       await supabase.from('apresentacoes').insert({
-        user_id:    user.id,
-        cliente:    rawData.nome,
-        residencial:rawData.residencial,
-        bairro:     rawData.bairro,
-        html:       html,
+        user_id: user.id, cliente: rawData.nome, residencial: rawData.residencial, bairro: rawData.bairro, html
       })
-
-      // Trigger download
+      // Download automático
       const blob = new Blob([html], { type: 'text/html' })
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
-      a.download = (rawData.residencial || 'Liberty')
-        .replace(/[^a-zA-Z0-9À-ɏ\s]/g, '')
-        .trim()
-        .replace(/\s+/g, '_') + '.html'
+      a.download = (rawData.residencial||'Liberty').replace(/[^a-zA-Z0-9\s]/g,'').trim().replace(/\s+/g,'_') + '.html'
       a.click()
-
       setStatus('done')
     } catch (err) {
       console.error(err)
@@ -102,216 +70,101 @@ export default function Gerador() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-liberty-dark">Gerar Apresentação</h1>
-        <p className="text-sm text-gray-400 mt-1">
-          Preencha os dados do imóvel. A IA gera as descrições automaticamente.
-        </p>
+        <h1 className="text-2xl font-bold">Gerar Apresentação</h1>
+        <p className="text-sm text-gray-400 mt-1">Preencha os dados. A IA gera as descrições automaticamente.</p>
       </div>
-
       <form ref={formRef} onSubmit={handleGerar} className="space-y-6">
 
-        {/* ── IDENTIFICAÇÃO ── */}
         <section className="card p-6 space-y-4">
           <p className="section-title">Identificação</p>
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Nome do cliente">
-              <Input name="p_nome" placeholder="Ex: Guilherme e Dilceia" />
-            </Field>
-            <Field label="Corretor">
-              <Input name="p_corretor" placeholder="Ex: Corretor Liberty" defaultValue="Corretor Liberty" />
-            </Field>
+            <Field label="Nome do cliente"><Input name="p_nome" placeholder="Ex: Guilherme e Dilceia" /></Field>
+            <Field label="Corretor"><Input name="p_corretor" placeholder="Corretor Liberty" defaultValue="Corretor Liberty" /></Field>
           </div>
-          <Field label="Nome do imóvel / Condomínio">
-            <Input name="p_residencial" placeholder="Ex: Condomínio Mont Blanc, SQN 202" />
-          </Field>
+          <Field label="Nome do imóvel / Condomínio"><Input name="p_residencial" placeholder="Ex: SQN 402, Condomínio Mont Blanc" /></Field>
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Endereço completo">
-              <Input name="p_endereco" placeholder="Ex: Bloco G, Apto 301 — Asa Norte" />
-            </Field>
-            <Field label="Bairro / Região">
-              <Input name="p_bairro" placeholder="Ex: Setor Sudoeste — Brasília, DF" />
-            </Field>
+            <Field label="Endereço"><Input name="p_endereco" placeholder="Ex: Bloco G, Apto 301" /></Field>
+            <Field label="Bairro / Região"><Input name="p_bairro" placeholder="Ex: Asa Norte — Brasília, DF" /></Field>
           </div>
         </section>
 
-        {/* ── FICHA TÉCNICA ── */}
         <section className="card p-6 space-y-4">
           <p className="section-title">Ficha Técnica</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <Field label="Quartos">
-              <Input name="p_quartos" placeholder="Ex: 2" />
-            </Field>
-            <Field label="Vagas">
-              <Input name="p_vagas" placeholder="Ex: 1" />
-            </Field>
-            <Field label="Área (m²)">
-              <Input name="p_area" placeholder="Ex: 66" />
-            </Field>
-            <Field label="Andar / Tipo">
-              <Input name="p_andar" placeholder="Ex: 3° andar, Kitnet" />
-            </Field>
+            <Field label="Quartos"><Input name="p_quartos" placeholder="Ex: 2" /></Field>
+            <Field label="Vagas"><Input name="p_vagas" placeholder="Ex: 1" /></Field>
+            <Field label="Área (m²)"><Input name="p_area" placeholder="Ex: 66" /></Field>
+            <Field label="Andar / Tipo"><Input name="p_andar" placeholder="Ex: 3° andar" /></Field>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Field label="Selic">
-              <Input name="selic" placeholder="Ex: 14,50%" defaultValue={SELIC_DEFAULT} />
-            </Field>
-            <Field label="Valor divulgação">
-              <Input name="vl_div" placeholder="Ex: R$ 840.000" />
-            </Field>
-            <Field label="Expectativa de fechamento">
-              <Input name="vl_fec" placeholder="Ex: R$ 825.000" />
-            </Field>
+          <div className="grid grid-cols-3 gap-4">
+            <Field label="Selic"><Input name="selic" placeholder="Ex: 14,50%" defaultValue="14,50%" /></Field>
+            <Field label="Valor divulgação"><Input name="vl_div" placeholder="Ex: R$ 840.000" /></Field>
+            <Field label="Expectativa fechamento"><Input name="vl_fec" placeholder="Ex: R$ 825.000" /></Field>
           </div>
-          <Field label="Referência de mercado" hint="base para posicionamento">
-            <Input name="vl_med" placeholder="Ex: R$ 850.000" />
-          </Field>
+          <Field label="Referência de mercado"><Input name="vl_med" placeholder="Ex: R$ 850.000" /></Field>
         </section>
 
-        {/* ── CONCORRENTES ── */}
         <section className="card p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <p className="section-title mb-0">Não vendidos (concorrentes ativos)</p>
-            {nvCount < 5 && (
-              <button type="button" onClick={() => setNvCount(n => n + 1)}
-                className="text-xs text-liberty-blue font-medium hover:underline">
-                + Adicionar
-              </button>
-            )}
+            <p className="section-title mb-0">Concorrentes ativos (não vendidos)</p>
+            {nvCount < 5 && <button type="button" onClick={() => setNvCount(n=>n+1)} className="text-xs text-blue-600 font-medium hover:underline">+ Adicionar</button>}
           </div>
-          {Array.from({ length: nvCount }, (_, i) => (
-            <NVRow
-              key={i}
-              idx={i + 1}
-              onRemove={() => setNvCount(n => Math.max(1, n - 1))}
-            />
-          ))}
+          {Array.from({length:nvCount},(_,i) => <NVRow key={i} idx={i+1} onRemove={() => setNvCount(n=>Math.max(1,n-1))} />)}
         </section>
 
-        {/* ── VENDIDOS ── */}
         <section className="card p-6 space-y-4">
           <div className="flex items-center justify-between">
             <p className="section-title mb-0">Histórico de vendas reais</p>
-            {vCount < 3 && (
-              <button type="button" onClick={() => setVCount(n => n + 1)}
-                className="text-xs text-liberty-blue font-medium hover:underline">
-                + Adicionar
-              </button>
-            )}
+            {vCount < 3 && <button type="button" onClick={() => setVCount(n=>n+1)} className="text-xs text-blue-600 font-medium hover:underline">+ Adicionar</button>}
           </div>
-          {Array.from({ length: vCount }, (_, i) => (
-            <VRow key={i} idx={i + 1} onRemove={() => setVCount(n => Math.max(1, n - 1))} />
-          ))}
+          {Array.from({length:vCount},(_,i) => <VRow key={i} idx={i+1} onRemove={() => setVCount(n=>Math.max(1,n-1))} />)}
         </section>
 
-        {/* ── ANÁLISE CRÍTICA ── */}
         <section className="card p-6 space-y-4">
           <p className="section-title">Análise Crítica</p>
-          <p className="text-xs text-gray-400 -mt-2">
-            Só o título — a IA gera a descrição estratégica de cada ponto
-          </p>
-
+          <p className="text-xs text-gray-400 -mt-2">Só o título — a IA gera a descrição estratégica</p>
           <div>
             <p className="text-xs font-medium text-gray-500 mb-2">Pontos Positivos</p>
             <div className="space-y-2">
-              {posItems.map((v, i) => (
+              {posItems.map((v,i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <input
-                    value={v}
-                    onChange={e => { const a = [...posItems]; a[i] = e.target.value; setPosItems(a) }}
-                    className="input-base flex-1"
-                    placeholder="Ex: Reformado, Vazado, Andar alto"
-                  />
-                  {posItems.length > 1 && (
-                    <button type="button"
-                      onClick={() => setPosItems(p => p.filter((_, j) => j !== i))}
-                      className="text-gray-300 hover:text-red-400 text-lg leading-none transition">×</button>
-                  )}
+                  <input value={v} onChange={e=>{const a=[...posItems];a[i]=e.target.value;setPosItems(a)}}
+                    className="input-base flex-1" placeholder="Ex: Reformado, Vazado, Andar alto"/>
+                  {posItems.length>1 && <button type="button" onClick={()=>setPosItems(p=>p.filter((_,j)=>j!==i))} className="text-gray-300 hover:text-red-400 text-lg leading-none">×</button>}
                 </div>
               ))}
-              {posItems.length < 4 && (
-                <button type="button" onClick={() => setPosItems(p => [...p, ''])}
-                  className="text-xs text-liberty-blue font-medium hover:underline">
-                  + Adicionar ponto positivo
-                </button>
-              )}
+              {posItems.length < 4 && <button type="button" onClick={() => setPosItems(p=>[...p,''])} className="text-xs text-blue-600 font-medium hover:underline">+ Adicionar positivo</button>}
             </div>
           </div>
-
           <div>
             <p className="text-xs font-medium text-gray-500 mb-2">Pontos de Atenção</p>
             <div className="space-y-2">
-              {negItems.map((v, i) => (
+              {negItems.map((v,i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <input
-                    value={v}
-                    onChange={e => { const a = [...negItems]; a[i] = e.target.value; setNegItems(a) }}
-                    className="input-base flex-1"
-                    placeholder="Ex: Necessita de reforma, Sem suíte"
-                  />
-                  {negItems.length > 1 && (
-                    <button type="button"
-                      onClick={() => setNegItems(p => p.filter((_, j) => j !== i))}
-                      className="text-gray-300 hover:text-red-400 text-lg leading-none transition">×</button>
-                  )}
+                  <input value={v} onChange={e=>{const a=[...negItems];a[i]=e.target.value;setNegItems(a)}}
+                    className="input-base flex-1" placeholder="Ex: Necessita de reforma, Sem suíte"/>
+                  {negItems.length>1 && <button type="button" onClick={()=>setNegItems(p=>p.filter((_,j)=>j!==i))} className="text-gray-300 hover:text-red-400 text-lg leading-none">×</button>}
                 </div>
               ))}
-              {negItems.length < 3 && (
-                <button type="button" onClick={() => setNegItems(p => [...p, ''])}
-                  className="text-xs text-liberty-blue font-medium hover:underline">
-                  + Adicionar ponto de atenção
-                </button>
-              )}
+              {negItems.length < 3 && <button type="button" onClick={() => setNegItems(p=>[...p,''])} className="text-xs text-blue-600 font-medium hover:underline">+ Adicionar atenção</button>}
             </div>
           </div>
         </section>
 
-        {/* ── PERFIL DO COMPRADOR ── */}
         <section className="card p-6 space-y-3">
           <p className="section-title">Perfil do Comprador</p>
-          <p className="text-xs text-gray-400 -mt-2">
-            Só o título de cada perfil — a IA gera a descrição e a estratégia
-          </p>
-          {[1, 2, 3, 4].map(i => <PerfilRow key={i} idx={i} />)}
+          <p className="text-xs text-gray-400 -mt-2">Só o título — a IA gera a descrição e a estratégia</p>
+          {[1,2,3,4].map(i => <PerfilRow key={i} idx={i} />)}
         </section>
 
-        {/* ── LEITURA DO MERCADO ── */}
-        <section className="card p-6 space-y-3">
-          <p className="section-title">Leitura do Mercado <span className="text-gray-300 font-normal normal-case tracking-normal">· opcional</span></p>
-          <textarea
-            name="leitura_mercado"
-            rows={3}
-            className="input-base resize-none"
-            placeholder="Ex: o imóvel vendido fechou por R$ 350.000 — os que estão há meses parados foram anunciados acima dessa realidade..."
-          />
-        </section>
-
-        {/* ── SUBMIT ── */}
         <div className="flex items-center gap-4">
-          <button
-            type="submit"
-            className="btn-primary flex items-center gap-2"
-            disabled={status === 'loading'}
-          >
-            {status === 'loading' ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Gerando com IA...
-              </>
-            ) : '✦ Gerar Apresentação'}
+          <button type="submit" className="btn-primary flex items-center gap-2" disabled={status==='loading'}>
+            {status==='loading' ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>Gerando com IA...</> : '✦ Gerar Apresentação'}
           </button>
-
-          {status === 'done' && (
-            <span className="text-sm text-green-600 font-medium">
-              ✓ Apresentação gerada e salva!
-            </span>
-          )}
-          {status === 'error' && (
-            <span className="text-sm text-red-500">{errorMsg}</span>
-          )}
+          {status==='done'  && <span className="text-sm text-green-600 font-medium">✓ Apresentação gerada!</span>}
+          {status==='error' && <span className="text-sm text-red-500">{errorMsg}</span>}
         </div>
-
       </form>
     </div>
   )
