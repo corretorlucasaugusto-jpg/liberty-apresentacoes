@@ -4,6 +4,9 @@ import { Field, Input, NVRow, VRow, PerfilRow } from '../components/FormFields.j
 import { buildHTML } from '../lib/buildHTML.js'
 import { useAuth } from '../hooks/useAuth.js'
 
+const MAX_NV = 8
+const MAX_V  = 8
+
 export default function Gerador() {
   const { user } = useAuth()
   const formRef = useRef(null)
@@ -13,8 +16,56 @@ export default function Gerador() {
   const [negItems, setNegItems] = useState([''])
   const [status,   setStatus]   = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
+  const [extractingNV, setExtractingNV] = useState({})
+  const [extractingV,  setExtractingV]  = useState({})
 
   const gv = (name) => { const el = formRef.current?.elements[name]; return el ? el.value.trim() : '' }
+  const sv = (name, val) => { const el = formRef.current?.elements[name]; if (el) el.value = val }
+
+  // Extract data from pasted content using AI
+  const extractFromContent = async (type, idx) => {
+    const contentKey = type === 'nv' ? `nv_content_${idx}` : `v_content_${idx}`
+    const content = gv(contentKey)
+    if (!content.trim()) return
+
+    const setExtracting = type === 'nv' ? setExtractingNV : setExtractingV
+    setExtracting(prev => ({ ...prev, [idx]: true }))
+
+    try {
+      const prompt = `Extraia os dados deste anúncio imobiliário e responda APENAS com JSON válido:
+${type === 'nv'
+  ? '{"nome":"nome do condomínio/empreendimento","area":"XXm²","carac":"NQ · NS · NV · características principais","valor":"R$ XXX.XXX","dias":"número de dias parado (se houver)"}'
+  : '{"nome":"nome do condomínio","area":"XXm²","carac":"NQ · NS · NV · características","valor":"R$ XXX.XXX"}'
+}
+
+Anúncio:
+${content.slice(0, 2000)}`
+
+      const { data, error } = await supabase.functions.invoke('gerar-apresentacao', {
+        body: { data: { _extract: true, prompt, content } }
+      })
+
+      if (!error && data?.extracted) {
+        const ex = data.extracted
+        if (type === 'nv') {
+          if (ex.nome)  sv(`nv_n_${idx}`, ex.nome)
+          if (ex.area)  sv(`nv_a_${idx}`, ex.area)
+          if (ex.carac) sv(`nv_c_${idx}`, ex.carac)
+          if (ex.valor) sv(`nv_v_${idx}`, ex.valor)
+          if (ex.dias)  sv(`nv_d_${idx}`, ex.dias)
+        } else {
+          if (ex.nome)  sv(`v_n_${idx}`, ex.nome)
+          if (ex.area)  sv(`v_a_${idx}`, ex.area)
+          if (ex.carac) sv(`v_c_${idx}`, ex.carac)
+          if (ex.valor) sv(`v_v_${idx}`, ex.valor)
+        }
+      }
+    } catch (err) {
+      console.warn('Extração falhou:', err.message)
+    }
+
+    setExtracting(prev => ({ ...prev, [idx]: false }))
+  }
 
   const collectData = () => {
     const d = {
@@ -30,7 +81,7 @@ export default function Gerador() {
     }
     for (let i = 1; i <= nvCount; i++) {
       const n=gv(`nv_n_${i}`),a=gv(`nv_a_${i}`),c=gv(`nv_c_${i}`),v=gv(`nv_v_${i}`),dd=gv(`nv_d_${i}`),url=gv(`lk_${i}`)
-      if (a||c||v) d.nv.push({n,a,c,v,d:dd,url})
+      if (a||c||v||n) d.nv.push({n,a,c,v,d:dd,url})
     }
     for (let i = 1; i <= vCount; i++) {
       const n=gv(`v_n_${i}`),a=gv(`v_a_${i}`),c=gv(`v_c_${i}`),v=gv(`v_v_${i}`)
@@ -41,12 +92,9 @@ export default function Gerador() {
 
   const handleGerar = async (e) => {
     e.preventDefault()
-    setStatus('loading')
-    setErrorMsg('')
+    setStatus('loading'); setErrorMsg('')
     try {
       const rawData = collectData()
-
-      // Tenta enriquecer com IA — usa rawData como fallback se falhar
       let enrichedData = rawData
       try {
         const { data, error } = await supabase.functions.invoke('gerar-apresentacao', { body: { data: rawData } })
@@ -72,20 +120,15 @@ export default function Gerador() {
 
       const html = buildHTML(enrichedData)
 
-      // Salva no banco apenas se usuário estiver logado
       if (user?.id) {
         supabase.from('apresentacoes').insert({
-          user_id: user.id,
-          cliente: rawData.nome,
-          residencial: rawData.residencial,
-          bairro: rawData.bairro,
-          html
+          user_id: user.id, cliente: rawData.nome,
+          residencial: rawData.residencial, bairro: rawData.bairro, html
         }).then(({ error: saveError }) => {
           if (saveError) console.warn('Histórico não salvo:', saveError.message)
         })
       }
 
-      // Download imediato
       const blob = new Blob([html], { type: 'text/html' })
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
@@ -94,7 +137,7 @@ export default function Gerador() {
       setStatus('done')
     } catch (err) {
       console.error(err)
-      setErrorMsg(err.message || 'Erro ao gerar apresentação.')
+      setErrorMsg(err.message || 'Erro ao gerar.')
       setStatus('error')
     }
   }
@@ -111,9 +154,9 @@ export default function Gerador() {
           <p className="section-title">Identificação</p>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Nome do cliente"><Input name="p_nome" placeholder="Ex: Guilherme e Dilceia" /></Field>
-            <Field label="Corretor"><Input name="p_corretor" placeholder="Corretor Liberty" defaultValue="Corretor Liberty" /></Field>
+            <Field label="Corretor"><Input name="p_corretor" defaultValue="Corretor Liberty" /></Field>
           </div>
-          <Field label="Nome do imóvel / Condomínio"><Input name="p_residencial" placeholder="Ex: SQN 402, Condomínio Mont Blanc" /></Field>
+          <Field label="Nome do imóvel / Condomínio"><Input name="p_residencial" placeholder="Ex: SQN 402, Mont Blanc" /></Field>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Endereço"><Input name="p_endereco" placeholder="Ex: Bloco G, Apto 301" /></Field>
             <Field label="Bairro / Região"><Input name="p_bairro" placeholder="Ex: Asa Norte — Brasília, DF" /></Field>
@@ -129,7 +172,7 @@ export default function Gerador() {
             <Field label="Andar / Tipo"><Input name="p_andar" placeholder="Ex: 3° andar" /></Field>
           </div>
           <div className="grid grid-cols-3 gap-4">
-            <Field label="Selic"><Input name="selic" placeholder="Ex: 14,50%" defaultValue="14,50%" /></Field>
+            <Field label="Selic"><Input name="selic" defaultValue="14,50%" /></Field>
             <Field label="Valor divulgação"><Input name="vl_div" placeholder="Ex: R$ 840.000" /></Field>
             <Field label="Expectativa fechamento"><Input name="vl_fec" placeholder="Ex: R$ 825.000" /></Field>
           </div>
@@ -138,34 +181,60 @@ export default function Gerador() {
 
         <section className="card p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <p className="section-title mb-0">Concorrentes ativos (não vendidos)</p>
-            {nvCount < 5 && <button type="button" onClick={() => setNvCount(n=>n+1)} className="text-xs text-blue-600 font-medium hover:underline">+ Adicionar</button>}
+            <div>
+              <p className="section-title mb-0">Concorrentes ativos</p>
+              <p className="text-xs text-gray-400 mt-0.5">Cole o anúncio e a IA extrai os dados</p>
+            </div>
+            {nvCount < MAX_NV && (
+              <button type="button" onClick={() => setNvCount(n=>n+1)}
+                className="text-xs text-blue-600 font-medium hover:underline">+ Adicionar</button>
+            )}
           </div>
-          {Array.from({length:nvCount},(_,i) => <NVRow key={i} idx={i+1} onRemove={() => setNvCount(n=>Math.max(1,n-1))} />)}
+          {Array.from({length:nvCount},(_,i) => (
+            <NVRow key={i} idx={i+1}
+              onRemove={() => setNvCount(n=>Math.max(1,n-1))}
+              onExtract={(idx) => extractFromContent('nv', idx)}
+              extracting={!!extractingNV[i+1]}
+            />
+          ))}
+          <p className="text-xs text-gray-300 text-right">{nvCount}/{MAX_NV} concorrentes</p>
         </section>
 
         <section className="card p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <p className="section-title mb-0">Histórico de vendas reais</p>
-            {vCount < 3 && <button type="button" onClick={() => setVCount(n=>n+1)} className="text-xs text-blue-600 font-medium hover:underline">+ Adicionar</button>}
+            <div>
+              <p className="section-title mb-0">Histórico de vendas reais</p>
+              <p className="text-xs text-gray-400 mt-0.5">Cole o anúncio e a IA extrai os dados</p>
+            </div>
+            {vCount < MAX_V && (
+              <button type="button" onClick={() => setVCount(n=>n+1)}
+                className="text-xs text-blue-600 font-medium hover:underline">+ Adicionar</button>
+            )}
           </div>
-          {Array.from({length:vCount},(_,i) => <VRow key={i} idx={i+1} onRemove={() => setVCount(n=>Math.max(1,n-1))} />)}
+          {Array.from({length:vCount},(_,i) => (
+            <VRow key={i} idx={i+1}
+              onRemove={() => setVCount(n=>Math.max(1,n-1))}
+              onExtract={(idx) => extractFromContent('v', idx)}
+              extracting={!!extractingV[i+1]}
+            />
+          ))}
+          <p className="text-xs text-gray-300 text-right">{vCount}/{MAX_V} vendidos</p>
         </section>
 
         <section className="card p-6 space-y-4">
           <p className="section-title">Análise Crítica</p>
-          <p className="text-xs text-gray-400 -mt-2">Só o título — a IA gera a descrição estratégica</p>
+          <p className="text-xs text-gray-400 -mt-2">Só o título — a IA gera a descrição</p>
           <div>
             <p className="text-xs font-medium text-gray-500 mb-2">Pontos Positivos</p>
             <div className="space-y-2">
               {posItems.map((v,i) => (
                 <div key={i} className="flex items-center gap-2">
                   <input value={v} onChange={e=>{const a=[...posItems];a[i]=e.target.value;setPosItems(a)}}
-                    className="input-base flex-1" placeholder="Ex: Reformado, Vazado, Andar alto"/>
-                  {posItems.length>1 && <button type="button" onClick={()=>setPosItems(p=>p.filter((_,j)=>j!==i))} className="text-gray-300 hover:text-red-400 text-lg leading-none">×</button>}
+                    className="input-base flex-1" placeholder="Ex: Reformado, Vazado"/>
+                  {posItems.length>1 && <button type="button" onClick={()=>setPosItems(p=>p.filter((_,j)=>j!==i))} className="text-gray-300 hover:text-red-400 text-lg">×</button>}
                 </div>
               ))}
-              {posItems.length < 4 && <button type="button" onClick={() => setPosItems(p=>[...p,''])} className="text-xs text-blue-600 font-medium hover:underline">+ Adicionar positivo</button>}
+              {posItems.length < 4 && <button type="button" onClick={() => setPosItems(p=>[...p,''])} className="text-xs text-blue-600 hover:underline">+ Adicionar</button>}
             </div>
           </div>
           <div>
@@ -174,18 +243,18 @@ export default function Gerador() {
               {negItems.map((v,i) => (
                 <div key={i} className="flex items-center gap-2">
                   <input value={v} onChange={e=>{const a=[...negItems];a[i]=e.target.value;setNegItems(a)}}
-                    className="input-base flex-1" placeholder="Ex: Necessita de reforma, Sem suíte"/>
-                  {negItems.length>1 && <button type="button" onClick={()=>setNegItems(p=>p.filter((_,j)=>j!==i))} className="text-gray-300 hover:text-red-400 text-lg leading-none">×</button>}
+                    className="input-base flex-1" placeholder="Ex: Necessita de reforma"/>
+                  {negItems.length>1 && <button type="button" onClick={()=>setNegItems(p=>p.filter((_,j)=>j!==i))} className="text-gray-300 hover:text-red-400 text-lg">×</button>}
                 </div>
               ))}
-              {negItems.length < 3 && <button type="button" onClick={() => setNegItems(p=>[...p,''])} className="text-xs text-blue-600 font-medium hover:underline">+ Adicionar atenção</button>}
+              {negItems.length < 3 && <button type="button" onClick={() => setNegItems(p=>[...p,''])} className="text-xs text-blue-600 hover:underline">+ Adicionar</button>}
             </div>
           </div>
         </section>
 
         <section className="card p-6 space-y-3">
           <p className="section-title">Perfil do Comprador</p>
-          <p className="text-xs text-gray-400 -mt-2">Só o título — a IA gera a descrição e a estratégia</p>
+          <p className="text-xs text-gray-400 -mt-2">Só o título — a IA gera a descrição</p>
           {[1,2,3,4].map(i => <PerfilRow key={i} idx={i} />)}
         </section>
 
