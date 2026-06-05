@@ -50,9 +50,8 @@ export default function Gerador() {
       let enrichedData = rawData
       try {
         const { data, error } = await supabase.functions.invoke('gerar-apresentacao', { body: { data: rawData } })
-        console.log('Edge function response:', JSON.stringify(data).slice(0, 200))
+        console.log('Edge function response:', JSON.stringify(data)?.slice(0, 300))
         if (!error && data?.enriched && data.enriched.residencial) {
-          // Merge: keep all rawData fields, only add AI-generated descriptions
           enrichedData = {
             ...rawData,
             posEnriched: data.enriched.posEnriched || rawData.pos.map(t=>({t,d:''})),
@@ -61,33 +60,32 @@ export default function Gerador() {
             nv:          data.enriched.nv || rawData.nv,
           }
         } else if (error) {
-          console.warn('Edge function error (usando dados sem IA):', error.message)
+          console.warn('Edge function error:', error.message)
         }
       } catch (edgeErr) {
-        console.warn('Edge function indisponível (usando dados sem IA):', edgeErr.message)
+        console.warn('Edge function indisponível:', edgeErr.message)
       }
 
-      // Garante que os campos obrigatórios existem antes do buildHTML
       if (!enrichedData.posEnriched) enrichedData.posEnriched = (enrichedData.pos||[]).map(t=>({t,d:''}))
       if (!enrichedData.negEnriched) enrichedData.negEnriched = (enrichedData.neg||[]).map(t=>({t,d:''}))
-      if (!enrichedData.comps || !enrichedData.comps.length) {
-        enrichedData.comps = [1,2,3,4].map(i=>({t:gv(`c${i}t`),d:''})).filter(c=>c.t)
-      }
+      if (!enrichedData.comps?.length) enrichedData.comps = [1,2,3,4].map(i=>({t:gv(`c${i}t`),d:''})).filter(c=>c.t)
 
       const html = buildHTML(enrichedData)
 
-      // Salva no banco (não bloqueia o download se falhar)
-      supabase.from('apresentacoes').insert({
-        user_id: user.id,
-        cliente: rawData.nome,
-        residencial: rawData.residencial,
-        bairro: rawData.bairro,
-        html
-      }).then(({ error: saveError }) => {
-        if (saveError) console.warn('Histórico não salvo:', saveError.message)
-      })
+      // Salva no banco apenas se usuário estiver logado
+      if (user?.id) {
+        supabase.from('apresentacoes').insert({
+          user_id: user.id,
+          cliente: rawData.nome,
+          residencial: rawData.residencial,
+          bairro: rawData.bairro,
+          html
+        }).then(({ error: saveError }) => {
+          if (saveError) console.warn('Histórico não salvo:', saveError.message)
+        })
+      }
 
-      // Download imediato — não espera o banco
+      // Download imediato
       const blob = new Blob([html], { type: 'text/html' })
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
