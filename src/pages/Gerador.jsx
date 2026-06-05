@@ -45,21 +45,41 @@ export default function Gerador() {
     setErrorMsg('')
     try {
       const rawData = collectData()
-      // Chama Edge Function para enriquecer com IA
-      const { data, error } = await supabase.functions.invoke('gerar-apresentacao', { body: { data: rawData } })
-      if (error) throw new Error(error.message)
-      const enrichedData = data?.enriched || rawData
+
+      // Tenta enriquecer com IA — usa rawData como fallback se falhar
+      let enrichedData = rawData
+      try {
+        const { data, error } = await supabase.functions.invoke('gerar-apresentacao', { body: { data: rawData } })
+        if (!error && data?.enriched) {
+          enrichedData = data.enriched
+        } else if (error) {
+          console.warn('Edge function error (usando dados sem IA):', error.message)
+        }
+      } catch (edgeErr) {
+        console.warn('Edge function indisponível (usando dados sem IA):', edgeErr.message)
+      }
+
+      // Garante que os campos obrigatórios existem antes do buildHTML
+      if (!enrichedData.posEnriched) enrichedData.posEnriched = (enrichedData.pos||[]).map(t=>({t,d:''}))
+      if (!enrichedData.negEnriched) enrichedData.negEnriched = (enrichedData.neg||[]).map(t=>({t,d:''}))
+      if (!enrichedData.comps || !enrichedData.comps.length) {
+        enrichedData.comps = [1,2,3,4].map(i=>({t:gv(`c${i}t`),d:''})).filter(c=>c.t)
+      }
+
       const html = buildHTML(enrichedData)
-      // Salva no banco
-      const { error: saveError } = await supabase.from('apresentacoes').insert({
+
+      // Salva no banco (não bloqueia o download se falhar)
+      supabase.from('apresentacoes').insert({
         user_id: user.id,
         cliente: rawData.nome,
         residencial: rawData.residencial,
         bairro: rawData.bairro,
         html
+      }).then(({ error: saveError }) => {
+        if (saveError) console.warn('Histórico não salvo:', saveError.message)
       })
-      if (saveError) console.warn('Erro ao salvar histórico:', saveError.message)
-      // Download automático
+
+      // Download imediato — não espera o banco
       const blob = new Blob([html], { type: 'text/html' })
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
@@ -165,9 +185,9 @@ export default function Gerador() {
 
         <div className="flex items-center gap-4">
           <button type="submit" className="btn-primary flex items-center gap-2" disabled={status==='loading'}>
-            {status==='loading' ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>Gerando com IA...</> : '✦ Gerar Apresentação'}
+            {status==='loading' ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>Gerando...</> : '✦ Gerar Apresentação'}
           </button>
-          {status==='done'  && <span className="text-sm text-green-600 font-medium">✓ Apresentação gerada!</span>}
+          {status==='done'  && <span className="text-sm text-green-600 font-medium">✓ Gerada e baixada!</span>}
           {status==='error' && <span className="text-sm text-red-500">{errorMsg}</span>}
         </div>
       </form>
