@@ -1,33 +1,36 @@
 import { CSS }         from './_css.js'
 import { NAVJS }       from './_navjs.js'
 import { BMODAL_HTML, VMODAL1_HTML, VMODAL2_HTML } from './_modals.js'
+import { MODAL_PORTFOLIO, MODAL_MATERIAIS, MODAL_MIDIA } from './_image_modals.js'
 import { buildSlides } from './_buildSlides.js'
-
-function e(s) {
-  if (s === undefined || s === null) return '';
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
 
 const VIDEO_PRODUCAO = import.meta.env.VITE_VIDEO_PRODUCAO_URL || 'liberty_video.mp4'
 const VIDEO_TRAFEGO  = import.meta.env.VITE_VIDEO_TRAFEGO_URL  || 'liberty_trafego.mov'
 
+// openImgModal / closeImgModal injected into navJs
+const imgModalJs = `
+function openImgModal(id){
+  var m=document.getElementById(id);
+  var sid='shell-'+id.split('-')[1];
+  var s=document.getElementById(sid)||m&&m.firstElementChild;
+  if(!m)return;
+  m.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.78);backdrop-filter:blur(28px) saturate(160%);display:flex;align-items:center;justify-content:center;pointer-events:all;transition:none';
+  if(s){s.style.transform='scale(1) translateY(0)';s.style.opacity='1';}
+}
+function closeImgModal(id){
+  var m=document.getElementById(id);
+  var sid='shell-'+id.split('-')[1];
+  var s=document.getElementById(sid)||m&&m.firstElementChild;
+  if(!m)return;
+  m.style.background='rgba(0,0,0,0)';
+  m.style.backdropFilter='blur(0px)';
+  m.style.pointerEvents='none';
+  if(s){s.style.transform='scale(.88) translateY(24px)';s.style.opacity='0';}
+}
+`
+
 export function buildHTML(d) {
   const lastSlides = []
-  if (typeof window !== 'undefined' && !window.e) {
-    window.e = function(s) {
-      if (s === undefined || s === null) return '';
-      return String(s)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-
   try { buildSlides(d, lastSlides) } catch(e) { console.error('buildSlides:', e) }
 
   const slideDivs = lastSlides.map((s, i) => {
@@ -70,9 +73,13 @@ ${slideDivs}
 ${BMODAL_HTML}
 ${vmodal1Final}
 ${vmodal2Final}
+${MODAL_PORTFOLIO}
+${MODAL_MATERIAIS}
+${MODAL_MIDIA}
 ${anuncioHtml}
 <${"scr"}ipt>
 ${navJsFinal}
+${imgModalJs}
 </${"scr"}ipt>
 </body>
 </html>`
