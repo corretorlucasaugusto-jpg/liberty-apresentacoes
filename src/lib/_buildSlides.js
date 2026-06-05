@@ -1,24 +1,9 @@
 // Auto-generated — do not edit
 // Regenerar: node extract-slides.js liberty_gerador_v2.html
 
-if (typeof window !== 'undefined' && !window.e) {
-  window.e = function(s) {
-    if (s === undefined || s === null) return '';
-    return String(s)
-      .replace(/&/g,'&amp;')
-      .replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;');
-  };
-}
-
 export function buildSlides(d, slides=[]){
-  // ── HTML escaper (local function) ──
-  function e(s){
-    if(s === undefined || s === null) return '';
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-  
+  // ── HTML escaper (was global in generator, needs to be local in module) ──
+  function e(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   // ── Defensive defaults ──
   if(!d) d={};
   if(!d.residencial) d.residencial='Residencial';
@@ -1254,6 +1239,75 @@ slides.push(`<div class="slide" id="s11">
     </div>
   </div>
 </div>`);
+
+  function buildS5(d) {
+    const hasV = (d.v || []).length > 0;
+    const hasNV = (d.nv || []).length > 0;
+    const rn = (d.residencial || '').split(' ')[0] || 'Boulevard';
+    let ofHTML = '';
+    if (hasV) {
+      ofHTML += `Vendidos
+Imóvel
+Área
+Características
+Valor negociado
+
+`;
+      d.v.forEach(r => {
+        ofHTML += `**${e(rn)}**
+${e(r.a)}
+${e(r.c)}
+${e(r.v)}
+
+`;
+      });
+      ofHTML += `
+
+`;
+    }
+    if (hasNV) {
+      ofHTML += `Não vendidos — ainda à venda
+Imóvel
+Área
+Características
+Valor anunciado
+Publicado há
+
+`;
+      d.nv.forEach(r => {
+        ofHTML += `**${e(rn)}**
+${e(r.a)}
+${e(r.c)}
+${e(r.v)}
+${e(r.d)}
+
+`;
+      });
+      ofHTML += `
+
+`;
+    }
+    if (!hasV && !hasNV) {
+      ofHTML += `Nenhum comparável informado
+`;
+    }
+    if (hasV && hasNV) {
+      const last = d.v[d.v.length - 1];
+      ofHTML += `Leitura do mercado
+O que efetivamente vendeu saiu a **${e(last.v)}**. A precificação adequada é a variável mais crítica para velocidade e resultado.
+
+`;
+    }
+    ofHTML += `
+`;
+    return `Ofertas
+Análise de mercado
+
+Comparativo com imóveis similares
+
+${ofHTML}
+`;
+  }
 
   return slides;
 }
