@@ -1,8 +1,29 @@
 // Auto-generated — do not edit
-// Regenerate: node extract-slides.js liberty_gerador_v2.html
+// Regenerar: node extract-slides.js liberty_gerador_v2.html
 
 export function buildSlides(d, slides=[]){
-  const rp=d.residencial.split(' ');
+  // Defensive defaults — prevents crash on empty form
+  if(!d) d={};
+  if(!d.residencial) d.residencial='Residencial';
+  if(!d.nome)        d.nome='Proprietário';
+  if(!d.bairro)      d.bairro='';
+  if(!d.endereco)    d.endereco='';
+  if(!d.quartos)     d.quartos='—';
+  if(!d.vagas)       d.vagas='—';
+  if(!d.area)        d.area='—';
+  if(!d.andar)       d.andar='—';
+  if(!d.selic)       d.selic='14,50%';
+  if(!d.vl_div)      d.vl_div='—';
+  if(!d.vl_fec)      d.vl_fec='—';
+  if(!d.vl_med)      d.vl_med='—';
+  if(!d.nv)          d.nv=[];
+  if(!d.v)           d.v=[];
+  if(!d.pos)         d.pos=[];
+  if(!d.neg)         d.neg=[];
+  if(!d.comps)       d.comps=[];
+  if(!d.posEnriched) d.posEnriched=d.pos.map(t=>({t,d:''}));
+  if(!d.negEnriched) d.negEnriched=d.neg.map(t=>({t,d:''}));
+  const rp=(d.residencial||'Residencial').split(' ');
   const r1=rp.slice(0,2).join(' '), r2=rp.slice(2).join(' ');
 
   // S1 CAPA
@@ -271,8 +292,8 @@ export function buildSlides(d, slides=[]){
 <!-- ═══ S5 ANÁLISE DE OFERTAS ═══ -->`);
 
   // S5 OFERTAS
-  const hasV=d.v.length>0,hasNV=d.nv.length>0;
-  const rn=d.residencial.split(' ')[0]||'Boulevard';
+  const hasV=(d.v||[]).length>0,hasNV=(d.nv||[]).length>0;
+  const rn=(d.residencial||'').split(' ')[0]||'Boulevard';
   let ofHTML='<div class="of-wrap">';
   if(hasV){ofHTML+=`<div><div class="of-lbl green">Vendidos</div><div class="tbl"><div class="th-v"><div class="th">Imóvel</div><div class="th">Área</div><div class="th">Características</div><div class="th">Valor negociado</div></div>`;d.v.forEach(r=>{ofHTML+=`<div class="tr-v"><div class="td"><strong>${e(rn)}</strong></div><div class="td">${e(r.a)}</div><div class="td" style="font-size:.74rem">${e(r.c)}</div><div class="td val">${e(r.v)}</div></div>`;});ofHTML+=`</div></div>`;}
   if(hasNV){ofHTML+=`<div><div class="of-lbl red">Não vendidos — ainda à venda</div><div class="tbl"><div class="th-nv"><div class="th">Imóvel</div><div class="th">Área</div><div class="th">Características</div><div class="th">Valor anunciado</div><div class="th">Publicado há</div></div>`;d.nv.forEach(r=>{ofHTML+=`<div class="tr-nv"><div class="td"><strong>${e(rn)}</strong></div><div class="td">${e(r.a)}</div><div class="td" style="font-size:.74rem">${e(r.c)}</div><div class="td val-r">${e(r.v)}</div><div class="td"><span class="badge red">${e(r.d)}</span></div></div>`;});ofHTML+=`</div></div>`;}
