@@ -1,11 +1,176 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@layer base { body { font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif; background: #f5f5f7; color: #1d1d1f; -webkit-font-smoothing: antialiased; } }
-@layer components {
-  .input-base { @apply w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 bg-white placeholder-gray-400 transition; }
-  .btn-primary { @apply bg-blue-600 text-white rounded-xl px-6 py-3 text-sm font-semibold hover:bg-blue-700 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed; }
-  .btn-ghost { @apply border border-gray-200 text-gray-600 rounded-xl px-5 py-2.5 text-sm font-medium hover:bg-gray-50 active:scale-95 transition-all; }
-  .card { @apply bg-white rounded-2xl border border-gray-100 shadow-sm; }
-  .section-title { @apply text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4; }
+
+/* ── CSS Variables — mudam automaticamente com body.dark / body.light ── */
+body.dark {
+  --bg:        #0a0f1a;
+  --bg2:       rgba(255,255,255,0.03);
+  --bg3:       rgba(255,255,255,0.06);
+  --border:    rgba(255,255,255,0.08);
+  --border2:   rgba(255,255,255,0.12);
+  --text:      #e8eaf0;
+  --text2:     rgba(255,255,255,0.5);
+  --text3:     rgba(255,255,255,0.25);
+  --input-bg:  rgba(255,255,255,0.05);
+  --input-bg-focus: rgba(18,102,205,0.1);
+  --label:     rgba(255,255,255,0.3);
+  --header-bg: rgba(10,15,26,0.92);
+  --section-bg:rgba(255,255,255,0.03);
+  --row-bg:    rgba(255,255,255,0.04);
+  --check-border: rgba(255,255,255,0.2);
+  --blue:      #1266CD;
+  --blue-text: #93c5fd;
+  --red:       #f87171;
+  --green:     #4ade80;
+  color-scheme: dark;
 }
+body.light {
+  --bg:        #f5f5f7;
+  --bg2:       #ffffff;
+  --bg3:       #f3f4f6;
+  --border:    #f0f0f0;
+  --border2:   #e5e7eb;
+  --text:      #111827;
+  --text2:     #6b7280;
+  --text3:     #9ca3af;
+  --input-bg:  #fafafa;
+  --input-bg-focus: #ffffff;
+  --label:     #9ca3af;
+  --header-bg: rgba(255,255,255,0.95);
+  --section-bg:#ffffff;
+  --row-bg:    #f9fafb;
+  --check-border: #d1d5db;
+  --blue:      #1266CD;
+  --blue-text: #1266CD;
+  --red:       #ef4444;
+  --green:     #22c55e;
+  color-scheme: light;
+}
+
+/* ── Base ── */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: var(--bg);
+  color: var(--text);
+  transition: background .3s, color .3s;
+}
+
+/* ── Shared components ── */
+.page-bg   { background: var(--bg); min-height: 100vh; }
+.header-bg {
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* ── Form elements ── */
+.lv-input {
+  width: 100%; box-sizing: border-box;
+  padding: 10px 14px; border-radius: 10px;
+  font-size: 13px; outline: none;
+  border: 1px solid var(--border2);
+  background: var(--input-bg);
+  color: var(--text);
+  transition: border-color .2s, background .2s;
+  font-family: inherit;
+}
+.lv-input:focus {
+  border-color: rgba(18,102,205,0.6);
+  background: var(--input-bg-focus);
+}
+.lv-input::placeholder { color: var(--text3); }
+
+/* ── Section cards ── */
+.lv-section {
+  border-radius: 16px; padding: 24px 20px;
+  border: 1px solid var(--border);
+  background: var(--section-bg);
+  transition: background .3s, border-color .3s;
+}
+.lv-section-title {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--blue); margin-bottom: 20px;
+  display: flex; align-items: center; gap: 8px;
+}
+.lv-label {
+  display: block; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  margin-bottom: 6px; color: var(--label);
+}
+
+/* ── Checkbox ── */
+.lv-check {
+  display: flex; align-items: center; gap: 10px;
+  cursor: pointer; padding: 8px 12px; border-radius: 10px;
+  border: 1px solid var(--border);
+  transition: all .15s;
+  user-select: none;
+}
+.lv-check:hover { border-color: var(--border2); }
+.lv-check.checked {
+  background: rgba(18,102,205,0.08);
+  border-color: rgba(18,102,205,0.3);
+}
+.lv-check-box {
+  width: 18px; height: 18px; border-radius: 5px; flex-shrink: 0;
+  border: 2px solid var(--check-border);
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s; background: transparent;
+}
+.lv-check.checked .lv-check-box {
+  background: var(--blue); border-color: var(--blue);
+}
+.lv-check-label {
+  font-size: 13px; color: var(--text2);
+  transition: color .15s;
+}
+.lv-check.checked .lv-check-label { color: var(--blue-text); font-weight: 500; }
+
+/* ── Row bg (concorrentes, etc) ── */
+.lv-row {
+  border-radius: 12px; padding: 16px;
+  border: 1px solid var(--border);
+  background: var(--row-bg);
+}
+
+/* ── Buttons ── */
+.btn-primary {
+  background: linear-gradient(135deg,#1266CD,#1a7be8);
+  color: #fff; border: none; border-radius: 10px;
+  padding: 10px 20px; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: opacity .2s, transform .1s;
+  box-shadow: 0 4px 14px rgba(18,102,205,0.4);
+}
+.btn-primary:hover   { opacity: .92; }
+.btn-primary:active  { transform: scale(.97); }
+.btn-primary:disabled{ opacity: .4; cursor: not-allowed; }
+
+.btn-ghost {
+  border: 1px solid var(--border2);
+  color: var(--text2); background: transparent;
+  border-radius: 10px; padding: 8px 16px;
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: background .15s;
+}
+.btn-ghost:hover { background: var(--bg3); }
+
+/* ── Cards (historico, etc) ── */
+.card {
+  background: var(--section-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  transition: background .3s, border-color .3s;
+}
+
+/* ── Tailwind overrides for dark ── */
+.input-base { @apply lv-input; }
+.section-title { color: var(--blue); @apply text-xs font-bold uppercase tracking-widest mb-4; }
+.label-muted   { color: var(--text3); }
+.row-bg        { background: var(--row-bg); border: 1px solid var(--border); }
+.divider       { border-color: var(--border2); }
+.page-bg       { background: var(--bg); }
+.header-bg     { background: var(--header-bg); border-bottom: 1px solid var(--border); }
