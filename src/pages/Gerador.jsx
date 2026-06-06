@@ -23,6 +23,16 @@ export default function Gerador() {
   const [errorMsg, setErrorMsg] = useState('')
   const [extractingNV, setExtractingNV] = useState({})
   const [extractingV,  setExtractingV]  = useState({})
+  const [selic,        setSelic]        = useState('14,50%')
+
+  // Busca Selic atual via Edge Function (proxy para Banco Central)
+  useEffect(() => {
+    supabase.functions.invoke('gerar-apresentacao', { body: { data: { _selic: true } } })
+      .then(({ data }) => {
+        if (data?.selic) setSelic(data.selic)
+      })
+      .catch(() => {})
+  }, [])
 
   // Load V1 data if coming from /v2/:v1id
   useEffect(() => {
@@ -57,30 +67,68 @@ export default function Gerador() {
   const sv = (name, val) => { const el = formRef.current?.elements[name]; if (el) el.value = val }
 
   const extractFromContent = async (type, idx) => {
-    const content = gv(type === 'nv' ? `nv_content_${idx}` : `v_content_${idx}`)
-    if (!content.trim()) return
+    // Read values directly from DOM by name — more reliable than form.elements
+    const getVal = (name) => {
+      const els = document.getElementsByName(name)
+      return els.length > 0 ? (els[0].value || '').trim() : ''
+    }
+    const setVal = (name, val) => {
+      const els = document.getElementsByName(name)
+      if (els.length > 0) els[0].value = val
+    }
+
+    const link   = type === 'nv' ? getVal(`lk_${idx}`) : ''
+    const pasted = getVal(type === 'nv' ? `nv_content_${idx}` : `v_content_${idx}`)
+
+    if (!link && !pasted) {
+      alert('Cole o link ou o conteúdo do anúncio antes de extrair.')
+      return
+    }
+
     const setExtracting = type === 'nv' ? setExtractingNV : setExtractingV
     setExtracting(prev => ({ ...prev, [idx]: true }))
+
     try {
+      let content = pasted
+
+      // Fetch via Supabase proxy if only link provided
+      if (link && !pasted) {
+        console.log('Fetching URL via proxy:', link)
+        const { data: fetchData, error: fetchErr } = await supabase.functions.invoke('gerar-apresentacao', {
+          body: { data: { _fetch_url: true, url: link } }
+        })
+        console.log('Fetch result:', fetchData, fetchErr)
+        content = fetchData?.content || ''
+        if (!content) throw new Error(fetchData?.error || 'Site bloqueou o acesso — cole o conteúdo manualmente')
+      }
+
+      console.log('Extracting from content length:', content.length)
       const { data, error } = await supabase.functions.invoke('gerar-apresentacao', {
         body: { data: { _extract: true, type, content } }
       })
+      console.log('Extract result:', data, error)
+
       if (!error && data?.extracted) {
         const ex = data.extracted
         if (type === 'nv') {
-          if (ex.nome)  sv(`nv_n_${idx}`, ex.nome)
-          if (ex.area)  sv(`nv_a_${idx}`, ex.area)
-          if (ex.carac) sv(`nv_c_${idx}`, ex.carac)
-          if (ex.valor) sv(`nv_v_${idx}`, ex.valor)
-          if (ex.dias)  sv(`nv_d_${idx}`, ex.dias)
+          if (ex.nome)  setVal(`nv_n_${idx}`, ex.nome)
+          if (ex.area)  setVal(`nv_a_${idx}`, ex.area)
+          if (ex.carac) setVal(`nv_c_${idx}`, ex.carac)
+          if (ex.valor) setVal(`nv_v_${idx}`, ex.valor)
+          if (ex.dias)  setVal(`nv_d_${idx}`, ex.dias)
         } else {
-          if (ex.nome)  sv(`v_n_${idx}`, ex.nome)
-          if (ex.area)  sv(`v_a_${idx}`, ex.area)
-          if (ex.carac) sv(`v_c_${idx}`, ex.carac)
-          if (ex.valor) sv(`v_v_${idx}`, ex.valor)
+          if (ex.nome)  setVal(`v_n_${idx}`, ex.nome)
+          if (ex.area)  setVal(`v_a_${idx}`, ex.area)
+          if (ex.carac) setVal(`v_c_${idx}`, ex.carac)
+          if (ex.valor) setVal(`v_v_${idx}`, ex.valor)
         }
+      } else if (error) {
+        throw new Error(error.message)
       }
-    } catch (err) { console.warn('Extração falhou:', err.message) }
+    } catch (err) {
+      console.error('Extração falhou:', err.message)
+      alert('Extração falhou: ' + err.message)
+    }
     setExtracting(prev => ({ ...prev, [idx]: false }))
   }
 
@@ -178,7 +226,7 @@ export default function Gerador() {
             <Field label="Andar / Tipo"><Input name="p_andar" placeholder="Ex: 3° andar" /></Field>
           </div>
           <div className="grid grid-cols-3 gap-4">
-            <Field label="Selic"><Input name="selic" defaultValue="14,50%" /></Field>
+            <Field label="Selic"><Input name="selic" value={selic} onChange={e=>setSelic(e.target.value)} /></Field>
             <Field label="Valor divulgação"><Input name="vl_div" placeholder="Ex: R$ 840.000" /></Field>
             <Field label="Expectativa fechamento"><Input name="vl_fec" placeholder="Ex: R$ 825.000" /></Field>
           </div>
