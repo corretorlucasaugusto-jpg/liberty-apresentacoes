@@ -4,11 +4,13 @@ import { supabase } from '../lib/supabase.js'
 import { Field, Input, NVRow, VRow, PerfilRow } from '../components/FormFields.jsx'
 import { buildHTML } from '../lib/buildHTML.js'
 import { useAuth } from '../hooks/useAuth.js'
+import { useDark } from '../hooks/useTheme.js'
 
 const MAX_NV = 8
 const MAX_V  = 8
 
 export default function Gerador() {
+  const dark = useDark()
   const { v1id } = useParams()
   const { user } = useAuth()
   const formRef = useRef(null)

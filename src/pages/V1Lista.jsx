@@ -2,13 +2,14 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../hooks/useAuth.js'
+import { useDark } from '../hooks/useTheme.js'
 
 export default function V1Lista() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [rows,    setRows]    = useState([])
   const [loading, setLoading] = useState(true)
-  const dark = document.body.classList.contains('dark')
+  const dark = useDark()
 
   useEffect(() => {
     if (!user?.id) { setLoading(false); return }

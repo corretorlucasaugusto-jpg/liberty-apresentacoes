@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { useAutoSave } from '../hooks/useAutoSave.js'
+import { useDark } from '../hooks/useTheme.js'
 
 // ─── Configs por tipo ───────────────────────────────────────────────
 const TIPOS = ['Apartamento','Casa','Cobertura','Kitnet / Studio','Comercial']
@@ -143,7 +144,7 @@ export default function V1Form() {
   const { id: urlId } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const dark = document.body.classList.contains('dark')
+  const dark = useDark()
   const [recordId, setRecordId] = useState(urlId || null)
   const [loading,  setLoading]  = useState(!!urlId)
 
