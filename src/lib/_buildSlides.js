@@ -1,5 +1,4 @@
 // Auto-generated — do not edit
-// Regenerar: node extract-slides.js liberty_gerador_v2.html
 
 export function buildS5(d){
   var e2 = function(v){ return v ? String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''; };
@@ -7,11 +6,15 @@ export function buildS5(d){
   // Vendidos rows
   var vRows = '';
   (d.v||[]).forEach(function(r,i){
-    vRows += '<div class="s5-row s5-row-v">' +
+    var rawVVal  = (r.v||'').replace(/[^0-9]/g,'');
+    var rawVArea = (r.a||'').replace(/[^0-9.,]/g,'').replace(',','.');
+    var vVm2 = (rawVVal && rawVArea && parseFloat(rawVArea)>0) ? 'R$\u00a0'+Math.round(parseInt(rawVVal)/parseFloat(rawVArea)).toLocaleString('pt-BR')+'/m²' : '—';
+    vRows += '<div class="s5-row s5-row-v" style="display:grid;grid-template-columns:1.6fr .55fr 2fr .85fr .72fr">' +
       '<div class="s5-td"><strong>' + e2(r.n || (r.c ? r.c.split('·')[0].trim() : 'Imóvel '+(i+1))) + '</strong></div>' +
       '<div class="s5-td">' + e2(r.a||'—') + '</div>' +
       '<div class="s5-td carac">' + e2(r.c||'—') + '</div>' +
       '<div class="s5-td val">' + e2(r.v||'—') + '</div>' +
+      '<div class="s5-td" style="font-size:.65rem;color:#27ae60;font-weight:600">' + vVm2 + '</div>' +
     '</div>';
   });
   if(!vRows) vRows = '<div style="padding:12px 16px;font-size:.75rem;color:#a1a1a6">Nenhum vendido cadastrado</div>';
@@ -19,14 +22,21 @@ export function buildS5(d){
   // NV rows
   var nvRows = '';
   (d.nv||[]).forEach(function(r,i){
-    var badge = r.d ? '<span class="s5-badge s5-badge-r">' + e2(r.d) + '</span>' : '—';
+    var diasNum = parseInt((r.d||'').replace(/[^0-9]/g,''))||0;
+    var badgeColor = diasNum >= 180 ? '#7f0000' : diasNum >= 90 ? '#c0392b' : '#e74c3c';
+    var badgeIcon  = diasNum >= 180 ? '🔴 ' : diasNum >= 90 ? '⚠️ ' : '';
+    var badge = r.d ? '<span class="s5-badge s5-badge-r" style="background:'+badgeColor+';color:#fff;font-weight:700;padding:3px 7px;border-radius:6px;font-size:.62rem">' + badgeIcon + e2(r.d) + '</span>' : '—';
     var verBtn = r.url ? '<button onclick="openAnuncio(this.dataset.url)" data-url="' + (r.url||'').replace(/"/g,'&quot;') + '" style="background:#1266CD;border:none;color:#fff;border-radius:6px;padding:4px 8px;font-size:.6rem;font-weight:700;cursor:pointer">Ver ↗</button>' : '';
     var aiRow = r.ai ? '<div style="padding:6px 16px 10px;background:#fff0f0;border-top:1px solid #ffc0c0;font-size:.68rem;color:#c0392b;font-style:italic">' + e2(r.ai) + '</div>' : '';
-    nvRows += '<div style="display:grid;grid-template-columns:1.6fr .55fr 2fr .85fr .85fr .4fr;align-items:center;padding:10px 16px;background:#ffd6d6;border-top:1px solid #e8e8ed">' +
+    var rawNVVal  = (r.v||'').replace(/[^0-9]/g,'');
+    var rawNVArea = (r.a||'').replace(/[^0-9.,]/g,'').replace(',','.');
+    var nvVm2 = (rawNVVal && rawNVArea && parseFloat(rawNVArea)>0) ? 'R$\u00a0'+Math.round(parseInt(rawNVVal)/parseFloat(rawNVArea)).toLocaleString('pt-BR')+'/m²' : '—';
+    nvRows += '<div style="display:grid;grid-template-columns:1.6fr .55fr 1.8fr .85fr .72fr .85fr .4fr;align-items:center;padding:10px 16px;background:#ffd6d6;border-top:1px solid #e8e8ed">' +
       '<div class="s5-td"><strong>' + e2(r.n || (r.c ? r.c.split('·')[0].trim() : 'Imóvel '+(i+1))) + '</strong></div>' +
       '<div class="s5-td">' + e2(r.a||'—') + '</div>' +
       '<div class="s5-td carac">' + e2(r.c||'—') + '</div>' +
       '<div class="s5-td val-r">' + e2(r.v||'—') + '</div>' +
+      '<div class="s5-td" style="font-size:.65rem;color:#c0392b;font-weight:600">' + nvVm2 + '</div>' +
       '<div class="s5-td">' + badge + '</div>' +
       '<div class="s5-td">' + verBtn + '</div>' +
     '</div>' + aiRow;
@@ -49,15 +59,15 @@ export function buildS5(d){
       '<div>' +
         '<div class="s5-sec-lbl s5-lbl-g"><span class="dot"></span>Vendidos — preço real de fechamento</div>' +
         '<div class="s5-tbl">' +
-          '<div class="s5-hdr s5-hdr-v"><div class="s5-th">Imóvel</div><div class="s5-th">Área</div><div class="s5-th">Características</div><div class="s5-th">Valor negociado</div></div>' +
+          '<div class="s5-hdr s5-hdr-v"><div class="s5-th">Imóvel</div><div class="s5-th">Área</div><div class="s5-th">Características</div><div class="s5-th">Valor negociado</div><div class="s5-th">R$/m²</div></div>' +
           vRows +
         '</div>' +
       '</div>' +
       '<div>' +
         '<div class="s5-sec-lbl s5-lbl-r"><span class="dot"></span>Não vendidos — ainda à venda</div>' +
         '<div class="s5-tbl">' +
-          '<div class="s5-hdr" style="display:grid;grid-template-columns:1.6fr .55fr 2fr .85fr .85fr .4fr;padding:8px 16px;background:#f5f5f7">' +
-            '<div class="s5-th">Imóvel</div><div class="s5-th">Área</div><div class="s5-th">Características</div><div class="s5-th">Valor anunciado</div><div class="s5-th">Parado há</div><div class="s5-th"></div>' +
+          '<div class="s5-hdr" style="display:grid;grid-template-columns:1.6fr .55fr 1.8fr .85fr .72fr .85fr .4fr;padding:8px 16px;background:#f5f5f7">' +
+            '<div class="s5-th">Imóvel</div><div class="s5-th">Área</div><div class="s5-th">Características</div><div class="s5-th">Valor anunciado</div><div class="s5-th">R$/m²</div><div class="s5-th">Parado há</div><div class="s5-th"></div>' +
           '</div>' +
           nvRows +
         '</div>' +
@@ -72,29 +82,27 @@ export function buildS5(d){
 
 
 export function buildSlides(d, slides=[]){
-  // e() — HTML escaper (needs to be local in ES module context)
   function e(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-  // Defensive defaults
-  if(!d) d={};
-  if(!d.residencial) d.residencial='Residencial';
-  if(!d.nome)        d.nome='Proprietário';
-  if(!d.bairro)      d.bairro='';
-  if(!d.endereco)    d.endereco='';
-  if(!d.quartos)     d.quartos='—';
-  if(!d.vagas)       d.vagas='—';
-  if(!d.area)        d.area='—';
-  if(!d.andar)       d.andar='—';
-  if(!d.selic)       d.selic='14,50%';
-  if(!d.vl_div)      d.vl_div='—';
-  if(!d.vl_fec)      d.vl_fec='—';
-  if(!d.vl_med)      d.vl_med='—';
-  if(!d.nv)          d.nv=[];
-  if(!d.v)           d.v=[];
-  if(!d.pos)         d.pos=[];
-  if(!d.neg)         d.neg=[];
-  if(!d.comps)       d.comps=[];
-  if(!d.posEnriched) d.posEnriched=d.pos.map(function(t){return{t:t,d:''};});
-  if(!d.negEnriched) d.negEnriched=d.neg.map(function(t){return{t:t,d:''};});
+  if(!d)d={};
+  if(!d.residencial)d.residencial='Residencial';
+  if(!d.nome)d.nome='Proprietário';
+  if(!d.bairro)d.bairro='';
+  if(!d.endereco)d.endereco='';
+  if(!d.quartos)d.quartos='—';
+  if(!d.vagas)d.vagas='—';
+  if(!d.area)d.area='—';
+  if(!d.andar)d.andar='—';
+  if(!d.selic)d.selic='14,50%';
+  if(!d.vl_div)d.vl_div='—';
+  if(!d.vl_fec)d.vl_fec='—';
+  if(!d.vl_med)d.vl_med='—';
+  if(!d.nv)d.nv=[];
+  if(!d.v)d.v=[];
+  if(!d.pos)d.pos=[];
+  if(!d.neg)d.neg=[];
+  if(!d.comps)d.comps=[];
+  if(!d.posEnriched)d.posEnriched=d.pos.map(function(t){return{t:t,d:''};});
+  if(!d.negEnriched)d.negEnriched=d.neg.map(function(t){return{t:t,d:''};});
   const rp=(d.residencial||'Residencial').split(' ');
   const r1=rp.slice(0,2).join(' '), r2=rp.slice(2).join(' ');
 
