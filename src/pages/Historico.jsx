@@ -117,20 +117,17 @@ export default function Historico() {
 
                 {/* Actions */}
                 <div style={{ display:'flex', gap:'6px', flexShrink:0 }} onClick={e => e.stopPropagation()}>
-                  {/* Edit button — only if raw_data exists */}
-                  {row.raw_data && (
-                    <button
-                      onClick={() => navigate(`/v2?edit=${row.id}`)}
-                      title="Editar e regenerar"
-                      style={{
-                        padding:'6px 10px', borderRadius:'8px', border:'none', cursor:'pointer',
-                        background:'rgba(18,102,205,0.12)', color:'#1266CD',
-                        fontSize:'11px', fontWeight:600,
-                      }}
-                    >
-                      ✎ Editar
-                    </button>
-                  )}
+                  <button
+                    onClick={() => navigate(`/v2?edit=${row.id}`)}
+                    title="Editar e regenerar"
+                    style={{
+                      padding:'6px 10px', borderRadius:'8px', border:'none', cursor:'pointer',
+                      background:'rgba(18,102,205,0.12)', color:'#1266CD',
+                      fontSize:'11px', fontWeight:600,
+                    }}
+                  >
+                    ✎ Editar
+                  </button>
                   <button
                     onClick={() => download(row)}
                     title="Baixar HTML"
@@ -179,14 +176,12 @@ export default function Historico() {
                 </p>
               </div>
               <div style={{ display:'flex', gap:'8px' }}>
-                {preview.raw_data && (
-                  <button
-                    onClick={() => navigate(`/v2?edit=${preview.id}`)}
-                    style={{ padding:'7px 14px', borderRadius:'8px', border:'none', cursor:'pointer', background:'linear-gradient(135deg,#1266CD,#1a7be8)', color:'#fff', fontSize:'12px', fontWeight:600 }}
-                  >
-                    ✎ Editar
-                  </button>
-                )}
+                <button
+                onClick={() => navigate(`/v2?edit=${preview.id}`)}
+                style={{ padding:'7px 14px', borderRadius:'8px', border:'none', cursor:'pointer', background:'linear-gradient(135deg,#1266CD,#1a7be8)', color:'#fff', fontSize:'12px', fontWeight:600 }}
+              >
+                ✎ Editar
+              </button>
                 <button
                   onClick={() => download(preview)}
                   style={{ padding:'7px 14px', borderRadius:'8px', border:'1px solid var(--border2)', background:'transparent', color:'var(--text2)', fontSize:'12px', cursor:'pointer' }}

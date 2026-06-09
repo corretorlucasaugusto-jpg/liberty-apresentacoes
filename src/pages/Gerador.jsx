@@ -27,6 +27,7 @@ export default function Gerador() {
   const [extractingV,   setExtractingV]   = useState({})
   const [precStatus,    setPrecStatus]    = useState(null) // null | 'loading' | 'done' | 'error'
   const [precData,      setPrecData]      = useState(null) // resultado da precificação
+  const [dataChanged,   setDataChanged]   = useState(false) // true when form changes after pricing
   const [selic,        setSelic]        = useState('14,50%')
 
   // Busca Selic atual via Edge Function (proxy para Banco Central)
@@ -75,12 +76,18 @@ export default function Gerador() {
   useEffect(() => {
     if (!editId) return
     supabase.from('apresentacoes')
-      .select('raw_data, cliente, residencial')
+      .select('raw_data, cliente, residencial, bairro')
       .eq('id', editId)
       .single()
       .then(({ data }) => {
-        if (!data?.raw_data) return
-        const d = data.raw_data
+        if (!data) return
+        // If raw_data exists, use it for full pre-fill
+        // Otherwise fall back to basic fields stored in the main columns
+        const d = data.raw_data || {
+          nome:        data.cliente,
+          residencial: data.residencial,
+          bairro:      data.bairro,
+        }
         // Pre-fill all form fields
         setTimeout(() => {
           const sv = (name, val) => { const els = document.getElementsByName(name); if (els.length && val) els[0].value = val }
@@ -242,6 +249,7 @@ export default function Gerador() {
     }
     setPrecStatus('loading')
     setPrecData(null)
+    setDataChanged(false)
     try {
       const { data, error } = await supabase.functions.invoke('gerar-apresentacao', {
         body: { data: {
@@ -334,7 +342,8 @@ export default function Gerador() {
         )}
         <p className={`text-sm ${tmute} mt-2`}>Complete os dados de mercado. A IA gera as descrições.</p>
       </div>
-      <form ref={formRef} onSubmit={handleGerar} className="space-y-6">
+      <form ref={formRef} onSubmit={handleGerar} className="space-y-6"
+        onChange={() => { if(precData) setDataChanged(true) }}>
 
         <section className="card p-6 space-y-4">
           <p className="section-title">Identificação</p>
@@ -375,9 +384,20 @@ export default function Gerador() {
           <div className="flex items-start justify-between">
             <div>
               <p className="section-title mb-0">Precificação Inteligente</p>
-              <p className={`text-xs ${tmute} mt-0.5`}>
-                Preencha concorrentes e vendidos acima, depois clique para a IA calcular
-              </p>
+              <div style={{ display:'flex', alignItems:'center', gap:'8px', marginTop:'4px' }}>
+                <p className={`text-xs ${tmute}`} style={{ margin:0 }}>
+                  Preencha concorrentes e vendidos acima, depois clique para a IA calcular
+                </p>
+                {dataChanged && precData && (
+                  <span style={{
+                    fontSize:'10px', fontWeight:600, padding:'2px 8px', borderRadius:'10px',
+                    background:'rgba(245,158,11,0.15)', color:'#f59e0b',
+                    border:'1px solid rgba(245,158,11,0.3)', whiteSpace:'nowrap',
+                  }}>
+                    ⚠️ Dados alterados — recalcule
+                  </span>
+                )}
+              </div>
             </div>
             <button
               type="button"
@@ -489,7 +509,7 @@ export default function Gerador() {
               <p className={`text-xs ${tmute} mt-0.5`}>Link + conteúdo colado → IA extrai os dados</p>
             </div>
             {nvCount < MAX_NV && (
-              <button type="button" onClick={() => setNvCount(n=>n+1)}
+              <button type="button" onClick={() => { setNvCount(n=>n+1); if(precData) setDataChanged(true) }}
                 className="text-xs text-blue-500 font-medium hover:underline">+ Adicionar</button>
             )}
           </div>
@@ -510,7 +530,7 @@ export default function Gerador() {
               <p className={`text-xs ${tmute} mt-0.5`}>Conteúdo colado → IA extrai os dados</p>
             </div>
             {vCount < MAX_V && (
-              <button type="button" onClick={() => setVCount(n=>n+1)}
+              <button type="button" onClick={() => { setVCount(n=>n+1); if(precData) setDataChanged(true) }}
                 className="text-xs text-blue-500 font-medium hover:underline">+ Adicionar</button>
             )}
           </div>
@@ -532,7 +552,7 @@ export default function Gerador() {
             <div className="space-y-2">
               {posItems.map((v,i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <input value={v} onChange={e=>{const a=[...posItems];a[i]=e.target.value;setPosItems(a)}}
+                  <input value={v} onChange={e=>{const a=[...posItems];a[i]=e.target.value;setPosItems(a);if(precData)setDataChanged(true)}}
                     className="input-base flex-1" placeholder="Ex: Reformado, Vazado"/>
                   {posItems.length>1 && <button type="button" onClick={()=>setPosItems(p=>p.filter((_,j)=>j!==i))} className="label-muted hover:text-red-400 text-lg">×</button>}
                 </div>
@@ -545,7 +565,7 @@ export default function Gerador() {
             <div className="space-y-2">
               {negItems.map((v,i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <input value={v} onChange={e=>{const a=[...negItems];a[i]=e.target.value;setNegItems(a)}}
+                  <input value={v} onChange={e=>{const a=[...negItems];a[i]=e.target.value;setNegItems(a);if(precData)setDataChanged(true)}}
                     className="input-base flex-1" placeholder="Ex: Necessita de reforma"/>
                   {negItems.length>1 && <button type="button" onClick={()=>setNegItems(p=>p.filter((_,j)=>j!==i))} className="label-muted hover:text-red-400 text-lg">×</button>}
                 </div>
