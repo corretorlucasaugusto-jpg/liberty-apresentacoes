@@ -55,7 +55,25 @@ export function buildHTML(d) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${title}</title>
-<style>${CSS}</style>
+<style>${CSS}
+/* S5 font size overrides */
+.s5-th{font-size:.65rem!important}
+.s5-td{font-size:.88rem!important}
+.s5-td.carac{font-size:.82rem!important}
+.s5-td.val,.s5-td.val-r{font-size:.96rem!important}
+.s5-badge{font-size:.72rem!important}
+.s5-sec-lbl{font-size:.68rem!important}
+.s5-insight-txt{font-size:.82rem!important}
+.s5-row{padding:14px 16px!important}
+/* S6 font size overrides */
+.s6-ttl{font-size:1.05rem!important;font-weight:800!important}
+.s6-dsc{font-size:.82rem!important;line-height:1.65!important;color:#3a3a3c!important}
+.s6-ico{width:64px!important;height:64px!important;border-radius:18px!important;min-width:64px!important}
+.s6-ico svg{width:30px!important;height:30px!important}
+/* S9 perfil overrides */
+.s9-ttl{font-size:1rem!important}
+.s9-dsc{font-size:.8rem!important}
+</style>
 </head>
 <body style="margin:0;overflow:hidden;background:#fff">
 <div class="deck" id="deck">
