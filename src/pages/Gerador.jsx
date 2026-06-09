@@ -25,6 +25,8 @@ export default function Gerador() {
   const [errorMsg, setErrorMsg] = useState('')
   const [extractingNV,  setExtractingNV]  = useState({})
   const [extractingV,   setExtractingV]   = useState({})
+  const [notFoundNV,    setNotFoundNV]    = useState({})
+  const [notFoundV,     setNotFoundV]     = useState({})
   const [precStatus,    setPrecStatus]    = useState(null) // null | 'loading' | 'done' | 'error'
   const [precData,      setPrecData]      = useState(null) // resultado da precificação
   const [dataChanged,   setDataChanged]   = useState(false) // true when form changes after pricing
@@ -113,10 +115,12 @@ export default function Gerador() {
           sv('vl_div',         d.vl_div)
           sv('vl_fec',         d.vl_fec)
           sv('vl_med',         d.vl_med)
-          sv('p_tipo_imovel',  d.tipo_imovel)
-          sv('p_posicao_solar',d.posicao_solar)
-          sv('p_situacao',     d.situacao)
-          sv('p_reforma',      d.reforma)
+          sv('p_tipo_imovel',      d.tipo_imovel)
+          sv('p_posicao_solar',    d.posicao_solar)
+          sv('p_situacao',         d.situacao)
+          sv('p_reforma',          d.reforma)
+          sv('p_condicao_interior',d.condicao_interior)
+          sv('p_condicao_fachada', d.condicao_fachada)
           // Pontos positivos e negativos
           if (d.pos?.length) setPosItems(d.pos)
           if (d.neg?.length) setNegItems(d.neg)
@@ -125,12 +129,16 @@ export default function Gerador() {
             setNvCount(d.nv.length)
             d.nv.forEach((r, i) => {
               setTimeout(() => {
-                sv(`nv_n_${i+1}`, r.n)
-                sv(`nv_a_${i+1}`, r.a)
-                sv(`nv_c_${i+1}`, r.c)
-                sv(`nv_v_${i+1}`, r.v)
-                sv(`nv_d_${i+1}`, r.d)
-                sv(`lk_${i+1}`,   r.url)
+                sv(`nv_n_${i+1}`,      r.n)
+                sv(`nv_a_${i+1}`,      r.a)
+                sv(`nv_terreno_${i+1}`,r.terreno)
+                sv(`nv_q_${i+1}`,      r.quartos)
+                sv(`nv_vagas_${i+1}`,  r.vagas)
+                sv(`nv_cons_${i+1}`,   r.conservacao)
+                sv(`nv_v_${i+1}`,      r.v)
+                sv(`nv_d_${i+1}`,      r.d)
+                sv(`nv_obs_${i+1}`,    r.obs)
+                sv(`lk_${i+1}`,        r.url)
               }, 200)
             })
           }
@@ -139,10 +147,14 @@ export default function Gerador() {
             setVCount(d.v.length)
             d.v.forEach((r, i) => {
               setTimeout(() => {
-                sv(`v_n_${i+1}`, r.n)
-                sv(`v_a_${i+1}`, r.a)
-                sv(`v_c_${i+1}`, r.c)
-                sv(`v_v_${i+1}`, r.v)
+                sv(`v_n_${i+1}`,      r.n)
+                sv(`v_a_${i+1}`,      r.a)
+                sv(`v_terreno_${i+1}`,r.terreno)
+                sv(`v_q_${i+1}`,      r.quartos)
+                sv(`v_vagas_${i+1}`,  r.vagas)
+                sv(`v_cons_${i+1}`,   r.conservacao)
+                sv(`v_v_${i+1}`,      r.v)
+                sv(`v_obs_${i+1}`,    r.obs)
               }, 200)
             })
           }
@@ -156,6 +168,11 @@ export default function Gerador() {
       })
   }, [editId])
 
+  const tipoImovel = () => {
+    const els = document.getElementsByName('p_tipo_imovel')
+    return els.length > 0 ? els[0].value : 'Apartamento'
+  }
+
   const gv = (name) => {
     // Use getElementsByName for reliability — works for inputs AND selects in nested components
     const els = document.getElementsByName(name)
@@ -167,60 +184,61 @@ export default function Gerador() {
   const sv = (name, val) => { const el = formRef.current?.elements[name]; if (el) el.value = val }
 
   const extractFromContent = async (type, idx) => {
-    // Read values directly from DOM by name — more reliable than form.elements
-    const getVal = (name) => {
-      const els = document.getElementsByName(name)
-      return els.length > 0 ? (els[0].value || '').trim() : ''
-    }
-    const setVal = (name, val) => {
-      const els = document.getElementsByName(name)
-      if (els.length > 0) els[0].value = val
-    }
+    const getVal = (name) => { const els = document.getElementsByName(name); return els.length > 0 ? (els[0].value||'').trim() : '' }
+    const setVal = (name, val) => { const els = document.getElementsByName(name); if (els.length > 0) els[0].value = val }
+    const setSel = (name, val) => { const els = document.getElementsByName(name); if (els.length > 0 && val) els[0].value = val }
 
     const link   = type === 'nv' ? getVal(`lk_${idx}`) : ''
     const pasted = getVal(type === 'nv' ? `nv_content_${idx}` : `v_content_${idx}`)
 
-    if (!link && !pasted) {
-      alert('Cole o link ou o conteúdo do anúncio antes de extrair.')
-      return
-    }
+    if (!link && !pasted) { alert('Cole o link ou o conteúdo do anúncio antes de extrair.'); return }
 
     const setExtracting = type === 'nv' ? setExtractingNV : setExtractingV
+    const setNotFound   = type === 'nv' ? setNotFoundNV   : setNotFoundV
     setExtracting(prev => ({ ...prev, [idx]: true }))
+    setNotFound(prev => ({ ...prev, [idx]: {} })) // reset
 
     try {
       let content = pasted
-
-      // Fetch via Supabase proxy if only link provided
       if (link && !pasted) {
-        console.log('Fetching URL via proxy:', link)
-        const { data: fetchData, error: fetchErr } = await supabase.functions.invoke('gerar-apresentacao', {
+        const { data: fd } = await supabase.functions.invoke('gerar-apresentacao', {
           body: { data: { _fetch_url: true, url: link } }
         })
-        console.log('Fetch result:', fetchData, fetchErr)
-        content = fetchData?.content || ''
-        if (!content) throw new Error(fetchData?.error || 'Site bloqueou o acesso — cole o conteúdo manualmente')
+        content = fd?.content || ''
+        if (!content) throw new Error(fd?.error || 'Site bloqueou — cole o conteúdo manualmente')
       }
 
-      console.log('Extracting from content length:', content.length)
       const { data, error } = await supabase.functions.invoke('gerar-apresentacao', {
-        body: { data: { _extract: true, type, content } }
+        body: { data: { _extract: true, type, content, tipo: tipoImovel() } }
       })
-      console.log('Extract result:', data, error)
 
       if (!error && data?.extracted) {
         const ex = data.extracted
+        const nf = {} // track what wasn't found
+
         if (type === 'nv') {
-          if (ex.nome)  setVal(`nv_n_${idx}`, ex.nome)
-          if (ex.area)  setVal(`nv_a_${idx}`, ex.area)
-          if (ex.carac) setVal(`nv_c_${idx}`, ex.carac)
-          if (ex.valor) setVal(`nv_v_${idx}`, ex.valor)
-          if (ex.dias)  setVal(`nv_d_${idx}`, ex.dias)
+          if (ex.nome)        setVal(`nv_n_${idx}`,     ex.nome);     else nf.nome = true
+          if (ex.area)        setVal(`nv_a_${idx}`,     ex.area);     else nf.area = true
+          if (ex.terreno)     setVal(`nv_terreno_${idx}`,ex.terreno)
+          if (ex.quartos)     setVal(`nv_q_${idx}`,     ex.quartos);  else nf.quartos = true
+          if (ex.vagas !== undefined && ex.vagas !== '') setVal(`nv_vagas_${idx}`, ex.vagas); else nf.vagas = true
+          if (ex.conservacao) setSel(`nv_cons_${idx}`,  ex.conservacao); else nf.conservacao = true
+          if (ex.valor)       setVal(`nv_v_${idx}`,     ex.valor);    else nf.valor = true
+          if (ex.dias)        setVal(`nv_d_${idx}`,     ex.dias);     else nf.dias = true
+          if (ex.obs)         setVal(`nv_obs_${idx}`,   ex.obs)
         } else {
-          if (ex.nome)  setVal(`v_n_${idx}`, ex.nome)
-          if (ex.area)  setVal(`v_a_${idx}`, ex.area)
-          if (ex.carac) setVal(`v_c_${idx}`, ex.carac)
-          if (ex.valor) setVal(`v_v_${idx}`, ex.valor)
+          if (ex.nome)        setVal(`v_n_${idx}`,      ex.nome);     else nf.nome = true
+          if (ex.area)        setVal(`v_a_${idx}`,      ex.area);     else nf.area = true
+          if (ex.terreno)     setVal(`v_terreno_${idx}`,ex.terreno)
+          if (ex.quartos)     setVal(`v_q_${idx}`,      ex.quartos);  else nf.quartos = true
+          if (ex.vagas !== undefined && ex.vagas !== '') setVal(`v_vagas_${idx}`, ex.vagas); else nf.vagas = true
+          if (ex.conservacao) setSel(`v_cons_${idx}`,   ex.conservacao); else nf.conservacao = true
+          if (ex.valor)       setVal(`v_v_${idx}`,      ex.valor);    else nf.valor = true
+          if (ex.obs)         setVal(`v_obs_${idx}`,    ex.obs)
+        }
+
+        if (Object.keys(nf).length > 0) {
+          setNotFound(prev => ({ ...prev, [idx]: nf }))
         }
       } else if (error) {
         throw new Error(error.message)
@@ -249,12 +267,31 @@ export default function Gerador() {
       comps: [1,2,3,4].map(i => ({ t: gv(`c${i}t`), d: '' })).filter(c => c.t),
     }
     for (let i = 1; i <= nvCount; i++) {
-      const n=gv(`nv_n_${i}`),a=gv(`nv_a_${i}`),c=gv(`nv_c_${i}`),v=gv(`nv_v_${i}`),dd=gv(`nv_d_${i}`),url=gv(`lk_${i}`)
-      if (a||c||v||n) d.nv.push({n,a,c,v,d:dd,url})
+      const n   = gv(`nv_n_${i}`)
+      const a   = gv(`nv_a_${i}`)
+      const ter = gv(`nv_terreno_${i}`)
+      const q   = gv(`nv_q_${i}`)
+      const vag = gv(`nv_vagas_${i}`)
+      const con = gv(`nv_cons_${i}`)
+      const v   = gv(`nv_v_${i}`)
+      const dd  = gv(`nv_d_${i}`)
+      const obs = gv(`nv_obs_${i}`)
+      const url = gv(`lk_${i}`)
+      // Build carac string for backward compat with slides
+      const carac = [q&&`${q}Q`, vag&&`${vag}V`, con, obs].filter(Boolean).join(' · ')
+      if (a||v||n) d.nv.push({n, a, terreno:ter, quartos:q, vagas:vag, conservacao:con, c:carac, v, d:dd, obs, url})
     }
     for (let i = 1; i <= vCount; i++) {
-      const n=gv(`v_n_${i}`),a=gv(`v_a_${i}`),c=gv(`v_c_${i}`),v=gv(`v_v_${i}`)
-      if (a||c||v||n) d.v.push({n,a,c,v})
+      const n   = gv(`v_n_${i}`)
+      const a   = gv(`v_a_${i}`)
+      const ter = gv(`v_terreno_${i}`)
+      const q   = gv(`v_q_${i}`)
+      const vag = gv(`v_vagas_${i}`)
+      const con = gv(`v_cons_${i}`)
+      const v   = gv(`v_v_${i}`)
+      const obs = gv(`v_obs_${i}`)
+      const carac = [q&&`${q}Q`, vag&&`${vag}V`, con, obs].filter(Boolean).join(' · ')
+      if (a||v||n) d.v.push({n, a, terreno:ter, quartos:q, vagas:vag, conservacao:con, c:carac, v, obs})
     }
     return d
   }
@@ -553,6 +590,8 @@ export default function Gerador() {
               onRemove={() => setNvCount(n=>Math.max(1,n-1))}
               onExtract={(idx) => extractFromContent('nv', idx)}
               extracting={!!extractingNV[i+1]}
+              notFound={notFoundNV[i+1]}
+              tipoImovel={tipoImovel()}
             />
           ))}
           <p className={`text-xs ${tmute} text-right`}>{nvCount}/{MAX_NV}</p>
@@ -574,6 +613,8 @@ export default function Gerador() {
               onRemove={() => setVCount(n=>Math.max(1,n-1))}
               onExtract={(idx) => extractFromContent('v', idx)}
               extracting={!!extractingV[i+1]}
+              notFound={notFoundV[i+1]}
+              tipoImovel={tipoImovel()}
             />
           ))}
           <p className={`text-xs ${tmute} text-right`}>{vCount}/{MAX_V}</p>
