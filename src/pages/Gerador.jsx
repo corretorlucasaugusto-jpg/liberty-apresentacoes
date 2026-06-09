@@ -274,12 +274,22 @@ export default function Gerador() {
       comps: [1,2,3,4].map(i => ({ t: gv(`c${i}t`), d: '' })).filter(c => c.t),
     }
     for (let i = 1; i <= nvCount; i++) {
-      const n=gv(`nv_n_${i}`),a=gv(`nv_a_${i}`),c=gv(`nv_c_${i}`),v=gv(`nv_v_${i}`),dd=gv(`nv_d_${i}`),url=gv(`lk_${i}`)
-      if (a||c||v||n) d.nv.push({n,a,c,v,d:dd,url})
+      const n      = gv(`nv_n_${i}`)
+      const a      = gv(`nv_a_${i}`)
+      const rawC   = gv(`nv_c_${i}`)
+      const parsed = parseCarac(rawC)
+      const v      = gv(`nv_v_${i}`)
+      const dd     = gv(`nv_d_${i}`)
+      const url    = gv(`lk_${i}`)
+      if (a||rawC||v||n) d.nv.push({n, a, quartos:parsed.quartos, vagas:parsed.vagas, conservacao:parsed.conservacao, c:rawC, v, d:dd, obs:parsed.obs, url})
     }
     for (let i = 1; i <= vCount; i++) {
-      const n=gv(`v_n_${i}`),a=gv(`v_a_${i}`),c=gv(`v_c_${i}`),v=gv(`v_v_${i}`)
-      if (a||c||v||n) d.v.push({n,a,c,v})
+      const n      = gv(`v_n_${i}`)
+      const a      = gv(`v_a_${i}`)
+      const rawC   = gv(`v_c_${i}`)
+      const parsed = parseCarac(rawC)
+      const v      = gv(`v_v_${i}`)
+      if (a||rawC||v||n) d.v.push({n, a, quartos:parsed.quartos, vagas:parsed.vagas, conservacao:parsed.conservacao, c:rawC, v, obs:parsed.obs})
     }
     return d
   }
