@@ -60,6 +60,15 @@ export default function Gerador() {
           sv('p_posicao_solar',data.posicao_solar || '')
           sv('p_situacao',     data.situacao      || '')
           sv('p_reforma',      data.reforma       || '')
+          // Map V1 reforma to V2 condicao_interior
+          const cond = data.reforma === 'Recentemente reformado' ? 'Recentemente reformado'
+            : data.reforma === 'Precisa de reforma' ? 'Precisa de reforma'
+            : data.reforma === 'Não precisa' ? 'Recentemente reformado'
+            : ''
+          if (cond) {
+            const el = document.getElementsByName('p_condicao_interior')[0]
+            if (el) el.value = cond
+          }
           // Pre-fill pontos positivos
           if (data.pos?.length) {
             setPosItems(data.pos.map(p => p.titulo || p).filter(Boolean))
@@ -226,6 +235,8 @@ export default function Gerador() {
       posicao_solar: gv('p_posicao_solar')||'',
       situacao: gv('p_situacao')||'',
       reforma: gv('p_reforma')||'',
+      condicao_interior: gv('p_condicao_interior')||'',
+      condicao_fachada: gv('p_condicao_fachada')||'',
       vl_div: gv('vl_div')||'—', vl_fec: gv('vl_fec')||'—', vl_med: gv('vl_med')||'—',
       nv: [], v: [], pos: posItems.filter(Boolean), neg: negItems.filter(Boolean),
       comps: [1,2,3,4].map(i => ({ t: gv(`c${i}t`), d: '' })).filter(c => c.t),
@@ -370,6 +381,23 @@ export default function Gerador() {
             <Field label="Vagas"><Input name="p_vagas" placeholder="Ex: 1" /></Field>
             <Field label="Área (m²)"><Input name="p_area" placeholder="Ex: 66" /></Field>
             <Field label="Andar / Tipo"><Input name="p_andar" placeholder="Ex: 3° andar" /></Field>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Condição do interior" hint="usado na precificação">
+              <select name="p_condicao_interior" className="lv-input" style={{cursor:'pointer'}}>
+                <option value="Recentemente reformado">Recentemente reformado</option>
+                <option value="Precisa de reforma">Precisa de reforma</option>
+                <option value="Parcialmente reformado">Parcialmente reformado</option>
+                <option value="Original">Original (sem reforma)</option>
+              </select>
+            </Field>
+            <Field label="Fachada do bloco" hint="usado na precificação">
+              <select name="p_condicao_fachada" className="lv-input" style={{cursor:'pointer'}}>
+                <option value="Boa">Boa condição</option>
+                <option value="Precisa de reforma">Precisa de reforma</option>
+                <option value="Recentemente reformada">Recentemente reformada</option>
+              </select>
+            </Field>
           </div>
           <div className="grid grid-cols-3 gap-4">
             <Field label="Selic"><Input name="selic" value={selic} onChange={e=>setSelic(e.target.value)} /></Field>
