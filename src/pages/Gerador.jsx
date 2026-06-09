@@ -21,8 +21,10 @@ export default function Gerador() {
   const [negItems, setNegItems] = useState([''])
   const [status,   setStatus]   = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
-  const [extractingNV, setExtractingNV] = useState({})
-  const [extractingV,  setExtractingV]  = useState({})
+  const [extractingNV,  setExtractingNV]  = useState({})
+  const [extractingV,   setExtractingV]   = useState({})
+  const [precStatus,    setPrecStatus]    = useState(null) // null | 'loading' | 'done' | 'error'
+  const [precData,      setPrecData]      = useState(null) // resultado da precificação
   const [selic,        setSelic]        = useState('14,50%')
 
   // Busca Selic atual via Edge Function (proxy para Banco Central)
@@ -51,6 +53,10 @@ export default function Gerador() {
           sv('p_vagas',       data.vagas)
           sv('p_area',        data.area)
           sv('p_andar',       data.andar)
+          sv('p_tipo_imovel',  data.tipo_imovel  || 'Apartamento')
+          sv('p_posicao_solar',data.posicao_solar || '')
+          sv('p_situacao',     data.situacao      || '')
+          sv('p_reforma',      data.reforma       || '')
           // Pre-fill pontos positivos
           if (data.pos?.length) {
             setPosItems(data.pos.map(p => p.titulo || p).filter(Boolean))
@@ -138,6 +144,10 @@ export default function Gerador() {
       residencial: gv('p_residencial')||'Residencial', endereco: gv('p_endereco')||'',
       bairro: gv('p_bairro')||'', quartos: gv('p_quartos')||'—', vagas: gv('p_vagas')||'—',
       area: gv('p_area')||'—', andar: gv('p_andar')||'—', selic: gv('selic')||'14,50%',
+      tipo_imovel: gv('p_tipo_imovel')||'Apartamento',
+      posicao_solar: gv('p_posicao_solar')||'',
+      situacao: gv('p_situacao')||'',
+      reforma: gv('p_reforma')||'',
       vl_div: gv('vl_div')||'—', vl_fec: gv('vl_fec')||'—', vl_med: gv('vl_med')||'—',
       nv: [], v: [], pos: posItems.filter(Boolean), neg: negItems.filter(Boolean),
       comps: [1,2,3,4].map(i => ({ t: gv(`c${i}t`), d: '' })).filter(c => c.t),
@@ -151,6 +161,44 @@ export default function Gerador() {
       if (a||c||v||n) d.v.push({n,a,c,v})
     }
     return d
+  }
+
+  const handlePrecificar = async () => {
+    const d = collectData()
+    if (!d.nv.length && !d.v.length) {
+      alert('Adicione pelo menos um concorrente ou imóvel vendido antes de precificar.')
+      return
+    }
+    setPrecStatus('loading')
+    setPrecData(null)
+    try {
+      const { data, error } = await supabase.functions.invoke('gerar-apresentacao', {
+        body: { data: {
+          _precificar: true,
+          imovel: { ...d, pos: d.pos, neg: d.neg },
+          nv: d.nv,
+          v:  d.v,
+        }}
+      })
+      if (error) throw new Error(error.message)
+      if (data?.error) throw new Error(data.error)
+      const p = data.precificacao
+      setPrecData(p)
+      setPrecStatus('done')
+      // Auto-fill pricing fields with "mercado" recommendation
+      const rec = p[p.recomendacao] || p.mercado
+      const sv = (name, val) => { const els = document.getElementsByName(name); if (els.length) els[0].value = val }
+      sv('vl_div', rec.totalFmt)
+      sv('vl_fec', p.mercado.totalFmt)
+      sv('vl_med', p.mercado.vm2Fmt)
+      // Scroll to pricing section
+      setTimeout(() => {
+        document.getElementsByName('vl_div')[0]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }, 300)
+    } catch (err) {
+      console.error('Precificação:', err.message)
+      setPrecStatus('error')
+    }
   }
 
   const handleGerar = async (e) => {
@@ -173,6 +221,8 @@ export default function Gerador() {
       } catch (edgeErr) { console.warn('Edge function:', edgeErr.message) }
       if (!enrichedData.posEnriched) enrichedData.posEnriched = (enrichedData.pos||[]).map(t=>({t,d:''}))
       if (!enrichedData.negEnriched) enrichedData.negEnriched = (enrichedData.neg||[]).map(t=>({t,d:''}))
+      // Inject pricing data if available
+      if (precData) enrichedData.prec = precData
       const html = buildHTML(enrichedData)
       if (user?.id) {
         supabase.from('apresentacoes').insert({
@@ -214,6 +264,11 @@ export default function Gerador() {
           <div className="grid grid-cols-2 gap-4">
             <Field label="Endereço"><Input name="p_endereco" placeholder="Ex: Bloco G, Apto 301" /></Field>
             <Field label="Bairro / Região"><Input name="p_bairro" placeholder="Ex: Asa Norte — Brasília, DF" /></Field>
+          {/* Hidden fields from V1 — auto-filled when coming from V1 */}
+          <input type="hidden" name="p_tipo_imovel" defaultValue="Apartamento" />
+          <input type="hidden" name="p_posicao_solar" />
+          <input type="hidden" name="p_situacao" />
+          <input type="hidden" name="p_reforma" />
           </div>
         </section>
 
@@ -227,10 +282,122 @@ export default function Gerador() {
           </div>
           <div className="grid grid-cols-3 gap-4">
             <Field label="Selic"><Input name="selic" value={selic} onChange={e=>setSelic(e.target.value)} /></Field>
-            <Field label="Valor divulgação"><Input name="vl_div" placeholder="Ex: R$ 840.000" /></Field>
-            <Field label="Expectativa fechamento"><Input name="vl_fec" placeholder="Ex: R$ 825.000" /></Field>
+            <Field label="Valor divulgação"><Input name="vl_div" placeholder="Calculado pela IA ↓" /></Field>
+            <Field label="Expectativa fechamento"><Input name="vl_fec" placeholder="Calculado pela IA ↓" /></Field>
           </div>
-          <Field label="Referência de mercado"><Input name="vl_med" placeholder="Ex: R$ 850.000" /></Field>
+          <Field label="Referência de mercado (R$/m²)"><Input name="vl_med" placeholder="Calculado pela IA ↓" /></Field>
+        </section>
+
+        {/* ── Precificação Inteligente ── */}
+        <section className="card p-6 space-y-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="section-title mb-0">Precificação Inteligente</p>
+              <p className={`text-xs ${tmute} mt-0.5`}>
+                Preencha concorrentes e vendidos acima, depois clique para a IA calcular
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handlePrecificar}
+              disabled={precStatus === 'loading'}
+              style={{
+                background: 'linear-gradient(135deg,#1266CD,#1a7be8)',
+                color: '#fff', border: 'none', borderRadius: '10px',
+                padding: '10px 18px', fontSize: '13px', fontWeight: '600',
+                cursor: precStatus === 'loading' ? 'not-allowed' : 'pointer',
+                opacity: precStatus === 'loading' ? 0.7 : 1,
+                display: 'flex', alignItems: 'center', gap: '8px',
+                boxShadow: '0 4px 14px rgba(18,102,205,0.4)', flexShrink: 0,
+              }}
+            >
+              {precStatus === 'loading'
+                ? <><div style={{width:'14px',height:'14px',border:'2px solid rgba(255,255,255,0.3)',borderTopColor:'#fff',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>Calculando...</>
+                : '✦ Sugerir Valores'}
+            </button>
+          </div>
+
+          {/* Resultado da precificação */}
+          {precData && (
+            <div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
+              {/* Três faixas */}
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'10px' }}>
+                {[
+                  { key:'competitivo', label:'Competitivo',  color:'#2563eb', bg: dark?'rgba(37,99,235,0.12)':'#EEF4FD' },
+                  { key:'mercado',     label:'Mercado',      color:'#059669', bg: dark?'rgba(5,150,105,0.12)':'#ECFDF5', rec: true },
+                  { key:'otimista',    label:'Otimista',     color:'#d97706', bg: dark?'rgba(217,119,6,0.12)':'#FFFBEB'  },
+                ].map(({ key, label, color, bg, rec }) => {
+                  const faixa = precData[key]
+                  return (
+                    <div key={key}
+                      onClick={() => {
+                        const sv = (n,v) => { const el = document.getElementsByName(n); if(el.length) el[0].value=v }
+                        sv('vl_div', faixa.totalFmt)
+                        sv('vl_fec', precData.mercado.totalFmt)
+                        sv('vl_med', faixa.vm2Fmt)
+                      }}
+                      style={{
+                        background: bg, borderRadius:'12px', padding:'14px',
+                        border: `1px solid ${color}40`,
+                        cursor:'pointer', transition:'transform .15s',
+                        position:'relative',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.transform='translateY(-2px)'}
+                      onMouseLeave={e => e.currentTarget.style.transform='translateY(0)'}
+                    >
+                      {rec && precData.recomendacao === key && (
+                        <div style={{ position:'absolute', top:'-8px', right:'8px', background:color, color:'#fff', fontSize:'9px', fontWeight:'700', padding:'2px 7px', borderRadius:'10px', letterSpacing:'0.05em' }}>
+                          SUGERIDO
+                        </div>
+                      )}
+                      <div style={{ fontSize:'10px', fontWeight:'700', letterSpacing:'0.08em', textTransform:'uppercase', color, marginBottom:'6px' }}>{label}</div>
+                      <div style={{ fontSize:'1.1rem', fontWeight:'800', color: dark?'#fff':'#111', marginBottom:'2px' }}>
+                        {faixa.totalFmt}
+                      </div>
+                      <div style={{ fontSize:'11px', color: dark?'rgba(255,255,255,0.4)':'#6b7280' }}>{faixa.vm2Fmt}</div>
+                      <div style={{ fontSize:'10px', color: dark?'rgba(255,255,255,0.35)':'#9ca3af', marginTop:'6px', lineHeight:'1.4' }}>{faixa.descricao}</div>
+                      <div style={{ fontSize:'10px', color, marginTop:'8px', fontWeight:'600' }}>← Usar este valor</div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Justificativa */}
+              <div style={{
+                padding:'14px 16px', borderRadius:'12px',
+                background: dark?'rgba(255,255,255,0.04)':'#f9fafb',
+                border: dark?'1px solid rgba(255,255,255,0.08)':'1px solid #e5e7eb',
+              }}>
+                <p style={{ fontSize:'11px', fontWeight:'700', letterSpacing:'0.08em', textTransform:'uppercase', color:'#1266CD', marginBottom:'6px' }}>
+                  Análise da IA
+                </p>
+                <p style={{ fontSize:'13px', color: dark?'rgba(255,255,255,0.7)':'#374151', lineHeight:'1.6', margin:0 }}>
+                  {precData.justificativa}
+                </p>
+              </div>
+
+              {/* Alertas */}
+              {precData.alertas?.length > 0 && (
+                <div style={{
+                  padding:'10px 14px', borderRadius:'10px',
+                  background: dark?'rgba(245,158,11,0.1)':'#FFFBEB',
+                  border:'1px solid rgba(245,158,11,0.3)',
+                }}>
+                  {precData.alertas.map((a, i) => (
+                    <p key={i} style={{ fontSize:'12px', color:'#d97706', margin: i===0?0:'4px 0 0', lineHeight:'1.5' }}>
+                      ⚠️ {a}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {precStatus === 'error' && (
+            <p style={{ fontSize:'12px', color:'#ef4444' }}>
+              Erro ao calcular. Verifique se os campos de área e valor dos concorrentes estão preenchidos.
+            </p>
+          )}
         </section>
 
         <section className="card p-6 space-y-4">
