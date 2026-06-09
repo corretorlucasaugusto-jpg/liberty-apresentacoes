@@ -232,6 +232,31 @@ export default function Gerador() {
     setExtracting(prev => ({ ...prev, [idx]: false }))
   }
 
+  const parseCarac = (c) => {
+    if (!c) return { quartos: '', vagas: '', conservacao: '', obs: '' }
+    const s = c.toLowerCase()
+    let quartos = ''
+    const qtMatch = s.match(/(\d+)\s*(quartos?|qts?|q\b)/)
+    if (qtMatch) quartos = qtMatch[1]
+    let vagas = ''
+    if (/sem\s*vaga/.test(s)) { vagas = '0' }
+    else { const vagMatch = s.match(/(\d+)\s*vaga/); if (vagMatch) vagas = vagMatch[1] }
+    let conservacao = ''
+    if (/alto\s*padr/.test(s)) conservacao = 'Alto padrão'
+    else if (/reform/.test(s)) conservacao = 'Reformado'
+    else if (/parcial/.test(s)) conservacao = 'Parcialmente reformado'
+    else if (/precisa/.test(s)) conservacao = 'Precisa de reforma'
+    else if (/original/.test(s)) conservacao = 'Original'
+    const obs = []
+    if (/nascente/.test(s)) obs.push('Nascente')
+    if (/poente/.test(s)) obs.push('Poente')
+    if (/canto/.test(s)) obs.push('Canto')
+    if (/andar alto/.test(s)) obs.push('Andar alto')
+    if (/andar baixo/.test(s)) obs.push('Andar baixo')
+    if (/cobertura/.test(s)) obs.push('Cobertura')
+    return { quartos, vagas, conservacao, obs: obs.join(' · ') }
+  }
+
   const collectData = () => {
     const d = {
       nome: gv('p_nome')||'Proprietário', corretor: gv('p_corretor')||'Corretor Liberty',
