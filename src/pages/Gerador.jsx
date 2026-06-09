@@ -211,16 +211,22 @@ export default function Gerador() {
       if (!error && data?.extracted) {
         const ex = data.extracted
         if (type === 'nv') {
-          if (ex.nome)  setVal(`nv_n_${idx}`, ex.nome)
-          if (ex.area)  setVal(`nv_a_${idx}`, ex.area)
-          if (ex.carac) setVal(`nv_c_${idx}`, ex.carac)
-          if (ex.valor) setVal(`nv_v_${idx}`, ex.valor)
-          if (ex.dias)  setVal(`nv_d_${idx}`, ex.dias)
+          if (ex.nome)        setVal(`nv_n_${idx}`,    ex.nome)
+          if (ex.area)        setVal(`nv_a_${idx}`,    ex.area)
+          if (ex.quartos)     setVal(`nv_q_${idx}`,    ex.quartos)
+          if (ex.vagas !== undefined && ex.vagas !== '') setVal(`nv_vagas_${idx}`, ex.vagas)
+          if (ex.conservacao) setVal(`nv_cons_${idx}`, ex.conservacao)
+          if (ex.valor)       setVal(`nv_v_${idx}`,    ex.valor)
+          if (ex.dias)        setVal(`nv_d_${idx}`,    ex.dias)
+          if (ex.obs)         setVal(`nv_obs_${idx}`,  ex.obs)
         } else {
-          if (ex.nome)  setVal(`v_n_${idx}`, ex.nome)
-          if (ex.area)  setVal(`v_a_${idx}`, ex.area)
-          if (ex.carac) setVal(`v_c_${idx}`, ex.carac)
-          if (ex.valor) setVal(`v_v_${idx}`, ex.valor)
+          if (ex.nome)        setVal(`v_n_${idx}`,     ex.nome)
+          if (ex.area)        setVal(`v_a_${idx}`,     ex.area)
+          if (ex.quartos)     setVal(`v_q_${idx}`,     ex.quartos)
+          if (ex.vagas !== undefined && ex.vagas !== '') setVal(`v_vagas_${idx}`, ex.vagas)
+          if (ex.conservacao) setVal(`v_cons_${idx}`,  ex.conservacao)
+          if (ex.valor)       setVal(`v_v_${idx}`,     ex.valor)
+          if (ex.obs)         setVal(`v_obs_${idx}`,   ex.obs)
         }
       } else if (error) {
         throw new Error(error.message)
