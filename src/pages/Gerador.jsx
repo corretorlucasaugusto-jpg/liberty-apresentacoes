@@ -156,7 +156,14 @@ export default function Gerador() {
       })
   }, [editId])
 
-  const gv = (name) => { const el = formRef.current?.elements[name]; return el ? el.value.trim() : '' }
+  const gv = (name) => {
+    // Use getElementsByName for reliability — works for inputs AND selects in nested components
+    const els = document.getElementsByName(name)
+    if (els.length > 0) return (els[0].value || '').trim()
+    // Fallback to formRef
+    const el = formRef.current?.elements[name]
+    return el ? el.value.trim() : ''
+  }
   const sv = (name, val) => { const el = formRef.current?.elements[name]; if (el) el.value = val }
 
   const extractFromContent = async (type, idx) => {
