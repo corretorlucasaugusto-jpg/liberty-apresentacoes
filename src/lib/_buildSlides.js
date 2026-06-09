@@ -466,36 +466,115 @@ export function buildSlides(d, slides=[]){
 
   // S8 COMPRADOR
   const comps=d.comps.length>0?d.comps:[{t:'Solteiros ou casal jovem',d:'Perfil 25–35 anos, busca independência'},{t:'Primeiro imóvel',d:'Compra emocionalmente motivada'},{t:'Familiares próximos',d:'Compra para filho ou familiar da região'},{t:'Realizará financiamento',d:'FGTS + financiamento bancário'}];
-  slides.push(`<div class="slide" id="s8">
+  // Build pricing display — use IA faixas if available, else manual values
+  var s8PrecHtml = '';
+  if (d.prec && d.prec.competitivo) {
+    var p = d.prec;
+    var recKey = p.recomendacao || 'mercado';
+    // Pre-calculate vm2 for samples for the chart
+    var nvSamplesForChart = (d.nv||[]).map(function(r){
+      var val = parseInt((r.v||'').replace(/[^0-9]/g,'')||'0');
+      var area = parseFloat((r.a||'').replace(/[^0-9.,]/g,'').replace(',','.')||'0');
+      return {n:r.n, vm2: area>0&&val>0 ? Math.round(val/area) : 0};
+    }).filter(function(r){return r.vm2>0;});
+    var vSamplesForChart = (d.v||[]).map(function(r){
+      var val = parseInt((r.v||'').replace(/[^0-9]/g,'')||'0');
+      var area = parseFloat((r.a||'').replace(/[^0-9.,]/g,'').replace(',','.')||'0');
+      return {n:r.n, vm2: area>0&&val>0 ? Math.round(val/area) : 0};
+    }).filter(function(r){return r.vm2>0;});
+    var faixas = [
+      { key:'competitivo', label:'Competitivo',  color:'#2563eb', bg:'rgba(37,99,235,0.08)' },
+      { key:'mercado',     label:'Mercado',      color:'#059669', bg:'rgba(5,150,105,0.08)' },
+      { key:'otimista',    label:'Otimista',     color:'#d97706', bg:'rgba(217,119,6,0.08)'  },
+    ];
+    var faixaCards = faixas.map(function(f) {
+      var fx = p[f.key] || {};
+      var recBadge = (f.key === recKey) ? '<div style="position:absolute;top:-8px;right:8px;background:'+f.color+';color:#fff;font-size:.5rem;font-weight:700;padding:2px 7px;border-radius:10px;letter-spacing:.05em">SUGERIDO</div>' : '';
+      return '<div style="position:relative;flex:1;background:'+f.bg+';border:1px solid '+f.color+'30;border-radius:12px;padding:16px">'
+        + recBadge
+        + '<div style="font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:'+f.color+';margin-bottom:6px">'+f.label+'</div>'
+        + '<div style="font-size:1.15rem;font-weight:800;color:#1d1d1f;margin-bottom:2px">'+(fx.totalFmt||'—')+'</div>'
+        + '<div style="font-size:.65rem;color:#6e6e73">'+(fx.vm2Fmt||'—')+'</div>'
+        + '<div style="font-size:.6rem;color:#8e8e93;margin-top:6px;line-height:1.4">'+(fx.descricao||'')+'</div>'
+        + '</div>';
+    }).join('');
+    var alertasHtml = (p.alertas||[]).length > 0
+      ? '<div style="margin-top:10px;padding:10px 14px;border-radius:10px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3)">'
+        + (p.alertas||[]).map(function(a){ return '<p style="font-size:.62rem;color:#d97706;margin:0 0 2px;line-height:1.4">⚠️ '+a+'</p>'; }).join('')
+        + '</div>'
+      : '';
+
+    // Build bar chart comparing our values vs samples
+    var allVm2 = [];
+    ['competitivo','mercado','otimista'].forEach(function(k){
+      if(p[k]&&p[k].vm2) allVm2.push(p[k].vm2);
+    });
+    (nvSamplesForChart||[]).forEach(function(r){ if(r.vm2) allVm2.push(r.vm2); });
+    (vSamplesForChart||[]).forEach(function(r){ if(r.vm2) allVm2.push(r.vm2); });
+    var maxVm2 = allVm2.length ? Math.max.apply(null,allVm2)*1.08 : 1;
+
+    function barRow(label, vm2, color, bgColor, bold) {
+      var pct = Math.round((vm2/maxVm2)*100);
+      var fmtd = 'R$\u00a0' + vm2.toLocaleString('pt-BR') + '/m\u00b2';
+      return '<div style="display:grid;grid-template-columns:160px 1fr;align-items:center;gap:8px;margin-bottom:5px">'
+        + '<div style="font-size:.6rem;font-weight:'+(bold?'700':'500')+';color:#3a3a3c;text-align:right;white-space:nowrap">'+label+'</div>'
+        + '<div style="background:#f0f0f2;border-radius:4px;height:22px;position:relative">'
+        + '<div style="position:absolute;left:0;top:0;height:100%;width:'+pct+'%;background:'+bgColor+';border-radius:4px;display:flex;align-items:center;padding-left:8px;transition:width .5s">'
+        + '<span style="font-size:.58rem;font-weight:700;color:#fff;white-space:nowrap">'+fmtd+'</span>'
+        + '</div></div></div>';
+    }
+
+    var chartRows = '';
+    var faixaCfg = [
+      {key:'competitivo', label:'VALOR COMPETITIVO', color:'#2563eb', bg:'#3b82f6'},
+      {key:'mercado',     label:'VALOR DE MERCADO',  color:'#059669', bg:'#10b981'},
+      {key:'otimista',    label:'VALOR OTIMISTA',    color:'#16a34a', bg:'#22c55e'},
+    ];
+    faixaCfg.forEach(function(f){
+      if(p[f.key]&&p[f.key].vm2) chartRows += barRow(f.label, p[f.key].vm2, f.color, f.bg, true);
+    });
+    (nvSamplesForChart||[]).forEach(function(r,i){
+      if(r.vm2) chartRows += barRow('Concorrente '+(i+1)+(r.n?' · '+r.n.split(' ')[0]:''), r.vm2, '#64748b', '#94a3b8', false);
+    });
+    (vSamplesForChart||[]).forEach(function(r,i){
+      if(r.vm2) chartRows += barRow('Vendido '+(i+1)+(r.n?' · '+r.n.split(' ')[0]:''), r.vm2, '#374151', '#6b7280', false);
+    });
+
+    var chartHtml = chartRows ? '<div style="margin-top:12px;padding:14px 16px;background:rgba(0,0,0,0.02);border-radius:12px;border:1px solid rgba(0,0,0,0.06)">'
+      + '<p style="font-size:.55rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1266CD;margin:0 0 10px">Comparativo de Valores · R$/m²</p>'
+      + chartRows
+      + '<div style="display:flex;gap:16px;margin-top:10px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.06)">'
+      + '<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:2px;background:#10b981"></div><span style="font-size:.55rem;color:#6b7280">Valores sugeridos Liberty</span></div>'
+      + '<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:2px;background:#94a3b8"></div><span style="font-size:.55rem;color:#6b7280">Concorrentes ativos</span></div>'
+      + '<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:2px;background:#6b7280"></div><span style="font-size:.55rem;color:#6b7280">Vendidos</span></div>'
+      + '</div></div>'
+      : '';
+
+    s8PrecHtml = '<div style="display:flex;gap:12px;margin-bottom:12px">' + faixaCards + '</div>'
+      + (p.justificativa ? '<div style="background:rgba(0,0,0,0.03);border-radius:10px;padding:12px 16px;font-size:.68rem;color:#3a3a3c;line-height:1.6">'
+        + '<span style="font-size:.55rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1266CD;display:block;margin-bottom:4px">Análise de mercado</span>'
+        + e(p.justificativa) + '</div>' : '')
+      + chartHtml
+      + alertasHtml;
+  } else {
+    s8PrecHtml = '<div class="s8-body">'
+      + '<div class="s8-l">'
+      + '<div class="s8-vcard s8-vc-div"><div class="s8-vc-lbl">Valor de divulgação</div><div class="s8-vc-val">'+e(d.vl_div)+'</div><div class="s8-vc-note">Valor de entrada nos portais e anúncios</div></div>'
+      + '<div class="s8-vcard s8-vc-fec"><div class="s8-vc-lbl">Expectativa de fechamento</div><div class="s8-vc-val">'+e(d.vl_fec)+'</div><div class="s8-vc-note">Ou algo próximo — com margem técnica de negociação</div></div>'
+      + '<div class="s8-vcard s8-vc-med"><div class="s8-vc-lbl">Referência · Últimos fechamentos</div><div class="s8-vc-val">'+e(d.vl_med)+'</div><div class="s8-vc-note">Média real de negócios em imóveis similares</div></div>'
+      + '</div>'
+      + '<div class="s8-r"></div>'
+      + '</div>';
+  }
+  slides.push(s8PrecHtml.startsWith('<div class="slide"') ? s8PrecHtml : `<div class="slide" id="s8">
   <div class="s-head">
     <div><div class="s-tag s-tag-blue">Precificação</div><div class="s-title">Sugestão de valores</div></div>
-    <div class="s-sub">Baseada em dados reais — não em expectativas</div>
+    <div class="s-sub">Baseada em dados reais de mercado</div>
   </div>
-  <div class="s8-body">
-    <div class="s8-l">
-      <div class="s8-vcard s8-vc-div"><div class="s8-vc-lbl">Valor de divulgação</div><div class="s8-vc-val">${e(d.vl_div)}</div><div class="s8-vc-note">Valor de entrada nos portais e anúncios</div></div>
-      <div class="s8-vcard s8-vc-fec"><div class="s8-vc-lbl">Expectativa de fechamento</div><div class="s8-vc-val">${e(d.vl_fec)}</div><div class="s8-vc-note">Ou algo próximo — com margem técnica de negociação</div></div>
-      <div class="s8-vcard s8-vc-med"><div class="s8-vc-lbl">Referência · Últimos fechamentos</div><div class="s8-vc-val">${e(d.vl_med)}</div><div class="s8-vc-note">Média real de negócios em imóveis similares</div></div>
-    </div>
-    <div class="s8-r">
-      <div class="s8-pr"><div class="s8-pr-ico"><svg viewBox="0 0 19 19"><path d="M9.5 2l2 5h5l-4 3 1.5 5-4.5-3-4.5 3L6 10l-4-3h5z"/></svg></div><div class="s8-pr-body"><div class="s8-pr-ttl">A decisão final é do proprietário</div><div class="s8-pr-dsc">Sugestão técnica com base em método. Você tem a palavra final — nosso papel é garantir que seja tomada com informação real.</div></div></div>
-      <div class="s8-pr"><div class="s8-pr-ico"><svg viewBox="0 0 19 19"><circle cx="9.5" cy="9.5" r="7.5"/><path d="M9.5 6v4l3 3"/></svg></div><div class="s8-pr-body"><div class="s8-pr-ttl">Prazo de venda não tem garantia</div><div class="s8-pr-dsc">O mercado é soberano. Prometemos o melhor posicionamento possível para que a venda aconteça no menor prazo e maior valor.</div></div></div>
-      <div class="s8-pr"><div class="s8-pr-ico"><svg viewBox="0 0 19 19"><path d="M3 9.5h13M9.5 3l6.5 6.5-6.5 6.5"/></svg></div><div class="s8-pr-body"><div class="s8-pr-ttl">Divulgação ≠ Fechamento</div><div class="s8-pr-dsc">O valor de anúncio e o valor real de fechamento são sempre diferentes. Trabalhamos com margem técnica — isso é estratégia.</div></div></div>
-      <div class="s8-note"><div class="s8-note-ico"><svg viewBox="0 0 12 12"><path d="M6 1L1 11h10L6 1z"/><path d="M6 5v3M6 9.5v.5"/></svg></div><div class="s8-note-txt"><strong>Valor de saída é crítico.</strong> Imóvel bem precificado desde o primeiro dia gera mais interesse, mais visitas e maior poder de negociação.</div></div>
-    </div>
-  </div>
-</div>
+  <div style="padding:0 40px 32px">${s8PrecHtml}</div>
+</div>`);
 
-
-
-<!-- ═══ S9 PERFIL DO COMPRADOR ═══ -->`);
-
-
-
-
-
-  // ============================
-  // S9 — FASE 1: FUNDAÇÃO (Apple white)
+// S9 — FASE 1: FUNDAÇÃO (Apple white)
   // ============================
   
   // S9 — PERFIL DO COMPRADOR

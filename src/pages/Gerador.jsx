@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import { Field, Input, NVRow, VRow, PerfilRow } from '../components/FormFields.jsx'
 import { buildHTML } from '../lib/buildHTML.js'
@@ -12,6 +12,8 @@ const MAX_V  = 8
 export default function Gerador() {
   const dark = useDark()
   const { v1id } = useParams()
+  const [searchParams] = useSearchParams()
+  const editId = searchParams.get('edit') // ID of apresentacao to edit
   const { user } = useAuth()
   const formRef = useRef(null)
   const [v1loaded, setV1loaded] = useState(false)
@@ -68,6 +70,75 @@ export default function Gerador() {
         }, 100)
       })
   }, [v1id, v1loaded])
+
+  // Load existing apresentacao for editing
+  useEffect(() => {
+    if (!editId) return
+    supabase.from('apresentacoes')
+      .select('raw_data, cliente, residencial')
+      .eq('id', editId)
+      .single()
+      .then(({ data }) => {
+        if (!data?.raw_data) return
+        const d = data.raw_data
+        // Pre-fill all form fields
+        setTimeout(() => {
+          const sv = (name, val) => { const els = document.getElementsByName(name); if (els.length && val) els[0].value = val }
+          sv('p_nome',         d.nome)
+          sv('p_corretor',     d.corretor)
+          sv('p_residencial',  d.residencial)
+          sv('p_endereco',     d.endereco)
+          sv('p_bairro',       d.bairro)
+          sv('p_quartos',      d.quartos)
+          sv('p_vagas',        d.vagas)
+          sv('p_area',         d.area)
+          sv('p_andar',        d.andar)
+          sv('selic',          d.selic)
+          sv('vl_div',         d.vl_div)
+          sv('vl_fec',         d.vl_fec)
+          sv('vl_med',         d.vl_med)
+          sv('p_tipo_imovel',  d.tipo_imovel)
+          sv('p_posicao_solar',d.posicao_solar)
+          sv('p_situacao',     d.situacao)
+          sv('p_reforma',      d.reforma)
+          // Pontos positivos e negativos
+          if (d.pos?.length) setPosItems(d.pos)
+          if (d.neg?.length) setNegItems(d.neg)
+          // NV rows
+          if (d.nv?.length) {
+            setNvCount(d.nv.length)
+            d.nv.forEach((r, i) => {
+              setTimeout(() => {
+                sv(`nv_n_${i+1}`, r.n)
+                sv(`nv_a_${i+1}`, r.a)
+                sv(`nv_c_${i+1}`, r.c)
+                sv(`nv_v_${i+1}`, r.v)
+                sv(`nv_d_${i+1}`, r.d)
+                sv(`lk_${i+1}`,   r.url)
+              }, 200)
+            })
+          }
+          // V rows
+          if (d.v?.length) {
+            setVCount(d.v.length)
+            d.v.forEach((r, i) => {
+              setTimeout(() => {
+                sv(`v_n_${i+1}`, r.n)
+                sv(`v_a_${i+1}`, r.a)
+                sv(`v_c_${i+1}`, r.c)
+                sv(`v_v_${i+1}`, r.v)
+              }, 200)
+            })
+          }
+          // Perfis
+          if (d.comps?.length) {
+            d.comps.forEach((c, i) => {
+              setTimeout(() => sv(`c${i+1}t`, c.t), 200)
+            })
+          }
+        }, 100)
+      })
+  }, [editId])
 
   const gv = (name) => { const el = formRef.current?.elements[name]; return el ? el.value.trim() : '' }
   const sv = (name, val) => { const el = formRef.current?.elements[name]; if (el) el.value = val }
@@ -225,10 +296,21 @@ export default function Gerador() {
       if (precData) enrichedData.prec = precData
       const html = buildHTML(enrichedData)
       if (user?.id) {
-        supabase.from('apresentacoes').insert({
+        const insertData = {
           user_id: user.id, cliente: rawData.nome,
-          residencial: rawData.residencial, bairro: rawData.bairro, html
-        }).then(({ error: se }) => { if (se) console.warn('Histórico:', se.message) })
+          residencial: rawData.residencial, bairro: rawData.bairro,
+          html, raw_data: rawData,
+        }
+        if (editId) {
+          // Update existing apresentacao
+          supabase.from('apresentacoes')
+            .update({ html, raw_data: rawData, updated_at: new Date().toISOString() })
+            .eq('id', editId)
+            .then(({ error: se }) => { if (se) console.warn('Update:', se.message) })
+        } else {
+          supabase.from('apresentacoes').insert(insertData)
+            .then(({ error: se }) => { if (se) console.warn('Histórico:', se.message) })
+        }
       }
       const blob = new Blob([html], { type: 'text/html' })
       const a = document.createElement('a')
@@ -244,7 +326,7 @@ export default function Gerador() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Gerar Apresentação · V2</h1>
+        <h1 className="text-2xl font-bold">{editId ? 'Editar Apresentação' : 'Gerar Apresentação · V2'}</h1>
         {v1id && (
           <div style={{ marginTop:'8px', padding:'8px 14px', borderRadius:'8px', background:'rgba(18,102,205,0.1)', border:'1px solid rgba(18,102,205,0.2)', fontSize:'12px', color:'#1266CD', display:'inline-flex', alignItems:'center', gap:'6px' }}>
             ✓ Dados pré-preenchidos da V1
@@ -483,7 +565,7 @@ export default function Gerador() {
           <button type="submit" className="btn-primary flex items-center gap-2" disabled={status==='loading'}>
             {status==='loading'
               ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Gerando...</>
-              : '✦ Gerar Apresentação'}
+              : (editId ? '✦ Atualizar Apresentação' : '✦ Gerar Apresentação')}
           </button>
           {status==='done'  && <span className="text-sm text-green-500 font-medium">✓ Gerada e baixada!</span>}
           {status==='error' && <span className="text-sm text-red-400">{errorMsg}</span>}
