@@ -284,12 +284,15 @@ export default function Gerador() {
       if (a||rawC||v||n) d.nv.push({n, a, quartos:parsed.quartos, vagas:parsed.vagas, conservacao:parsed.conservacao, c:rawC, v, d:dd, obs:parsed.obs, url})
     }
     for (let i = 1; i <= vCount; i++) {
-      const n      = gv(`v_n_${i}`)
-      const a      = gv(`v_a_${i}`)
-      const rawC   = gv(`v_c_${i}`)
-      const parsed = parseCarac(rawC)
-      const v      = gv(`v_v_${i}`)
-      if (a||rawC||v||n) d.v.push({n, a, quartos:parsed.quartos, vagas:parsed.vagas, conservacao:parsed.conservacao, c:rawC, v, obs:parsed.obs})
+      const n   = gv(`v_n_${i}`)
+      const a   = gv(`v_a_${i}`)
+      const q   = gv(`v_q_${i}`)
+      const vag = gv(`v_vagas_${i}`)
+      const con = gv(`v_cons_${i}`)
+      const v   = gv(`v_v_${i}`)
+      const obs = gv(`v_obs_${i}`)
+      const carac = [q&&`${q}Q`, vag&&`${vag}V`, con, obs].filter(Boolean).join(' · ')
+      if (a||v||n) d.v.push({n, a, quartos:q, vagas:vag, conservacao:con, c:carac, v, obs})
     }
     return d
   }
