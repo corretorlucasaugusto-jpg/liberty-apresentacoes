@@ -25,6 +25,8 @@ export default function Gerador() {
   const [errorMsg, setErrorMsg] = useState('')
   const [extractingNV,  setExtractingNV]  = useState({})
   const [extractingV,   setExtractingV]   = useState({})
+  const [notFoundNV,    setNotFoundNV]    = useState({})
+  const [notFoundV,     setNotFoundV]     = useState({})
   const [precStatus,    setPrecStatus]    = useState(null) // null | 'loading' | 'done' | 'error'
   const [precData,      setPrecData]      = useState(null) // resultado da precificação
   const [dataChanged,   setDataChanged]   = useState(false) // true when form changes after pricing
