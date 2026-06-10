@@ -553,23 +553,31 @@ export function buildSlides(d, slides=[]){
     }
     var chartRows = '';
     var faixaCfg = [
-      {key:'competitivo', label:'VALOR COMPETITIVO', bg:'#3b82f6'},
-      {key:'mercado',     label:'VALOR DE MERCADO',  bg:'#10b981'},
       {key:'otimista',    label:'VALOR OTIMISTA',    bg:'#22c55e'},
+      {key:'mercado',     label:'VALOR DE MERCADO',  bg:'#10b981'},
+      {key:'competitivo', label:'VALOR COMPETITIVO', bg:'#3b82f6'},
     ];
     faixaCfg.forEach(function(f){
       if(p[f.key]&&p[f.key].vm2) chartRows += barRowFull(f.label, p[f.key].vm2, f.bg, true, null);
     });
-    (vSamplesForChart||[]).forEach(function(r,i){
-      if(r.vm2) chartRows += barRowFull('Vendido '+(i+1)+(r.n?' · '+r.n.split(' ')[0]:''), r.vm2, '#334155', false, null);
+    chartRows += '<div style="height:1px;background:rgba(0,0,0,0.08);margin:6px 0 6px 168px"></div>';
+    var nvSorted = (nvSamplesForChart||[]).slice().sort(function(a,b){
+      var da = parseInt((a.d||'').replace(/[^0-9]/g,''))||0;
+      var db = parseInt((b.d||'').replace(/[^0-9]/g,''))||0;
+      return db - da;
     });
-    (nvSamplesForChart||[]).forEach(function(r,i){
+    nvSorted.forEach(function(r,i){
       if(r.vm2) {
         var ds = r.d || '';
-        if (!ds) { var m = (r.c||'').match(/([0-9]+)\s*dia/i); if (m) ds = m[1]+' dias'; }
-        chartRows += barRowFull('Concorrente '+(i+1)+(r.n?' · '+r.n.split(' ')[0]:''), r.vm2, diasColor(parseInt((ds).replace(/[^0-9]/g,''))||0), false, ds);
+        if (!ds) { var m = (r.c||'').match(/([0-9]+) dia/i); if (m) ds = m[1]+' dias'; }
+        var diasNum = parseInt((ds).replace(/[^0-9]/g,''))||0;
+        chartRows += barRowFull('Concorrente '+(i+1)+(r.n?' · '+r.n.split(' ')[0]:''), r.vm2, diasColor(diasNum), false, ds);
       }
     });
+    chartRows += '<div style="height:1px;background:rgba(0,0,0,0.08);margin:6px 0 6px 168px"></div>';
+    (vSamplesForChart||[]).forEach(function(r,i){
+      if(r.vm2) chartRows += barRowFull('Vendido '+(i+1)+(r.n?' · '+r.n.split(' ')[0]:''), r.vm2, '#334155', false, null);
+    });;
 
     var chartHtml = chartRows ? '<div style="margin-top:12px;padding:14px 16px;background:rgba(0,0,0,0.02);border-radius:12px;border:1px solid rgba(0,0,0,0.06)">'
       + '<p style="font-size:.55rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1266CD;margin:0 0 10px">Comparativo de Valores · R$/m²</p>'

@@ -56,6 +56,10 @@ export function buildHTML(d) {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${title}</title>
 <style>${CSS}
+/* Nav nunca sobrepoe slides */
+.deck{padding-bottom:56px!important}
+.nav{position:fixed!important;bottom:0!important;left:50%!important;transform:translateX(-50%)!important;z-index:9000!important}
+.slide{overflow-y:auto!important;overflow-x:hidden!important}
 /* S5 font size overrides */
 .s5-th{font-size:.65rem!important}
 .s5-td{font-size:.88rem!important}
