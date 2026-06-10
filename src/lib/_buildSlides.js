@@ -23,8 +23,9 @@ export function buildS5(d){
   // NV rows
   var nvRows = '';
   (d.nv||[]).forEach(function(r,i){
-    var diasStr = r.d || '; if (!diasStr) { var m = (r.c||').match(/(\d+)\s*dia/i); if (m) diasStr = m[1] + ' dias'; } var diasNum = parseInt(diasStr.replace(/[^0-9]/g, ')).replace(/[^0-9]/g,''))||0;
-    var badgeColor = diasNum >= 180 ? '#7f0000' : diasNum >= 90 ? '#c0392b' : '#e74c3c';
+    var diasStr = r.d || "";
+    if (!diasStr) { var m = (r.c||"").match(/([0-9]+)\s*dia/i); if (m) diasStr = m[1] + " dias"; }
+    var diasNum = parseInt((diasStr).replace(/[^0-9]/g,""))||0;    var badgeColor = diasNum >= 180 ? '#7f0000' : diasNum >= 90 ? '#c0392b' : '#e74c3c';
     var badgeIcon  = diasNum >= 180 ? '🔴 ' : diasNum >= 90 ? '⚠️ ' : '';
     var badge = r.d ? '<span class="s5-badge s5-badge-r" style="background:'+badgeColor+';color:#fff;font-weight:700;padding:3px 7px;border-radius:6px;font-size:.62rem">' + badgeIcon + e2(r.d) + '</span>' : '—';
     var verBtn = r.url ? '<button onclick="openAnuncio(this.dataset.url)" data-url="' + (r.url||'').replace(/"/g,'&quot;') + '" style="background:#1266CD;border:none;color:#fff;border-radius:6px;padding:4px 8px;font-size:.6rem;font-weight:700;cursor:pointer">Ver ↗</button>' : '';
