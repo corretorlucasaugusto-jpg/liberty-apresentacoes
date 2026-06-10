@@ -1,4 +1,3 @@
-// MANUAL_EDIT Ter  9 Jun 2026 22:22:04 -03
 // Auto-generated — do not edit
 
 export function buildS5(d){
@@ -13,7 +12,14 @@ export function buildS5(d){
     vRows += '<div class="s5-row s5-row-v" style="display:grid;grid-template-columns:1.6fr .55fr 2fr .85fr .72fr">' +
       '<div class="s5-td"><strong>' + e2(r.n || (r.c ? r.c.split('·')[0].trim() : 'Imóvel '+(i+1))) + '</strong></div>' +
       '<div class="s5-td">' + e2(r.a||'—') + '</div>' +
-      '<div class="s5-td carac">' + e2(r.c||'—') + '</div>' +
+      '<div class="s5-td carac">' + (function(){
+      var parts = [];
+      if(r.quartos) parts.push(r.quartos + ' qtos');
+      if(r.vagas !== undefined && r.vagas !== '') parts.push(r.vagas === '0' ? 'sem vaga' : r.vagas + ' vaga(s)');
+      if(r.conservacao) parts.push(r.conservacao);
+      if(r.obs) parts.push(r.obs);
+      return e2(parts.length ? parts.join(' · ') : (r.c||'—'));
+    })() + '</div>' +
       '<div class="s5-td val">' + e2(r.v||'—') + '</div>' +
       '<div class="s5-td" style="font-size:.65rem;color:#27ae60;font-weight:600">' + vVm2 + '</div>' +
     '</div>';
@@ -23,12 +29,10 @@ export function buildS5(d){
   // NV rows
   var nvRows = '';
   (d.nv||[]).forEach(function(r,i){
-    var diasStr = r.d || "";
-    if (!diasStr) { var m = (r.c||"").match(/([0-9]+)\s*dia/i); if (m) diasStr = m[1] + " dias"; }
-    var diasNum = parseInt((diasStr).replace(/[^0-9]/g,""))||0;
-    var badgeColor = diasNum >= 180 ? "#7f0000" : diasNum >= 90 ? "#c0392b" : diasNum >= 60 ? "#ea580c" : diasNum >= 30 ? "#ca8a04" : "#94a3b8";
-    var badgeIcon = diasNum >= 180 ? "🔴 " : diasNum >= 90 ? "⚠️ " : "";
-    var badge = diasStr ? '<span class="s5-badge s5-badge-r" style="background:'+badgeColor+';color:#fff;font-weight:700;padding:3px 7px;border-radius:6px;font-size:.62rem">' + badgeIcon + e2(diasStr) + '</span>' : '—';
+    var diasNum = parseInt((r.d||'').replace(/[^0-9]/g,''))||0;
+    var badgeColor = diasNum >= 180 ? '#7f0000' : diasNum >= 90 ? '#c0392b' : '#e74c3c';
+    var badgeIcon  = diasNum >= 180 ? '🔴 ' : diasNum >= 90 ? '⚠️ ' : '';
+    var badge = r.d ? '<span class="s5-badge s5-badge-r" style="background:'+badgeColor+';color:#fff;font-weight:700;padding:3px 7px;border-radius:6px;font-size:.62rem">' + badgeIcon + e2(r.d) + '</span>' : '—';
     var verBtn = r.url ? '<button onclick="openAnuncio(this.dataset.url)" data-url="' + (r.url||'').replace(/"/g,'&quot;') + '" style="background:#1266CD;border:none;color:#fff;border-radius:6px;padding:4px 8px;font-size:.6rem;font-weight:700;cursor:pointer">Ver ↗</button>' : '';
     var aiRow = r.ai ? '<div style="padding:6px 16px 10px;background:#fff0f0;border-top:1px solid #ffc0c0;font-size:.68rem;color:#c0392b;font-style:italic">' + e2(r.ai) + '</div>' : '';
     var rawNVVal  = (r.v||'').replace(/[^0-9]/g,'');
@@ -37,7 +41,14 @@ export function buildS5(d){
     nvRows += '<div style="display:grid;grid-template-columns:1.6fr .55fr 1.8fr .85fr .72fr .85fr .4fr;align-items:center;padding:10px 16px;background:#ffd6d6;border-top:1px solid #e8e8ed">' +
       '<div class="s5-td"><strong>' + e2(r.n || (r.c ? r.c.split('·')[0].trim() : 'Imóvel '+(i+1))) + '</strong></div>' +
       '<div class="s5-td">' + e2(r.a||'—') + '</div>' +
-      '<div class="s5-td carac">' + e2(r.c||'—') + '</div>' +
+      '<div class="s5-td carac">' + (function(){
+      var parts = [];
+      if(r.quartos) parts.push(r.quartos + ' qtos');
+      if(r.vagas !== undefined && r.vagas !== '') parts.push(r.vagas === '0' ? 'sem vaga' : r.vagas + ' vaga(s)');
+      if(r.conservacao) parts.push(r.conservacao);
+      if(r.obs) parts.push(r.obs);
+      return e2(parts.length ? parts.join(' · ') : (r.c||'—'));
+    })() + '</div>' +
       '<div class="s5-td val-r">' + e2(r.v||'—') + '</div>' +
       '<div class="s5-td" style="font-size:.65rem;color:#c0392b;font-weight:600">' + nvVm2 + '</div>' +
       '<div class="s5-td">' + badge + '</div>' +
@@ -58,7 +69,7 @@ export function buildS5(d){
 
   return '<div class="slide" id="s5">' +
     '<div class="s-head"><div><div class="s-tag s-tag-blue">Inteligência de Mercado</div><div class="s-title">Análise de ofertas comparativas</div></div></div>' +
-    '<div class="s5-body">' +
+    '<div class="s5-body" style="overflow-y:auto;max-height:calc(100% - 90px);padding-bottom:8px">' +
       '<div>' +
         '<div class="s5-sec-lbl s5-lbl-g"><span class="dot"></span>Vendidos — preço real de fechamento</div>' +
         '<div class="s5-tbl">' +
@@ -483,7 +494,7 @@ export function buildSlides(d, slides=[]){
     var vSamplesForChart = (d.v||[]).map(function(r){
       var val = parseInt((r.v||'').replace(/[^0-9]/g,'')||'0');
       var area = parseFloat((r.a||'').replace(/[^0-9.,]/g,'').replace(',','.')||'0');
-      return {n:r.n, d:r.d||'', c:r.c||'', vm2: area>0&&val>0 ? Math.round(val/area) : 0};
+      return {n:r.n, vm2: area>0&&val>0 ? Math.round(val/area) : 0};
     }).filter(function(r){return r.vm2>0;});
     var faixas = [
       { key:'competitivo', label:'Competitivo',  color:'#2563eb', bg:'rgba(37,99,235,0.08)' },
@@ -527,65 +538,96 @@ export function buildSlides(d, slides=[]){
         + '</div></div></div>';
     }
 
-    function diasColor(d) {
-      d = Math.max(0, parseInt(d)||0);
-      if (d < 30)  return '#94a3b8';
-      if (d < 60)  return '#ca8a04';
-      if (d < 90)  return '#ea580c';
-      if (d < 180) return '#dc2626';
-      return '#7f1d1d';
+    // Color helpers
+    function diasColor(dias) {
+      // Interpolate from #94a3b8 (cinza, 0d) → #f97316 (laranja, 90d) → #991b1b (vermelho escuro, 365d)
+      var d = Math.max(0, parseInt(dias)||0);
+      if (d <= 0)   return '#94a3b8'; // cinza — sem info
+      if (d < 30)   return '#94a3b8'; // cinza neutro — recente
+      if (d < 60)   return '#ca8a04'; // amarelo — atenção
+      if (d < 90)   return '#ea580c'; // laranja — resistência
+      if (d < 180)  return '#dc2626'; // vermelho — rejeição
+      return '#7f1d1d';               // vermelho escuro — mercado disse não
     }
-    function barRowFull(label, vm2, bgColor, bold, diasStr) {
+    function diasLabel(dias) {
+      var d = parseInt(dias)||0;
+      if (!d)      return '';
+      if (d < 30)  return d+'d';
+      if (d < 90)  return d+'d ⚠';
+      if (d < 180) return d+'d ●';
+      return d+'d ✕';
+    }
+
+    // Extended barRow with optional days badge
+    function barRowFull(label, vm2, bgColor, bold, dias) {
       var pct  = Math.round((vm2/maxVm2)*100);
       var fmtd = 'R ' + vm2.toLocaleString('pt-BR') + '/m²';
-      var diasNum = parseInt((diasStr||'').replace(/[^0-9]/g,''))||0;
-      var badgeHtml = diasStr
-        ? '<div style="font-size:.55rem;font-weight:700;color:'+diasColor(diasNum)+';white-space:nowrap;text-align:left;min-width:52px">'+diasStr+'</div>'
-        : '<div style="min-width:52px"></div>';
-      return '<div style="display:grid;grid-template-columns:160px 1fr 60px;align-items:center;gap:8px;margin-bottom:6px">'
+      var badgeHtml = '';
+      if (dias) {
+        var d = parseInt(dias)||0;
+        var bc = diasColor(d);
+        var dl = diasLabel(d);
+        badgeHtml = '<div style="position:absolute;right:-72px;top:50%;transform:translateY(-50%);'
+          + 'background:'+bc+';color:#fff;font-size:.52rem;font-weight:700;'
+          + 'padding:2px 6px;border-radius:6px;white-space:nowrap;min-width:52px;text-align:center">'
+          + dl+'</div>';
+      }
+      return '<div style="display:grid;grid-template-columns:160px 1fr 80px;align-items:center;gap:8px;margin-bottom:6px">'
         + '<div style="font-size:.6rem;font-weight:'+(bold?'700':'500')+';color:#3a3a3c;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+label+'</div>'
         + '<div style="background:#f0f0f2;border-radius:4px;height:24px;position:relative">'
-        + '<div style="position:absolute;left:0;top:0;height:100%;width:'+pct+'%;background:'+bgColor+';border-radius:4px;display:flex;align-items:center;padding-left:8px">'
+        + '<div style="position:absolute;left:0;top:0;height:100%;width:'+pct+'%;background:'+bgColor+';border-radius:4px;display:flex;align-items:center;padding-left:8px;transition:width .5s">'
         + '<span style="font-size:.58rem;font-weight:700;color:#fff;white-space:nowrap">'+fmtd+'</span>'
         + '</div></div>'
-        + badgeHtml
+        + '<div style="font-size:.55rem;font-weight:700;color:'+(dias?diasColor(parseInt(dias)||0):'transparent')+';white-space:nowrap;text-align:left">'
+        + (dias ? diasLabel(parseInt(dias)||0) : '')
+        + '</div>'
         + '</div>';
     }
+
     var chartRows = '';
     var faixaCfg = [
-      {key:'otimista',    label:'VALOR OTIMISTA',    bg:'#22c55e'},
-      {key:'mercado',     label:'VALOR DE MERCADO',  bg:'#10b981'},
       {key:'competitivo', label:'VALOR COMPETITIVO', bg:'#3b82f6'},
+      {key:'mercado',     label:'VALOR DE MERCADO',  bg:'#10b981'},
+      {key:'otimista',    label:'VALOR OTIMISTA',    bg:'#22c55e'},
     ];
     faixaCfg.forEach(function(f){
       if(p[f.key]&&p[f.key].vm2) chartRows += barRowFull(f.label, p[f.key].vm2, f.bg, true, null);
     });
-    chartRows += '<div style="height:1px;background:rgba(0,0,0,0.08);margin:6px 0 6px 168px"></div>';
-    var nvSorted = (nvSamplesForChart||[]).slice().sort(function(a,b){
-      var da = parseInt((a.d||'').replace(/[^0-9]/g,''))||0;
-      var db = parseInt((b.d||'').replace(/[^0-9]/g,''))||0;
-      return db - da;
+    // Vendidos — azul grafite sólido (fato consumado)
+    (vSamplesForChart||[]).forEach(function(r,i){
+      if(r.vm2) chartRows += barRowFull(
+        'Vendido '+(i+1)+(r.n?' · '+r.n.split(' ')[0]:''),
+        r.vm2, '#334155', false, null
+      );
     });
-    nvSorted.forEach(function(r,i){
+    // Concorrentes — gradiente cinza→vermelho pelo tempo parado
+    (nvSamplesForChart||[]).forEach(function(r,i){
       if(r.vm2) {
-        var ds = r.d || '';
-        if (!ds) { var m = (r.c||'').match(/([0-9]+) dia/i); if (m) ds = m[1]+' dias'; }
-        var diasNum = parseInt((ds).replace(/[^0-9]/g,''))||0;
-        chartRows += barRowFull('Concorrente '+(i+1)+(r.n?' · '+r.n.split(' ')[0]:''), r.vm2, diasColor(diasNum), false, ds);
+        // Try r.d first, fallback to extracting from carac string
+        console.log('NV'+i, 'r.d=', r.d, 'r.c=', r.c, 'r.obs=', r.obs, 'full=', JSON.stringify(r));
+        var diasStr = r.d || '';
+        if (!diasStr) {
+          var m = (r.c||'').match(/(\d+)\s*dia/i);
+          if (m) diasStr = m[1] + ' dias';
+        }
+        var diasNum = parseInt((diasStr).replace(/[^0-9]/g,''))||0;
+        var barColor = diasColor(diasNum);
+        chartRows += barRowFull(
+          'Concorrente '+(i+1)+(r.n?' · '+r.n.split(' ')[0]:''),
+          r.vm2, barColor, false, diasStr
+        );
       }
     });
-    chartRows += '<div style="height:1px;background:rgba(0,0,0,0.08);margin:6px 0 6px 168px"></div>';
-    (vSamplesForChart||[]).forEach(function(r,i){
-      if(r.vm2) chartRows += barRowFull('Vendido '+(i+1)+(r.n?' · '+r.n.split(' ')[0]:''), r.vm2, '#334155', false, null);
-    });;
 
     var chartHtml = chartRows ? '<div style="margin-top:12px;padding:14px 16px;background:rgba(0,0,0,0.02);border-radius:12px;border:1px solid rgba(0,0,0,0.06)">'
       + '<p style="font-size:.55rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1266CD;margin:0 0 10px">Comparativo de Valores · R$/m²</p>'
       + chartRows
-      + '<div style="display:flex;gap:16px;margin-top:10px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.06)">'
+      + '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.06)">'
       + '<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:2px;background:#10b981"></div><span style="font-size:.55rem;color:#6b7280">Valores sugeridos Liberty</span></div>'
-      + '<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:2px;background:#94a3b8"></div><span style="font-size:.55rem;color:#6b7280">Concorrentes ativos</span></div>'
-      + '<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:2px;background:#6b7280"></div><span style="font-size:.55rem;color:#6b7280">Vendidos</span></div>'
+      + '<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:2px;background:#334155"></div><span style="font-size:.55rem;color:#6b7280">Vendidos (preço real)</span></div>'
+      + '<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:2px;background:#94a3b8"></div><span style="font-size:.55rem;color:#6b7280">Concorrente &lt;30d</span></div>'
+      + '<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:2px;background:#ea580c"></div><span style="font-size:.55rem;color:#6b7280">Concorrente 60–90d</span></div>'
+      + '<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:2px;background:#dc2626"></div><span style="font-size:.55rem;color:#6b7280">Concorrente &gt;90d (rejeitado)</span></div>'
       + '</div></div>'
       : '';
 
