@@ -478,12 +478,12 @@ export function buildSlides(d, slides=[]){
     var nvSamplesForChart = (d.nv||[]).map(function(r){
       var val = parseInt((r.v||'').replace(/[^0-9]/g,'')||'0');
       var area = parseFloat((r.a||'').replace(/[^0-9.,]/g,'').replace(',','.')||'0');
-      return {n:r.n, vm2: area>0&&val>0 ? Math.round(val/area) : 0};
+      return {n:r.n, d:r.d||'', c:r.c||'', vm2: area>0&&val>0 ? Math.round(val/area) : 0};
     }).filter(function(r){return r.vm2>0;});
     var vSamplesForChart = (d.v||[]).map(function(r){
       var val = parseInt((r.v||'').replace(/[^0-9]/g,'')||'0');
       var area = parseFloat((r.a||'').replace(/[^0-9.,]/g,'').replace(',','.')||'0');
-      return {n:r.n, vm2: area>0&&val>0 ? Math.round(val/area) : 0};
+      return {n:r.n, d:r.d||'', c:r.c||'', vm2: area>0&&val>0 ? Math.round(val/area) : 0};
     }).filter(function(r){return r.vm2>0;});
     var faixas = [
       { key:'competitivo', label:'Competitivo',  color:'#2563eb', bg:'rgba(37,99,235,0.08)' },
@@ -527,20 +527,48 @@ export function buildSlides(d, slides=[]){
         + '</div></div></div>';
     }
 
+    function diasColor(d) {
+      d = Math.max(0, parseInt(d)||0);
+      if (d < 30)  return '#94a3b8';
+      if (d < 60)  return '#ca8a04';
+      if (d < 90)  return '#ea580c';
+      if (d < 180) return '#dc2626';
+      return '#7f1d1d';
+    }
+    function barRowFull(label, vm2, bgColor, bold, diasStr) {
+      var pct  = Math.round((vm2/maxVm2)*100);
+      var fmtd = 'R ' + vm2.toLocaleString('pt-BR') + '/m²';
+      var diasNum = parseInt((diasStr||'').replace(/[^0-9]/g,''))||0;
+      var badgeHtml = diasStr
+        ? '<div style="font-size:.55rem;font-weight:700;color:'+diasColor(diasNum)+';white-space:nowrap;text-align:left;min-width:52px">'+diasStr+'</div>'
+        : '<div style="min-width:52px"></div>';
+      return '<div style="display:grid;grid-template-columns:160px 1fr 60px;align-items:center;gap:8px;margin-bottom:6px">'
+        + '<div style="font-size:.6rem;font-weight:'+(bold?'700':'500')+';color:#3a3a3c;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+label+'</div>'
+        + '<div style="background:#f0f0f2;border-radius:4px;height:24px;position:relative">'
+        + '<div style="position:absolute;left:0;top:0;height:100%;width:'+pct+'%;background:'+bgColor+';border-radius:4px;display:flex;align-items:center;padding-left:8px">'
+        + '<span style="font-size:.58rem;font-weight:700;color:#fff;white-space:nowrap">'+fmtd+'</span>'
+        + '</div></div>'
+        + badgeHtml
+        + '</div>';
+    }
     var chartRows = '';
     var faixaCfg = [
-      {key:'competitivo', label:'VALOR COMPETITIVO', color:'#2563eb', bg:'#3b82f6'},
-      {key:'mercado',     label:'VALOR DE MERCADO',  color:'#059669', bg:'#10b981'},
-      {key:'otimista',    label:'VALOR OTIMISTA',    color:'#16a34a', bg:'#22c55e'},
+      {key:'competitivo', label:'VALOR COMPETITIVO', bg:'#3b82f6'},
+      {key:'mercado',     label:'VALOR DE MERCADO',  bg:'#10b981'},
+      {key:'otimista',    label:'VALOR OTIMISTA',    bg:'#22c55e'},
     ];
     faixaCfg.forEach(function(f){
-      if(p[f.key]&&p[f.key].vm2) chartRows += barRow(f.label, p[f.key].vm2, f.color, f.bg, true);
-    });
-    (nvSamplesForChart||[]).forEach(function(r,i){
-      if(r.vm2) chartRows += barRow('Concorrente '+(i+1)+(r.n?' · '+r.n.split(' ')[0]:''), r.vm2, '#64748b', '#94a3b8', false);
+      if(p[f.key]&&p[f.key].vm2) chartRows += barRowFull(f.label, p[f.key].vm2, f.bg, true, null);
     });
     (vSamplesForChart||[]).forEach(function(r,i){
-      if(r.vm2) chartRows += barRow('Vendido '+(i+1)+(r.n?' · '+r.n.split(' ')[0]:''), r.vm2, '#374151', '#6b7280', false);
+      if(r.vm2) chartRows += barRowFull('Vendido '+(i+1)+(r.n?' · '+r.n.split(' ')[0]:''), r.vm2, '#334155', false, null);
+    });
+    (nvSamplesForChart||[]).forEach(function(r,i){
+      if(r.vm2) {
+        var ds = r.d || '';
+        if (!ds) { var m = (r.c||'').match(/([0-9]+)\s*dia/i); if (m) ds = m[1]+' dias'; }
+        chartRows += barRowFull('Concorrente '+(i+1)+(r.n?' · '+r.n.split(' ')[0]:''), r.vm2, diasColor(parseInt((ds).replace(/[^0-9]/g,''))||0), false, ds);
+      }
     });
 
     var chartHtml = chartRows ? '<div style="margin-top:12px;padding:14px 16px;background:rgba(0,0,0,0.02);border-radius:12px;border:1px solid rgba(0,0,0,0.06)">'
