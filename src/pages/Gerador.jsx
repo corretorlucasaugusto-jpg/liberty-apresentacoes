@@ -16,9 +16,6 @@ export default function Gerador() {
   const editId = searchParams.get('edit') // ID of apresentacao to edit
   const { user } = useAuth()
   const formRef = useRef(null)
-  const draftIdRef = useRef(null)       // ID do rascunho criado automaticamente
-  const autoSaveTimer = useRef(null)    // debounce timer
-  const [autoSaveStatus, setAutoSaveStatus] = useState(null) // null | 'saving' | 'saved' | 'error
   const [v1loaded, setV1loaded] = useState(false)
   const [nvCount,  setNvCount]  = useState(2)
   const [vCount,   setVCount]   = useState(1)
@@ -316,12 +313,13 @@ export default function Gerador() {
       const a     = gv(`nv_a_${i}`)
       const rawC  = gv(`nv_c_${i}`)
       const parsed = parseCarac(rawC)
-      const q     = parsed.quartos
-      const vag   = parsed.vagas
-      const con   = parsed.conservacao
+      // Usa campos estruturados se preenchidos, senão fallback para parseCarac
+      const q     = gv(`nv_q_${i}`)     || parsed.quartos
+      const vag   = gv(`nv_vagas_${i}`) || parsed.vagas
+      const con   = gv(`nv_cons_${i}`)  || parsed.conservacao
       const v     = gv(`nv_v_${i}`)
       const dd    = gv(`nv_d_${i}`)
-      const obs   = parsed.obs
+      const obs   = gv(`nv_obs_${i}`)   || parsed.obs
       const url   = gv(`lk_${i}`)
       const carac = rawC
       if (a||v||n) d.nv.push({n, a, quartos:q, vagas:vag, conservacao:con, c:carac, v, d:dd, obs, url})
@@ -331,61 +329,16 @@ export default function Gerador() {
       const a     = gv(`v_a_${i}`)
       const rawC  = gv(`v_c_${i}`)
       const parsed = parseCarac(rawC)
-      const q     = parsed.quartos
-      const vag   = parsed.vagas
-      const con   = parsed.conservacao
+      // Usa campos estruturados se preenchidos, senão fallback para parseCarac
+      const q     = gv(`v_q_${i}`)     || parsed.quartos
+      const vag   = gv(`v_vagas_${i}`) || parsed.vagas
+      const con   = gv(`v_cons_${i}`)  || parsed.conservacao
       const v     = gv(`v_v_${i}`)
-      const obs   = parsed.obs
+      const obs   = gv(`v_obs_${i}`)   || parsed.obs
       const carac = rawC
       if (a||v||n) d.v.push({n, a, quartos:q, vagas:vag, conservacao:con, c:carac, v, obs})
     }
     return d
-  }
-
-  // ── Auto-save ──
-  const autoSave = async () => {
-    if (!user?.id) return
-    const rawData = collectData()
-    if (!rawData.residencial || rawData.residencial === 'Residencial') return
-    const activeId = editId || draftIdRef.current
-    setAutoSaveStatus('saving')
-    try {
-      if (activeId) {
-        await supabase.from('apresentacoes')
-          .update({ raw_data: rawData, updated_at: new Date().toISOString() })
-          .eq('id', activeId)
-      } else {
-        const { data: inserted, error } = await supabase.from('apresentacoes')
-          .insert({
-            user_id: user.id,
-            cliente: rawData.nome,
-            residencial: rawData.residencial,
-            bairro: rawData.bairro,
-            raw_data: rawData,
-            html: '',
-            draft: true,
-          })
-          .select('id')
-          .single()
-        if (error) throw error
-        if (inserted?.id) {
-          draftIdRef.current = inserted.id
-          window.history.replaceState(null, '', `?edit=${inserted.id}`)
-        }
-      }
-      setAutoSaveStatus('saved')
-      setTimeout(() => setAutoSaveStatus(null), 2000)
-    } catch (err) {
-      console.warn('Auto-save falhou:', err.message)
-      setAutoSaveStatus('error')
-      setTimeout(() => setAutoSaveStatus(null), 3000)
-    }
-  }
-
-  const handleFormBlur = (e) => {
-    if (e.target.tagName === 'BUTTON') return
-    clearTimeout(autoSaveTimer.current)
-    autoSaveTimer.current = setTimeout(autoSave, 600)
   }
 
   const handlePrecificar = async () => {
@@ -482,21 +435,7 @@ export default function Gerador() {
   return (
     <div className="space-y-6">
       <div>
-        <div style={{ display:'flex', alignItems:'center', gap:'12px', flexWrap:'wrap' }}>
-          <h1 className="text-2xl font-bold">{editId ? 'Editar Apresentação' : 'Gerar Apresentação · V2'}</h1>
-          {autoSaveStatus === 'saving' && (
-            <span style={{ fontSize:'11px', color:'#6b7280', display:'flex', alignItems:'center', gap:'4px' }}>
-              <div style={{ width:'10px', height:'10px', border:'1.5px solid #9ca3af', borderTopColor:'#374151', borderRadius:'50%', animation:'spin .7s linear infinite' }}/>
-              Salvando...
-            </span>
-          )}
-          {autoSaveStatus === 'saved' && (
-            <span style={{ fontSize:'11px', color:'#059669', fontWeight:'500' }}>✓ Salvo</span>
-          )}
-          {autoSaveStatus === 'error' && (
-            <span style={{ fontSize:'11px', color:'#ef4444' }}>⚠ Erro ao salvar</span>
-          )}
-        </div>
+        <h1 className="text-2xl font-bold">{editId ? 'Editar Apresentação' : 'Gerar Apresentação · V2'}</h1>
         {v1id && (
           <div style={{ marginTop:'8px', padding:'8px 14px', borderRadius:'8px', background:'rgba(18,102,205,0.1)', border:'1px solid rgba(18,102,205,0.2)', fontSize:'12px', color:'#1266CD', display:'inline-flex', alignItems:'center', gap:'6px' }}>
             ✓ Dados pré-preenchidos da V1
@@ -505,8 +444,7 @@ export default function Gerador() {
         <p className={`text-sm ${tmute} mt-2`}>Complete os dados de mercado. A IA gera as descrições.</p>
       </div>
       <form ref={formRef} onSubmit={handleGerar} className="space-y-6"
-        onChange={() => { if(precData) setDataChanged(true) }}
-        onBlur={handleFormBlur}>
+        onChange={() => { if(precData) setDataChanged(true) }}>
 
         <section className="card p-6 space-y-4">
           <p className="section-title">Identificação</p>
