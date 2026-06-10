@@ -124,7 +124,9 @@ export default function Gerador() {
           sv('p_tipo_imovel',  d.tipo_imovel)
           sv('p_posicao_solar',d.posicao_solar)
           sv('p_situacao',     d.situacao)
-          sv('p_reforma',      d.reforma)
+          sv('p_reforma',          d.reforma)
+          sv('p_condicao_interior', d.condicao_interior)
+          sv('p_condicao_fachada',  d.condicao_fachada)
           // Pontos positivos e negativos
           if (d.pos?.length) setPosItems(d.pos)
           if (d.neg?.length) setNegItems(d.neg)
