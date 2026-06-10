@@ -158,6 +158,22 @@ export default function Gerador() {
       })
   }, [editId])
 
+  const autoSave = () => {
+    if (!editId || !user?.id) return
+    clearTimeout(autoSaveRef.current)
+    autoSaveRef.current = setTimeout(async () => {
+      try {
+        const d = collectData()
+        await supabase.from('apresentacoes')
+          .update({ raw_data: d, updated_at: new Date().toISOString() })
+          .eq('id', editId)
+          .eq('user_id', user.id)
+      } catch (e) {
+        console.warn('Auto-save V2:', e.message)
+      }
+    }, 800)
+  }
+
   const gv = (name) => {
     // Use getElementsByName for reliability — works for inputs AND selects in nested components
     const els = document.getElementsByName(name)
@@ -407,7 +423,7 @@ export default function Gerador() {
         <p className={`text-sm ${tmute} mt-2`}>Complete os dados de mercado. A IA gera as descrições.</p>
       </div>
       <form ref={formRef} onSubmit={handleGerar} className="space-y-6"
-        onChange={() => { if(precData) setDataChanged(true) }}>
+        onChange={() => { if(precData) setDataChanged(true); autoSave() }}>
 
         <section className="card p-6 space-y-4">
           <p className="section-title">Identificação</p>
@@ -633,7 +649,7 @@ export default function Gerador() {
             <div className="space-y-2">
               {posItems.map((v,i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <input value={v} onChange={e=>{const a=[...posItems];a[i]=e.target.value;setPosItems(a);if(precData)setDataChanged(true)}}
+                  <input value={v} onChange={e=>{const a=[...posItems];a[i]=e.target.value;setPosItems(a);if(precData)setDataChanged(true);autoSave()}}
                     className="input-base flex-1" placeholder="Ex: Reformado, Vazado"/>
                   {posItems.length>1 && <button type="button" onClick={()=>setPosItems(p=>p.filter((_,j)=>j!==i))} className="label-muted hover:text-red-400 text-lg">×</button>}
                 </div>
@@ -646,7 +662,7 @@ export default function Gerador() {
             <div className="space-y-2">
               {negItems.map((v,i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <input value={v} onChange={e=>{const a=[...negItems];a[i]=e.target.value;setNegItems(a);if(precData)setDataChanged(true)}}
+                  <input value={v} onChange={e=>{const a=[...negItems];a[i]=e.target.value;setNegItems(a);if(precData)setDataChanged(true);autoSave()}}
                     className="input-base flex-1" placeholder="Ex: Necessita de reforma"/>
                   {negItems.length>1 && <button type="button" onClick={()=>setNegItems(p=>p.filter((_,j)=>j!==i))} className="label-muted hover:text-red-400 text-lg">×</button>}
                 </div>
