@@ -169,13 +169,8 @@ export default function Gerador() {
             })
           }
           // Restaura precificação salva
-          if (d.prec) {
-            setPrecData(d.prec)
-            setPrecStatus('done')
-          }
-          if (d.precAdj) {
-            setPrecAdj(d.precAdj)
-          }
+          if (d.prec) { setPrecData(d.prec); setPrecStatus('done') }
+          if (d.precAdj) setPrecAdj(d.precAdj)
         }, 100)
       })
   }, [editId])
@@ -349,7 +344,6 @@ export default function Gerador() {
       const carac = rawC
       if (a||v||n) d.v.push({n, a, quartos:q, vagas:vag, conservacao:con, c:carac, v, obs})
     }
-    // Persiste precData e precAdj no raw_data
     if (precData) d.prec = precData
     if (precAdj) d.precAdj = precAdj
     return d
@@ -391,7 +385,7 @@ export default function Gerador() {
     autoSaveTimer.current = setTimeout(autoSave, 600)
   }
 
-  const handlePrecificar = async () => {
+    const handlePrecificar = async () => {
     const d = collectData()
     if (!d.nv.length && !d.v.length) {
       alert('Adicione pelo menos um concorrente ou imóvel vendido antes de precificar.')
@@ -487,7 +481,7 @@ export default function Gerador() {
       <div>
         <div style={{ display:'flex', alignItems:'center', gap:'12px', flexWrap:'wrap' }}>
           <h1 className="text-2xl font-bold">{editId ? 'Editar Apresentação' : 'Gerar Apresentação · V2'}</h1>
-          {autoSaveStatus === 'saving' && <span style={{ fontSize:'11px', color:'#6b7280', display:'flex', alignItems:'center', gap:'4px' }}><div style={{ width:'10px', height:'10px', border:'1.5px solid #9ca3af', borderTopColor:'#374151', borderRadius:'50%', animation:'spin .7s linear infinite' }}/>Salvando...</span>}
+          {autoSaveStatus === 'saving' && <span style={{ fontSize:'11px', color:'#6b7280' }}>Salvando...</span>}
           {autoSaveStatus === 'saved' && <span style={{ fontSize:'11px', color:'#059669', fontWeight:'500' }}>✓ Salvo</span>}
           {autoSaveStatus === 'error' && <span style={{ fontSize:'11px', color:'#ef4444' }}>⚠ Erro ao salvar</span>}
         </div>
