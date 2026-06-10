@@ -30,6 +30,9 @@ export default function Gerador() {
   const [precStatus,    setPrecStatus]    = useState(null) // null | 'loading' | 'done' | 'error'
   const [precData,      setPrecData]      = useState(null) // resultado da precificação
   const [dataChanged,   setDataChanged]   = useState(false) // true when form changes after pricing
+  // Ajustes manuais de ±1% sobre os valores calculados pela IA
+  // { competitivo: 0, mercado: 0, otimista: 0 } — cada unidade = +1%
+  const [precAdj, setPrecAdj] = useState({ competitivo: 0, mercado: 0, otimista: 0 })
   const [selic,        setSelic]        = useState('14,50%')
 
   // Busca Selic atual via Edge Function (proxy para Banco Central)
@@ -158,20 +161,9 @@ export default function Gerador() {
       })
   }, [editId])
 
-  const autoSave = () => {
-    if (!editId || !user?.id) return
-    clearTimeout(autoSaveRef.current)
-    autoSaveRef.current = setTimeout(async () => {
-      try {
-        const d = collectData()
-        await supabase.from('apresentacoes')
-          .update({ raw_data: d, updated_at: new Date().toISOString() })
-          .eq('id', editId)
-          .eq('user_id', user.id)
-      } catch (e) {
-        console.warn('Auto-save V2:', e.message)
-      }
-    }, 800)
+  const tipoImovel = () => {
+    const els = document.getElementsByName('p_tipo_imovel')
+    return els.length > 0 ? els[0].value : 'Apartamento'
   }
 
   const gv = (name) => {
@@ -185,66 +177,61 @@ export default function Gerador() {
   const sv = (name, val) => { const el = formRef.current?.elements[name]; if (el) el.value = val }
 
   const extractFromContent = async (type, idx) => {
-    // Read values directly from DOM by name — more reliable than form.elements
-    const getVal = (name) => {
-      const els = document.getElementsByName(name)
-      return els.length > 0 ? (els[0].value || '').trim() : ''
-    }
-    const setVal = (name, val) => {
-      const els = document.getElementsByName(name)
-      if (els.length > 0) els[0].value = val
-    }
+    const getVal = (name) => { const els = document.getElementsByName(name); return els.length > 0 ? (els[0].value||'').trim() : '' }
+    const setVal = (name, val) => { const els = document.getElementsByName(name); if (els.length > 0) els[0].value = val }
+    const setSel = (name, val) => { const els = document.getElementsByName(name); if (els.length > 0 && val) els[0].value = val }
 
     const link   = type === 'nv' ? getVal(`lk_${idx}`) : ''
     const pasted = getVal(type === 'nv' ? `nv_content_${idx}` : `v_content_${idx}`)
 
-    if (!link && !pasted) {
-      alert('Cole o link ou o conteúdo do anúncio antes de extrair.')
-      return
-    }
+    if (!link && !pasted) { alert('Cole o link ou o conteúdo do anúncio antes de extrair.'); return }
 
     const setExtracting = type === 'nv' ? setExtractingNV : setExtractingV
+    const setNotFound   = type === 'nv' ? setNotFoundNV   : setNotFoundV
     setExtracting(prev => ({ ...prev, [idx]: true }))
+    setNotFound(prev => ({ ...prev, [idx]: {} })) // reset
 
     try {
       let content = pasted
-
-      // Fetch via Supabase proxy if only link provided
       if (link && !pasted) {
-        console.log('Fetching URL via proxy:', link)
-        const { data: fetchData, error: fetchErr } = await supabase.functions.invoke('gerar-apresentacao', {
+        const { data: fd } = await supabase.functions.invoke('gerar-apresentacao', {
           body: { data: { _fetch_url: true, url: link } }
         })
-        console.log('Fetch result:', fetchData, fetchErr)
-        content = fetchData?.content || ''
-        if (!content) throw new Error(fetchData?.error || 'Site bloqueou o acesso — cole o conteúdo manualmente')
+        content = fd?.content || ''
+        if (!content) throw new Error(fd?.error || 'Site bloqueou — cole o conteúdo manualmente')
       }
 
-      console.log('Extracting from content length:', content.length)
       const { data, error } = await supabase.functions.invoke('gerar-apresentacao', {
-        body: { data: { _extract: true, type, content } }
+        body: { data: { _extract: true, type, content, tipo: tipoImovel() } }
       })
-      console.log('Extract result:', data, error)
 
       if (!error && data?.extracted) {
         const ex = data.extracted
+        const nf = {} // track what wasn't found
+
         if (type === 'nv') {
-          if (ex.nome)        setVal(`nv_n_${idx}`,    ex.nome)
-          if (ex.area)        setVal(`nv_a_${idx}`,    ex.area)
-          if (ex.quartos)     setVal(`nv_q_${idx}`,    ex.quartos)
-          if (ex.vagas !== undefined && ex.vagas !== '') setVal(`nv_vagas_${idx}`, ex.vagas)
-          if (ex.conservacao) setVal(`nv_cons_${idx}`, ex.conservacao)
-          if (ex.valor)       setVal(`nv_v_${idx}`,    ex.valor)
-          if (ex.dias)        setVal(`nv_d_${idx}`,    ex.dias)
-          if (ex.obs)         setVal(`nv_obs_${idx}`,  ex.obs)
+          if (ex.nome)        setVal(`nv_n_${idx}`,     ex.nome);     else nf.nome = true
+          if (ex.area)        setVal(`nv_a_${idx}`,     ex.area);     else nf.area = true
+          if (ex.terreno)     setVal(`nv_terreno_${idx}`,ex.terreno)
+          if (ex.quartos)     setVal(`nv_q_${idx}`,     ex.quartos);  else nf.quartos = true
+          if (ex.vagas !== undefined && ex.vagas !== '') setVal(`nv_vagas_${idx}`, ex.vagas); else nf.vagas = true
+          if (ex.conservacao) setSel(`nv_cons_${idx}`,  ex.conservacao); else nf.conservacao = true
+          if (ex.valor)       setVal(`nv_v_${idx}`,     ex.valor);    else nf.valor = true
+          if (ex.dias)        setVal(`nv_d_${idx}`,     ex.dias);     else nf.dias = true
+          if (ex.obs)         setVal(`nv_obs_${idx}`,   ex.obs)
         } else {
-          if (ex.nome)        setVal(`v_n_${idx}`,     ex.nome)
-          if (ex.area)        setVal(`v_a_${idx}`,     ex.area)
-          if (ex.quartos)     setVal(`v_q_${idx}`,     ex.quartos)
-          if (ex.vagas !== undefined && ex.vagas !== '') setVal(`v_vagas_${idx}`, ex.vagas)
-          if (ex.conservacao) setVal(`v_cons_${idx}`,  ex.conservacao)
-          if (ex.valor)       setVal(`v_v_${idx}`,     ex.valor)
-          if (ex.obs)         setVal(`v_obs_${idx}`,   ex.obs)
+          if (ex.nome)        setVal(`v_n_${idx}`,      ex.nome);     else nf.nome = true
+          if (ex.area)        setVal(`v_a_${idx}`,      ex.area);     else nf.area = true
+          if (ex.terreno)     setVal(`v_terreno_${idx}`,ex.terreno)
+          if (ex.quartos)     setVal(`v_q_${idx}`,      ex.quartos);  else nf.quartos = true
+          if (ex.vagas !== undefined && ex.vagas !== '') setVal(`v_vagas_${idx}`, ex.vagas); else nf.vagas = true
+          if (ex.conservacao) setSel(`v_cons_${idx}`,   ex.conservacao); else nf.conservacao = true
+          if (ex.valor)       setVal(`v_v_${idx}`,      ex.valor);    else nf.valor = true
+          if (ex.obs)         setVal(`v_obs_${idx}`,    ex.obs)
+        }
+
+        if (Object.keys(nf).length > 0) {
+          setNotFound(prev => ({ ...prev, [idx]: nf }))
         }
       } else if (error) {
         throw new Error(error.message)
@@ -256,29 +243,45 @@ export default function Gerador() {
     setExtracting(prev => ({ ...prev, [idx]: false }))
   }
 
+  // Parseia o campo c (texto livre do DFImóveis) para extrair quartos, vagas e conservação
   const parseCarac = (c) => {
     if (!c) return { quartos: '', vagas: '', conservacao: '', obs: '' }
     const s = c.toLowerCase()
+
+    // Quartos
     let quartos = ''
     const qtMatch = s.match(/(\d+)\s*(quartos?|qts?|q\b)/)
     if (qtMatch) quartos = qtMatch[1]
+
+    // Vagas
     let vagas = ''
-    if (/sem\s*vaga/.test(s)) { vagas = '0' }
-    else { const vagMatch = s.match(/(\d+)\s*vaga/); if (vagMatch) vagas = vagMatch[1] }
+    if (/sem\s*vaga/.test(s)) {
+      vagas = '0'
+    } else {
+      const vagMatch = s.match(/(\d+)\s*vaga/)
+      if (vagMatch) vagas = vagMatch[1]
+    }
+
+    // Conservação — mapeia para os valores padrão
     let conservacao = ''
-    if (/alto\s*padr/.test(s)) conservacao = 'Alto padrão'
-    else if (/reform/.test(s)) conservacao = 'Reformado'
-    else if (/parcial/.test(s)) conservacao = 'Parcialmente reformado'
-    else if (/precisa/.test(s)) conservacao = 'Precisa de reforma'
-    else if (/original/.test(s)) conservacao = 'Original'
-    const obs = []
-    if (/nascente/.test(s)) obs.push('Nascente')
-    if (/poente/.test(s)) obs.push('Poente')
-    if (/canto/.test(s)) obs.push('Canto')
-    if (/andar alto/.test(s)) obs.push('Andar alto')
-    if (/andar baixo/.test(s)) obs.push('Andar baixo')
-    if (/cobertura/.test(s)) obs.push('Cobertura')
-    return { quartos, vagas, conservacao, obs: obs.join(' · ') }
+    if (/alto\s*padr[ãa]o|luxo/.test(s))              conservacao = 'Alto padrão'
+    else if (/reform/.test(s))                         conservacao = 'Reformado'
+    else if (/parcial/.test(s))                        conservacao = 'Parcialmente reformado'
+    else if (/precisa|deteriorad/.test(s))             conservacao = 'Precisa de reforma'
+    else if (/original|sem\s*reforma/.test(s))         conservacao = 'Original'
+
+    // Obs — resto relevante (posição solar, andar, suíte, canto)
+    const obsTerms = []
+    if (/nascente/.test(s))  obsTerms.push('Nascente')
+    if (/poente/.test(s))    obsTerms.push('Poente')
+    if (/vazado/.test(s))    obsTerms.push('Vazado')
+    if (/canto/.test(s))     obsTerms.push('Canto')
+    if (/su[ií]te/.test(s))  obsTerms.push('Suíte')
+    if (/andar\s*alto|alto\s*andar/.test(s)) obsTerms.push('Andar alto')
+    if (/andar\s*baixo|baixo\s*andar/.test(s)) obsTerms.push('Andar baixo')
+    if (/cobertura/.test(s)) obsTerms.push('Cobertura')
+
+    return { quartos, vagas, conservacao, obs: obsTerms.join(' · ') }
   }
 
   const collectData = () => {
@@ -298,24 +301,31 @@ export default function Gerador() {
       comps: [1,2,3,4].map(i => ({ t: gv(`c${i}t`), d: '' })).filter(c => c.t),
     }
     for (let i = 1; i <= nvCount; i++) {
-      const n      = gv(`nv_n_${i}`)
-      const a      = gv(`nv_a_${i}`)
-      const rawC   = gv(`nv_c_${i}`)
+      const n     = gv(`nv_n_${i}`)
+      const a     = gv(`nv_a_${i}`)
+      const rawC  = gv(`nv_c_${i}`)
       const parsed = parseCarac(rawC)
-      const v      = gv(`nv_v_${i}`)
-      const dd     = gv(`nv_d_${i}`)
-      const url    = gv(`lk_${i}`)
-      if (a||rawC||v||n) d.nv.push({n, a, quartos:parsed.quartos, vagas:parsed.vagas, conservacao:parsed.conservacao, c:rawC, v, d:dd, obs:parsed.obs, url})
+      const q     = parsed.quartos
+      const vag   = parsed.vagas
+      const con   = parsed.conservacao
+      const v     = gv(`nv_v_${i}`)
+      const dd    = gv(`nv_d_${i}`)
+      const obs   = parsed.obs
+      const url   = gv(`lk_${i}`)
+      const carac = rawC
+      if (a||v||n) d.nv.push({n, a, quartos:q, vagas:vag, conservacao:con, c:carac, v, d:dd, obs, url})
     }
     for (let i = 1; i <= vCount; i++) {
-      const n   = gv(`v_n_${i}`)
-      const a   = gv(`v_a_${i}`)
-      const q   = gv(`v_q_${i}`)
-      const vag = gv(`v_vagas_${i}`)
-      const con = gv(`v_cons_${i}`)
-      const v   = gv(`v_v_${i}`)
-      const obs = gv(`v_obs_${i}`)
-      const carac = [q&&`${q}Q`, vag&&`${vag}V`, con, obs].filter(Boolean).join(' · ')
+      const n     = gv(`v_n_${i}`)
+      const a     = gv(`v_a_${i}`)
+      const rawC  = gv(`v_c_${i}`)
+      const parsed = parseCarac(rawC)
+      const q     = parsed.quartos
+      const vag   = parsed.vagas
+      const con   = parsed.conservacao
+      const v     = gv(`v_v_${i}`)
+      const obs   = parsed.obs
+      const carac = rawC
       if (a||v||n) d.v.push({n, a, quartos:q, vagas:vag, conservacao:con, c:carac, v, obs})
     }
     return d
@@ -330,6 +340,7 @@ export default function Gerador() {
     setPrecStatus('loading')
     setPrecData(null)
     setDataChanged(false)
+    setPrecAdj({ competitivo: 0, mercado: 0, otimista: 0 })
     try {
       const { data, error } = await supabase.functions.invoke('gerar-apresentacao', {
         body: { data: {
@@ -423,7 +434,7 @@ export default function Gerador() {
         <p className={`text-sm ${tmute} mt-2`}>Complete os dados de mercado. A IA gera as descrições.</p>
       </div>
       <form ref={formRef} onSubmit={handleGerar} className="space-y-6"
-        onChange={() => { if(precData) setDataChanged(true); autoSave() }}>
+        onChange={() => { if(precData) setDataChanged(true) }}>
 
         <section className="card p-6 space-y-4">
           <p className="section-title">Identificação</p>
@@ -527,35 +538,104 @@ export default function Gerador() {
                   { key:'otimista',    label:'Otimista',     color:'#d97706', bg: dark?'rgba(217,119,6,0.12)':'#FFFBEB'  },
                 ].map(({ key, label, color, bg, rec }) => {
                   const faixa = precData[key]
+                  const adj   = precAdj[key] || 0  // ajuste acumulado em %
+                  // Calcula valor ajustado
+                  const totalBase = faixa.total
+                  const totalAdj  = Math.round(totalBase * (1 + adj / 100) / 1000) * 1000
+                  const areaNum   = parseFloat((precData.mercado?.vm2 > 0 && totalAdj > 0)
+                    ? totalAdj / (precData.mercado.total / precData.mercado.vm2)
+                    : 0)
+                  // Formata valor ajustado
+                  const fmtAdj  = 'R$\u00a0' + totalAdj.toLocaleString('pt-BR')
+                  const vm2Adj  = faixa.vm2 > 0 && faixa.total > 0
+                    ? Math.round(faixa.vm2 * (totalAdj / faixa.total))
+                    : faixa.vm2
+                  const vm2AdjFmt = 'R$\u00a0' + vm2Adj.toLocaleString('pt-BR') + '/m²'
+
+                  const applyValue = () => {
+                    const sv = (n,v) => { const el = document.getElementsByName(n); if(el.length) el[0].value=v }
+                    sv('vl_div', fmtAdj)
+                    sv('vl_fec', precData.mercado
+                      ? 'R$\u00a0' + (Math.round(precData.mercado.total * (1 + (precAdj.mercado||0) / 100) / 1000) * 1000).toLocaleString('pt-BR')
+                      : fmtAdj)
+                    sv('vl_med', vm2AdjFmt)
+                  }
+
+                  const btnStyle = {
+                    width:'26px', height:'26px', borderRadius:'50%',
+                    border: `1px solid ${color}60`,
+                    background: dark ? `${color}22` : `${color}18`,
+                    color, fontSize:'16px', fontWeight:'700', lineHeight:'1',
+                    cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                    flexShrink: 0, userSelect:'none',
+                    transition:'background .15s',
+                  }
+
                   return (
                     <div key={key}
-                      onClick={() => {
-                        const sv = (n,v) => { const el = document.getElementsByName(n); if(el.length) el[0].value=v }
-                        sv('vl_div', faixa.totalFmt)
-                        sv('vl_fec', precData.mercado.totalFmt)
-                        sv('vl_med', faixa.vm2Fmt)
-                      }}
                       style={{
                         background: bg, borderRadius:'12px', padding:'14px',
                         border: `1px solid ${color}40`,
-                        cursor:'pointer', transition:'transform .15s',
-                        position:'relative',
+                        transition:'transform .15s', position:'relative',
+                        display:'flex', flexDirection:'column', gap:'0',
                       }}
-                      onMouseEnter={e => e.currentTarget.style.transform='translateY(-2px)'}
-                      onMouseLeave={e => e.currentTarget.style.transform='translateY(0)'}
                     >
                       {rec && precData.recomendacao === key && (
                         <div style={{ position:'absolute', top:'-8px', right:'8px', background:color, color:'#fff', fontSize:'9px', fontWeight:'700', padding:'2px 7px', borderRadius:'10px', letterSpacing:'0.05em' }}>
                           SUGERIDO
                         </div>
                       )}
-                      <div style={{ fontSize:'10px', fontWeight:'700', letterSpacing:'0.08em', textTransform:'uppercase', color, marginBottom:'6px' }}>{label}</div>
-                      <div style={{ fontSize:'1.1rem', fontWeight:'800', color: dark?'#fff':'#111', marginBottom:'2px' }}>
-                        {faixa.totalFmt}
+                      <div style={{ fontSize:'10px', fontWeight:'700', letterSpacing:'0.08em', textTransform:'uppercase', color, marginBottom:'8px' }}>{label}</div>
+
+                      {/* Valor + botões ±1% */}
+                      <div style={{ display:'flex', alignItems:'center', gap:'6px', marginBottom:'2px' }}>
+                        <button type="button" style={btnStyle}
+                          onMouseEnter={e => e.currentTarget.style.background = dark ? `${color}40` : `${color}30`}
+                          onMouseLeave={e => e.currentTarget.style.background = dark ? `${color}22` : `${color}18`}
+                          onClick={() => setPrecAdj(prev => ({ ...prev, [key]: (prev[key]||0) - 1 }))}>
+                          −
+                        </button>
+                        <div style={{ fontSize:'1.05rem', fontWeight:'800', color: dark?'#fff':'#111', flex:1, textAlign:'center' }}>
+                          {fmtAdj}
+                        </div>
+                        <button type="button" style={btnStyle}
+                          onMouseEnter={e => e.currentTarget.style.background = dark ? `${color}40` : `${color}30`}
+                          onMouseLeave={e => e.currentTarget.style.background = dark ? `${color}22` : `${color}18`}
+                          onClick={() => setPrecAdj(prev => ({ ...prev, [key]: (prev[key]||0) + 1 }))}>
+                          +
+                        </button>
                       </div>
-                      <div style={{ fontSize:'11px', color: dark?'rgba(255,255,255,0.4)':'#6b7280' }}>{faixa.vm2Fmt}</div>
+
+                      {/* Indicador de ajuste acumulado */}
+                      {adj !== 0 && (
+                        <div style={{ fontSize:'10px', textAlign:'center', color: adj > 0 ? '#059669' : '#ef4444', fontWeight:'600', marginBottom:'2px' }}>
+                          {adj > 0 ? `+${adj}%` : `${adj}%`} sobre base
+                          <button type="button"
+                            onClick={() => setPrecAdj(prev => ({ ...prev, [key]: 0 }))}
+                            style={{ marginLeft:'6px', color: dark?'rgba(255,255,255,0.4)':'#9ca3af', background:'none', border:'none', cursor:'pointer', fontSize:'10px', padding:0 }}>
+                            (zerar)
+                          </button>
+                        </div>
+                      )}
+
+                      <div style={{ fontSize:'11px', color: dark?'rgba(255,255,255,0.4)':'#6b7280', textAlign:'center' }}>{vm2AdjFmt}</div>
                       <div style={{ fontSize:'10px', color: dark?'rgba(255,255,255,0.35)':'#9ca3af', marginTop:'6px', lineHeight:'1.4' }}>{faixa.descricao}</div>
-                      <div style={{ fontSize:'10px', color, marginTop:'8px', fontWeight:'600' }}>← Usar este valor</div>
+
+                      {/* Botão usar valor */}
+                      <button type="button"
+                        onClick={applyValue}
+                        style={{
+                          marginTop:'10px', width:'100%', padding:'6px 0',
+                          borderRadius:'8px', border:`1px solid ${color}50`,
+                          background: dark ? `${color}18` : `${color}12`,
+                          color, fontSize:'11px', fontWeight:'600', cursor:'pointer',
+                          transition:'background .15s',
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = dark ? `${color}30` : `${color}22`}
+                        onMouseLeave={e => e.currentTarget.style.background = dark ? `${color}18` : `${color}12`}
+                      >
+                        ← Usar este valor
+                      </button>
                     </div>
                   )
                 })}
@@ -612,9 +692,11 @@ export default function Gerador() {
           </div>
           {Array.from({length:nvCount},(_,i) => (
             <NVRow key={i} idx={i+1}
-              onRemove={() => setNvCount(n=>Math.max(1,n-1))}
+              onRemove={() => { setNvCount(n=>Math.max(1,n-1)); if(precData) setDataChanged(true) }}
               onExtract={(idx) => extractFromContent('nv', idx)}
               extracting={!!extractingNV[i+1]}
+              tipoImovel={tipoImovel()}
+              notFound={notFoundNV[i+1] || {}}
             />
           ))}
           <p className={`text-xs ${tmute} text-right`}>{nvCount}/{MAX_NV}</p>
@@ -633,9 +715,11 @@ export default function Gerador() {
           </div>
           {Array.from({length:vCount},(_,i) => (
             <VRow key={i} idx={i+1}
-              onRemove={() => setVCount(n=>Math.max(1,n-1))}
+              onRemove={() => { setVCount(n=>Math.max(1,n-1)); if(precData) setDataChanged(true) }}
               onExtract={(idx) => extractFromContent('v', idx)}
               extracting={!!extractingV[i+1]}
+              tipoImovel={tipoImovel()}
+              notFound={notFoundV[i+1] || {}}
             />
           ))}
           <p className={`text-xs ${tmute} text-right`}>{vCount}/{MAX_V}</p>
@@ -649,7 +733,7 @@ export default function Gerador() {
             <div className="space-y-2">
               {posItems.map((v,i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <input value={v} onChange={e=>{const a=[...posItems];a[i]=e.target.value;setPosItems(a);if(precData)setDataChanged(true);autoSave()}}
+                  <input value={v} onChange={e=>{const a=[...posItems];a[i]=e.target.value;setPosItems(a);if(precData)setDataChanged(true)}}
                     className="input-base flex-1" placeholder="Ex: Reformado, Vazado"/>
                   {posItems.length>1 && <button type="button" onClick={()=>setPosItems(p=>p.filter((_,j)=>j!==i))} className="label-muted hover:text-red-400 text-lg">×</button>}
                 </div>
@@ -662,7 +746,7 @@ export default function Gerador() {
             <div className="space-y-2">
               {negItems.map((v,i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <input value={v} onChange={e=>{const a=[...negItems];a[i]=e.target.value;setNegItems(a);if(precData)setDataChanged(true);autoSave()}}
+                  <input value={v} onChange={e=>{const a=[...negItems];a[i]=e.target.value;setNegItems(a);if(precData)setDataChanged(true)}}
                     className="input-base flex-1" placeholder="Ex: Necessita de reforma"/>
                   {negItems.length>1 && <button type="button" onClick={()=>setNegItems(p=>p.filter((_,j)=>j!==i))} className="label-muted hover:text-red-400 text-lg">×</button>}
                 </div>
