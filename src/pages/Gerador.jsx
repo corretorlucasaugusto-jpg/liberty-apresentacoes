@@ -32,6 +32,7 @@ export default function Gerador() {
   const [notFoundV,     setNotFoundV]     = useState({})
   const [precStatus,    setPrecStatus]    = useState(null) // null | 'loading' | 'done' | 'error'
   const [precData,      setPrecData]      = useState(null) // resultado da precificação
+  const [editData,       setEditData]       = useState(null) // dados carregados para edição
   const [dataChanged,   setDataChanged]   = useState(false) // true when form changes after pricing
   // Ajustes manuais de ±1% sobre os valores calculados pela IA
   // { competitivo: 0, mercado: 0, otimista: 0 } — cada unidade = +1%
@@ -85,7 +86,7 @@ export default function Gerador() {
             setNegItems(data.neg.map(n => n.titulo || n).filter(Boolean))
           }
           setV1loaded(true)
-        }, 100)
+        }, 500)
       })
   }, [v1id, v1loaded])
 
@@ -105,9 +106,10 @@ export default function Gerador() {
           residencial: data.residencial,
           bairro:      data.bairro,
         }
+        setEditData(d)
         // Pre-fill all form fields
         setTimeout(() => {
-          const sv = (name, val) => { const els = document.getElementsByName(name); if (els.length && val) els[0].value = val }
+          const sv = (name, val) => { const els = document.getElementsByName(name); if (els.length && (val !== undefined && val !== null && val !== '')) els[0].value = val }
           sv('p_nome',         d.nome)
           sv('p_corretor',     d.corretor)
           sv('p_residencial',  d.residencial)
@@ -124,9 +126,7 @@ export default function Gerador() {
           sv('p_tipo_imovel',  d.tipo_imovel)
           sv('p_posicao_solar',d.posicao_solar)
           sv('p_situacao',     d.situacao)
-          sv('p_reforma',          d.reforma)
-          sv('p_condicao_interior', d.condicao_interior)
-          sv('p_condicao_fachada',  d.condicao_fachada)
+          sv('p_reforma',      d.reforma)
           // Pontos positivos e negativos
           if (d.pos?.length) setPosItems(d.pos)
           if (d.neg?.length) setNegItems(d.neg)
@@ -621,6 +621,15 @@ export default function Gerador() {
                       ? 'R$\u00a0' + (Math.round(precData.mercado.total * (1 + (precAdj.mercado||0) / 100) / 1000) * 1000).toLocaleString('pt-BR')
                       : fmtAdj)
                     sv('vl_med', vm2AdjFmt)
+                    // Auto-save silencioso após aplicar valor
+                    if (editId) {
+                      setTimeout(() => {
+                        const rawData = collectData()
+                        if (precData) rawData.prec = precData
+                        if (precAdj) rawData.precAdj = precAdj
+                        supabase.from('apresentacoes').update({ raw_data: rawData, updated_at: new Date().toISOString() }).eq('id', editId).then(() => {})
+                      }, 300)
+                    }
                   }
 
                   const btnStyle = {
