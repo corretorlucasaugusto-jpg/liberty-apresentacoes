@@ -1,3 +1,4 @@
+// MANUAL_EDIT Ter  9 Jun 2026 22:22:04 -03
 // Auto-generated — do not edit
 
 export function buildS5(d){
