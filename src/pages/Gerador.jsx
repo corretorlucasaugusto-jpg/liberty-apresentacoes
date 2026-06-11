@@ -449,8 +449,30 @@ export default function Gerador() {
       } catch (edgeErr) { console.warn('Edge function:', edgeErr.message) }
       if (!enrichedData.posEnriched) enrichedData.posEnriched = (enrichedData.pos||[]).map(t=>({t,d:''}))
       if (!enrichedData.negEnriched) enrichedData.negEnriched = (enrichedData.neg||[]).map(t=>({t,d:''}))
-      // Inject pricing data if available
-      if (precData) enrichedData.prec = precData
+      // Inject pricing data — aplicando os ajustes manuais (precAdj) sobre os valores base
+      if (precData) {
+        const applyAdj = (faixa, key) => {
+          if (!faixa) return faixa
+          const adj = (precAdj && precAdj[key]) || 0
+          if (adj === 0) return faixa
+          const totalAdj = Math.round(faixa.total * (1 + adj / 100) / 1000) * 1000
+          const areaNum  = enrichedData.area ? parseFloat((enrichedData.area||'').replace(/[^0-9.,]/g,'').replace(',','.')) : 0
+          const vm2Adj   = areaNum > 0 ? Math.round(totalAdj / areaNum) : faixa.vm2
+          return {
+            ...faixa,
+            total:    totalAdj,
+            vm2:      vm2Adj,
+            totalFmt: 'R ' + totalAdj.toLocaleString('pt-BR'),
+            vm2Fmt:   'R ' + vm2Adj.toLocaleString('pt-BR') + '/m²',
+          }
+        }
+        enrichedData.prec = {
+          ...precData,
+          competitivo: applyAdj(precData.competitivo, 'competitivo'),
+          mercado:     applyAdj(precData.mercado,     'mercado'),
+          otimista:    applyAdj(precData.otimista,    'otimista'),
+        }
+      }
       const html = buildHTML(enrichedData)
       if (user?.id) {
         const insertData = {

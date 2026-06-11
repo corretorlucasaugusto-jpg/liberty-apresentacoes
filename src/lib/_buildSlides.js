@@ -539,17 +539,28 @@ export function buildSlides(d, slides=[]){
       rulerDots += '<div style="position:absolute;top:24px;height:10px;left:'+zLeft+'%;width:'+zWidth+'%;background:rgba(22,163,74,0.2);border-radius:3px;border:1px solid #16a34a55"></div>';
     }
 
-    // Pontos dos concorrentes (bairro = cinza, amplo = amarelo)
+    // Pontos dos concorrentes (bairro = cinza, amplo = amarelo) — com badge de dias
     (d.nv||[]).forEach(function(r) {
       var v = parseVal(r.v);
       if (!v) return;
       var isCat = (r.cat || 'local') === 'amplo';
-      var cor = isCat ? '#f59e0b' : '#9ca3af';
+      var diasNum = parseInt((r.d||'').replace(/[^0-9]/g,''))||0;
+      // Cor por dias parados
+      var cor;
+      if (isCat) cor = '#f59e0b';
+      else if (diasNum === 0) cor = '#9ca3af';
+      else if (diasNum < 30) cor = '#27ae60';
+      else if (diasNum < 60) cor = '#f59e0b';
+      else if (diasNum < 90) cor = '#e67e22';
+      else if (diasNum < 180) cor = '#c0392b';
+      else cor = '#7f0000';
       var left = pct(v);
       var label = (r.n || 'Conc').split(' ')[0];
-      rulerDots += '<div style="position:absolute;left:'+left+'%;top:16px;transform:translateX(-50%)">'
-        + '<div style="width:20px;height:20px;border-radius:50%;background:'+cor+';border:2px solid #fff;margin:0 auto;box-shadow:0 1px 4px rgba(0,0,0,.18)"></div>'
-        + '<div style="font-size:.42rem;color:#888;text-align:center;margin-top:2px;white-space:nowrap">'+e(label)+'</div>'
+      var diasLabel = diasNum > 0 ? diasNum+'d' : '';
+      rulerDots += '<div style="position:absolute;left:'+left+'%;top:12px;transform:translateX(-50%);text-align:center">'
+        + '<div style="width:22px;height:22px;border-radius:50%;background:'+cor+';border:2px solid #fff;margin:0 auto;box-shadow:0 1px 5px rgba(0,0,0,.22)"></div>'
+        + '<div style="font-size:.4rem;color:#555;margin-top:2px;white-space:nowrap;font-weight:600">'+e(label)+'</div>'
+        + (diasLabel ? '<div style="font-size:.42rem;color:'+cor+';font-weight:700;white-space:nowrap">'+diasLabel+'</div>' : '')
         + '</div>';
     });
 
@@ -678,16 +689,28 @@ export function buildSlides(d, slides=[]){
       var barsRows = rows.map(function(r) {
         var pct = Math.round((r.val / maxV) * 100);
         var valFmt = 'R$ ' + Math.round(r.val/1000).toLocaleString('pt-BR') + 'k';
-        var diasTxt = r.dias !== null ? (r.dias + 'd') : '';
-        var diasFlag = r.dias !== null && r.dias >= 90 ? ' ✕' : (r.dias !== null && r.dias >= 60 ? ' ●' : '');
-        var diasColor = r.dias !== null && r.dias >= 90 ? '#c0392b' : (r.dias !== null && r.dias >= 60 ? '#e67e22' : '#888');
-        return '<div style="display:grid;grid-template-columns:160px 1fr 90px;align-items:center;gap:6px;margin-bottom:4px">'
-          + '<div style="font-size:.6rem;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+e(r.label)+'</div>'
-          + '<div style="background:#f0f0f2;border-radius:3px;overflow:hidden;height:18px">'
+        // Dias: badge colorido e proeminente
+        var diasBadge = '';
+        if (r.dias !== null && r.dias > 0) {
+          var dCor, dBg, dIcon;
+          if (r.dias >= 180) { dCor='#fff'; dBg='#7f0000'; dIcon='✕✕'; }
+          else if (r.dias >= 90) { dCor='#fff'; dBg='#c0392b'; dIcon='✕'; }
+          else if (r.dias >= 60) { dCor='#fff'; dBg='#e67e22'; dIcon='●'; }
+          else if (r.dias >= 30) { dCor='#fff'; dBg='#f59e0b'; dIcon=''; }
+          else { dCor='#fff'; dBg='#27ae60'; dIcon=''; }
+          diasBadge = '<span style="display:inline-block;background:'+dBg+';color:'+dCor+';font-size:.55rem;font-weight:700;padding:2px 7px;border-radius:12px;white-space:nowrap;letter-spacing:.03em">'
+            + dIcon+(dIcon?' ':'')+r.dias+'d'
+            + '</span>';
+        } else if (r.dias === 0) {
+          diasBadge = '<span style="font-size:.52rem;color:#888">—</span>';
+        }
+        return '<div style="display:grid;grid-template-columns:160px 1fr auto;align-items:center;gap:8px;margin-bottom:5px">'
+          + '<div style="font-size:.6rem;color:#444;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:'+(r.isSug?'700':'400')+'">'+e(r.label)+'</div>'
+          + '<div style="background:#f0f0f2;border-radius:3px;overflow:hidden;height:20px">'
           + '<div style="height:100%;width:'+pct+'%;background:'+r.cor+';border-radius:3px;display:flex;align-items:center;padding-left:6px">'
-          + '<span style="font-size:.55rem;font-weight:700;color:#fff;white-space:nowrap">'+valFmt+'</span>'
+          + '<span style="font-size:.58rem;font-weight:700;color:#fff;white-space:nowrap">'+valFmt+'</span>'
           + '</div></div>'
-          + '<div style="font-size:.56rem;color:'+diasColor+';text-align:right">'+e(diasTxt)+diasFlag+'</div>'
+          + '<div style="min-width:52px;text-align:right">'+diasBadge+'</div>'
           + '</div>';
       }).join('');
       return '<div style="margin-top:12px">'
