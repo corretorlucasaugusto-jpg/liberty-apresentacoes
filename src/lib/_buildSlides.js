@@ -129,10 +129,32 @@ export function buildSlides(d, slides=[]){
         <div class="s1-prop-addr">${e(d.endereco)}<br>${e(d.bairro)}</div>
       </div>
       <div class="s1-stats">
-        <div class="s1-stat"><div class="s1-stat-n">${e(d.area)}m²</div><div class="s1-stat-d"><strong>Área privativa</strong></div></div>
-        <div class="s1-stat"><div class="s1-stat-n">${e(d.quartos)}</div><div class="s1-stat-d"><strong>Quartos</strong></div></div>
-        <div class="s1-stat"><div class="s1-stat-n">${e(d.vagas)||"—"}</div><div class="s1-stat-d"><strong>Vagas de garagem</strong></div></div>
-        <div class="s1-stat"><div class="s1-stat-n">${e(d.andar)}</div><div class="s1-stat-d"><strong>${e(d.andar)==="Térrea"?"Casa térrea":"Andar "+e(d.andar)}</strong></div></div>
+        ${(function(){
+          var tipo = (d.tipo_imovel||'').toLowerCase();
+          var isTer  = tipo.includes('terreno');
+          var isCasa = tipo.includes('casa') || tipo.includes('cobertura');
+          var isCom  = tipo.includes('comercial');
+          var stats  = '';
+          if (isTer) {
+            stats += '<div class="s1-stat"><div class="s1-stat-n">'+e(d.area||d.terreno||'—')+'m²</div><div class="s1-stat-d"><strong>Área do terreno</strong></div></div>';
+            stats += '<div class="s1-stat"><div class="s1-stat-n">'+e(d.bairro||'—')+'</div><div class="s1-stat-d"><strong>Localização</strong></div></div>';
+          } else if (isCasa) {
+            stats += '<div class="s1-stat"><div class="s1-stat-n">'+e(d.area)+'m²</div><div class="s1-stat-d"><strong>Área privativa</strong></div></div>';
+            if (d.terreno && d.terreno !== '—') stats += '<div class="s1-stat"><div class="s1-stat-n">'+e(d.terreno)+'m²</div><div class="s1-stat-d"><strong>Área do terreno</strong></div></div>';
+            stats += '<div class="s1-stat"><div class="s1-stat-n">'+e(d.quartos)+'</div><div class="s1-stat-d"><strong>Quartos</strong></div></div>';
+            stats += '<div class="s1-stat"><div class="s1-stat-n">'+(e(d.vagas)||'—')+'</div><div class="s1-stat-d"><strong>Vagas</strong></div></div>';
+          } else if (isCom) {
+            stats += '<div class="s1-stat"><div class="s1-stat-n">'+e(d.area)+'m²</div><div class="s1-stat-d"><strong>Área total</strong></div></div>';
+            stats += '<div class="s1-stat"><div class="s1-stat-n">'+(e(d.andar)||'—')+'</div><div class="s1-stat-d"><strong>Localização</strong></div></div>';
+            stats += '<div class="s1-stat"><div class="s1-stat-n">'+(e(d.vagas)||'—')+'</div><div class="s1-stat-d"><strong>Vagas</strong></div></div>';
+          } else {
+            stats += '<div class="s1-stat"><div class="s1-stat-n">'+e(d.area)+'m²</div><div class="s1-stat-d"><strong>Área privativa</strong></div></div>';
+            stats += '<div class="s1-stat"><div class="s1-stat-n">'+e(d.quartos)+'</div><div class="s1-stat-d"><strong>Quartos</strong></div></div>';
+            stats += '<div class="s1-stat"><div class="s1-stat-n">'+(e(d.vagas)||'—')+'</div><div class="s1-stat-d"><strong>Vagas de garagem</strong></div></div>';
+            stats += '<div class="s1-stat"><div class="s1-stat-n">'+e(d.andar)+'</div><div class="s1-stat-d"><strong>'+(e(d.andar)==='Térrea'?'Casa térrea':'Andar '+e(d.andar))+'</strong></div></div>';
+          }
+          return stats;
+        })()}
       </div>
       <div class="s1-foot">Liberty Imóveis · 10 anos de mercado</div>
     </div>
@@ -519,7 +541,7 @@ export function buildSlides(d, slides=[]){
     function barRow(label, vm2, color, bgColor, bold) {
       var pct = Math.round((vm2/maxVm2)*100);
       var fmtd = 'R$\u00a0' + vm2.toLocaleString('pt-BR') + '/m\u00b2';
-      return '<div style="display:grid;grid-template-columns:160px 1fr;align-items:center;gap:8px;margin-bottom:5px">'
+      return '<div style="display:grid;grid-template-columns:200px 1fr;align-items:center;gap:8px;margin-bottom:5px">'
         + '<div style="font-size:.6rem;font-weight:'+(bold?'700':'500')+';color:#3a3a3c;text-align:right;white-space:nowrap">'+label+'</div>'
         + '<div style="background:#f0f0f2;border-radius:4px;height:22px;position:relative">'
         + '<div style="position:absolute;left:0;top:0;height:100%;width:'+pct+'%;background:'+bgColor+';border-radius:4px;display:flex;align-items:center;padding-left:8px;transition:width .5s">'
@@ -542,7 +564,7 @@ export function buildSlides(d, slides=[]){
       var badgeHtml = diasStr
         ? '<div style="font-size:.55rem;font-weight:700;color:'+diasColor(diasNum)+';white-space:nowrap;text-align:left;min-width:52px">'+diasStr+'</div>'
         : '<div style="min-width:52px"></div>';
-      return '<div style="display:grid;grid-template-columns:160px 1fr 60px;align-items:center;gap:8px;margin-bottom:6px">'
+      return '<div style="display:grid;grid-template-columns:200px 1fr 60px;align-items:center;gap:8px;margin-bottom:6px">'
         + '<div style="font-size:.6rem;font-weight:'+(bold?'700':'500')+';color:#3a3a3c;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+label+'</div>'
         + '<div style="background:#f0f0f2;border-radius:4px;height:24px;position:relative">'
         + '<div style="position:absolute;left:0;top:0;height:100%;width:'+pct+'%;background:'+bgColor+';border-radius:4px;display:flex;align-items:center;padding-left:8px">'
