@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth.js'
 import { useAutoSave } from '../hooks/useAutoSave.js'
 import { useDark } from '../hooks/useTheme.js'
 
-const TIPOS     = ['Apartamento','Casa','Cobertura','Kitnet / Studio','Comercial']
+const TIPOS     = ['Apartamento','Casa','Cobertura','Kitnet / Studio','Comercial','Terreno']
 const SITUACOES = ['Vazio','Ocupado pelo dono','Locado']
 const REFORMAS  = ['Não precisa','Precisa de reforma','Recentemente reformado']
 const POSICOES  = ['Nascente','Poente','Norte','Sul','Nascente/Poente (Vazado)']
@@ -14,6 +14,7 @@ const DIFS = {
   apt: ['Fachada reformada','Portaria 24h','Elevador moderno','Salão de festas','Piscina','Academia','Playground','Jardim cuidado','Interfone / Biometria','Garagem coberta','Espaço gourmet','Vista livre'],
   casa:['Quintal / Jardim','Piscina','Churrasqueira','Área gourmet','Garagem coberta','Portão eletrônico','Câmeras de segurança','Gerador','Energia solar','Poço artesiano','Vista privilegiada'],
   com: ['Estacionamento próprio','Recepção','Ar-condicionado central','Copa / Cozinha','Sala de reunião','CFTV','Gerador','Elevador','Acesso para PCD','Banheiros independentes','Fachada envidraçada'],
+  ter: ['Esquina','Plano','Aclive suave','Topografia irregular','Murado','Cercado','Árborizado','Acesso pavimentado','Infraestrutura de água','Infraestrutura de esgoto','Infraestrutura de energia','Próximo a avenida principal'],
 }
 const DOCS = {
   apt: [
@@ -33,11 +34,18 @@ const DOCS = {
     {key:'inventario',label:'Sem inventário pendente'},{key:'financiamento',label:'Aceita financiamento'},
     {key:'quitado',label:'Imóvel quitado'},
   ],
+  ter: [
+    {key:'matricula',label:'Matrícula atualizada'},{key:'iptu_ok',label:'IPTU em dia'},
+    {key:'uso_solo',label:'Certidão de uso do solo'},{key:'demarcacao',label:'Demarcação / Levantamento'},
+    {key:'inventario',label:'Sem inventário pendente'},{key:'financiamento',label:'Aceita financiamento'},
+    {key:'quitado',label:'Terreno quitado'},
+  ],
 }
 
 function typeKey(tipo) {
-  if (tipo==='Casa') return 'casa'
+  if (tipo==='Casa' || tipo==='Cobertura') return 'casa'
   if (tipo==='Comercial') return 'com'
+  if (tipo==='Terreno') return 'ter'
   return 'apt'
 }
 
@@ -129,10 +137,11 @@ export default function V1Form() {
 
   const sf = (k,v) => { const n={...form,[k]:v}; setForm(n); save(n) }
 
-  const tk = typeKey(form.tipo_imovel)
+  const tk    = typeKey(form.tipo_imovel)
   const isCasa = tk==='casa'
   const isCom  = tk==='com'
   const isApt  = tk==='apt'
+  const isTer  = tk==='ter'
 
   if (loading) return (
     <div style={{display:'flex',justifyContent:'center',paddingTop:'80px'}}>
@@ -184,13 +193,17 @@ export default function V1Form() {
         {/* Ficha técnica */}
         <Section title="Ficha Técnica" icon="📐">
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px'}}>
+
+            {/* Tipo de imóvel — sempre visível */}
             <div>
               <label className="lv-label">Tipo de imóvel</label>
               <select className="lv-input" value={form.tipo_imovel} onChange={e=>sf('tipo_imovel',e.target.value)} style={{cursor:'pointer'}}>
                 {TIPOS.map(t=><option key={t}>{t}</option>)}
               </select>
             </div>
-            {!isCom && (
+
+            {/* Posição solar — oculta em Comercial e Terreno */}
+            {!isCom && !isTer && (
               <div>
                 <label className="lv-label">Posição solar</label>
                 <select className="lv-input" value={form.posicao_solar} onChange={e=>sf('posicao_solar',e.target.value)} style={{cursor:'pointer'}}>
@@ -199,26 +212,45 @@ export default function V1Form() {
                 </select>
               </div>
             )}
-            <div>
-              <label className="lv-label">{isCom?'Área total (m²)':'Área privativa (m²)'}</label>
-              <input className="lv-input" value={form.area} placeholder="Ex: 125" onChange={e=>sf('area',e.target.value)}/>
-            </div>
+
+            {/* Terreno: área do terreno em vez de área privativa */}
+            {isTer ? (
+              <div>
+                <label className="lv-label">Área do terreno (m²)</label>
+                <input className="lv-input" value={form.terreno} placeholder="Ex: 500" onChange={e=>sf('terreno',e.target.value)}/>
+              </div>
+            ) : (
+              <div>
+                <label className="lv-label">{isCom?'Área total (m²)':'Área privativa (m²)'}</label>
+                <input className="lv-input" value={form.area} placeholder="Ex: 125" onChange={e=>sf('area',e.target.value)}/>
+              </div>
+            )}
+
+            {/* Área do terreno — só Casa */}
             {isCasa && (
               <div>
                 <label className="lv-label">Área do terreno (m²)</label>
                 <input className="lv-input" value={form.terreno} placeholder="Ex: 360" onChange={e=>sf('terreno',e.target.value)}/>
               </div>
             )}
-            {!isCom && (
+
+            {/* Quartos — oculto em Comercial e Terreno */}
+            {!isCom && !isTer && (
               <div>
                 <label className="lv-label">Quartos</label>
                 <input className="lv-input" value={form.quartos} placeholder="Ex: 3" onChange={e=>sf('quartos',e.target.value)}/>
               </div>
             )}
-            <div>
-              <label className="lv-label">{isCasa?'Vagas na garagem':'Vagas'}</label>
-              <input className="lv-input" value={form.vagas} placeholder="Ex: 2" onChange={e=>sf('vagas',e.target.value)}/>
-            </div>
+
+            {/* Vagas — oculto em Terreno */}
+            {!isTer && (
+              <div>
+                <label className="lv-label">{isCasa?'Vagas na garagem':'Vagas'}</label>
+                <input className="lv-input" value={form.vagas} placeholder="Ex: 2" onChange={e=>sf('vagas',e.target.value)}/>
+              </div>
+            )}
+
+            {/* Andar — só Apt e Comercial */}
             {isApt && <>
               <div>
                 <label className="lv-label">Andar</label>
@@ -235,36 +267,43 @@ export default function V1Form() {
                 <input className="lv-input" value={form.andar} placeholder="Ex: Térreo, 2° andar" onChange={e=>sf('andar',e.target.value)}/>
               </div>
             )}
-            {!isCasa && (
+
+            {/* Condomínio — oculto em Casa e Terreno */}
+            {!isCasa && !isTer && (
               <div>
                 <label className="lv-label">Condomínio R$/mês</label>
                 <input className="lv-input" value={form.condominio} placeholder="Ex: 1.141" onChange={e=>sf('condominio',e.target.value)}/>
               </div>
             )}
+
+            {/* IPTU — sempre visível */}
             <div>
               <label className="lv-label">IPTU R$/ano</label>
               <input className="lv-input" value={form.iptu} placeholder="Ex: 2.739" onChange={e=>sf('iptu',e.target.value)}/>
             </div>
+
           </div>
         </Section>
 
-        {/* Situação */}
-        <Section title="Situação" icon="🔑">
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px'}}>
-            <div>
-              <label className="lv-label">Situação atual</label>
-              <select className="lv-input" value={form.situacao} onChange={e=>sf('situacao',e.target.value)} style={{cursor:'pointer'}}>
-                {SITUACOES.map(s=><option key={s}>{s}</option>)}
-              </select>
+        {/* Situação — oculto em Terreno */}
+        {!isTer && (
+          <Section title="Situação" icon="🔑">
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px'}}>
+              <div>
+                <label className="lv-label">Situação atual</label>
+                <select className="lv-input" value={form.situacao} onChange={e=>sf('situacao',e.target.value)} style={{cursor:'pointer'}}>
+                  {SITUACOES.map(s=><option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="lv-label">Reforma</label>
+                <select className="lv-input" value={form.reforma} onChange={e=>sf('reforma',e.target.value)} style={{cursor:'pointer'}}>
+                  {REFORMAS.map(r=><option key={r}>{r}</option>)}
+                </select>
+              </div>
             </div>
-            <div>
-              <label className="lv-label">Reforma</label>
-              <select className="lv-input" value={form.reforma} onChange={e=>sf('reforma',e.target.value)} style={{cursor:'pointer'}}>
-                {REFORMAS.map(r=><option key={r}>{r}</option>)}
-              </select>
-            </div>
-          </div>
-        </Section>
+          </Section>
+        )}
 
         {/* Pontos positivos */}
         <Section title="Pontos Positivos" icon="✅">
@@ -272,7 +311,7 @@ export default function V1Form() {
             {pos.map((p,i)=>(
               <div key={i} style={{display:'flex',gap:'8px',alignItems:'center'}}>
                 <input className="lv-input" style={{flex:1}} value={p.titulo}
-                  placeholder="Ex: Reformado, Vazado, Andar alto..."
+                  placeholder={isTer ? 'Ex: Localização privilegiada, Esquina, Plano...' : 'Ex: Reformado, Vazado, Andar alto...'}
                   onChange={e=>{const a=[...pos];a[i]={...a[i],titulo:e.target.value};setPos(a);save({},a,neg,diferenciais,docs)}}/>
                 {pos.length>1 && <button onClick={()=>{const a=pos.filter((_,j)=>j!==i);setPos(a);save({},a,neg,diferenciais,docs)}} style={{background:'none',border:'none',color:'var(--text3)',cursor:'pointer',fontSize:'18px'}}>×</button>}
               </div>
@@ -287,7 +326,7 @@ export default function V1Form() {
             {neg.map((n,i)=>(
               <div key={i} style={{display:'flex',gap:'8px',alignItems:'center'}}>
                 <input className="lv-input" style={{flex:1}} value={n.titulo}
-                  placeholder="Ex: Necessita reforma, Sem suíte, Frente para rua..."
+                  placeholder={isTer ? 'Ex: Aclive, Sem infraestrutura de esgoto...' : 'Ex: Necessita reforma, Sem suíte, Frente para rua...'}
                   onChange={e=>{const a=[...neg];a[i]={...a[i],titulo:e.target.value};setNeg(a);save({},pos,a,diferenciais,docs)}}/>
                 {neg.length>1 && <button onClick={()=>{const a=neg.filter((_,j)=>j!==i);setNeg(a);save({},pos,a,diferenciais,docs)}} style={{background:'none',border:'none',color:'var(--text3)',cursor:'pointer',fontSize:'18px'}}>×</button>}
               </div>
@@ -297,7 +336,7 @@ export default function V1Form() {
         </Section>
 
         {/* Diferenciais */}
-        <Section title={isCasa?'Características da Casa':isCom?'Infraestrutura do Espaço':'Diferenciais do Bloco'} icon="🏠">
+        <Section title={isTer?'Características do Terreno':isCasa?'Características da Casa':isCom?'Infraestrutura do Espaço':'Diferenciais do Bloco'} icon="🏠">
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px'}}>
             {DIFS[tk].map(d=>(
               <LvCheck key={d} label={d} checked={diferenciais.includes(d)}
