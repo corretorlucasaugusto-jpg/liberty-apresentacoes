@@ -547,8 +547,8 @@ export function buildSlides(d, slides=[]){
       var cor = isCat ? '#f59e0b' : '#9ca3af';
       var left = pct(v);
       var label = (r.n || 'Conc').split(' ')[0];
-      rulerDots += '<div style="position:absolute;left:'+left+'%;top:19px;transform:translateX(-50%)">'
-        + '<div style="width:14px;height:14px;border-radius:50%;background:'+cor+';border:2px solid #fff;margin:0 auto"></div>'
+      rulerDots += '<div style="position:absolute;left:'+left+'%;top:16px;transform:translateX(-50%)">'
+        + '<div style="width:20px;height:20px;border-radius:50%;background:'+cor+';border:2px solid #fff;margin:0 auto;box-shadow:0 1px 4px rgba(0,0,0,.18)"></div>'
         + '<div style="font-size:.42rem;color:#888;text-align:center;margin-top:2px;white-space:nowrap">'+e(label)+'</div>'
         + '</div>';
     });
@@ -650,7 +650,59 @@ export function buildSlides(d, slides=[]){
         + '</div>';
     }
 
-    var s8Inner = rulerHtml + cardsHtml + justHtml + alertasHtml;
+    // --- Grafico de barras por valor total ---
+    var barsHtml = (function() {
+      var rows = [];
+      if (hasPric) {
+        var faixasCores = { competitivo:'#2563eb', mercado:'#16a34a', otimista:'#ea580c' };
+        var faixasLabel = { competitivo:'Valor Competitivo', mercado:'Valor de Mercado', otimista:'Valor Otimista' };
+        ['competitivo','mercado','otimista'].forEach(function(k) {
+          var fx = p[k] || {};
+          if (fx.total) rows.push({ label: faixasLabel[k], val: fx.total, cor: faixasCores[k], dias: null, isSug: true });
+        });
+      }
+      (d.v||[]).forEach(function(r,i) {
+        var v = parseVal(r.v);
+        if (!v) return;
+        rows.push({ label: (r.n||('Vendido '+(i+1))), val: v, cor: '#1d3a1d', dias: null, isVend: true });
+      });
+      (d.nv||[]).forEach(function(r,i) {
+        var v = parseVal(r.v);
+        if (!v) return;
+        var diasNum = parseInt((r.d||'').replace(/[^0-9]/g,''))||0;
+        var barCor = diasNum === 0 ? '#888' : diasNum < 30 ? '#27ae60' : diasNum < 60 ? '#e67e22' : diasNum < 90 ? '#c0392b' : '#7f0000';
+        rows.push({ label: (r.n||('Concorrente '+(i+1))), val: v, cor: barCor, dias: diasNum });
+      });
+      if (!rows.length) return '';
+      var maxV = Math.max.apply(null, rows.map(function(r){ return r.val; }));
+      var barsRows = rows.map(function(r) {
+        var pct = Math.round((r.val / maxV) * 100);
+        var valFmt = 'R$ ' + Math.round(r.val/1000).toLocaleString('pt-BR') + 'k';
+        var diasTxt = r.dias !== null ? (r.dias + 'd') : '';
+        var diasFlag = r.dias !== null && r.dias >= 90 ? ' ✕' : (r.dias !== null && r.dias >= 60 ? ' ●' : '');
+        var diasColor = r.dias !== null && r.dias >= 90 ? '#c0392b' : (r.dias !== null && r.dias >= 60 ? '#e67e22' : '#888');
+        return '<div style="display:grid;grid-template-columns:160px 1fr 90px;align-items:center;gap:6px;margin-bottom:4px">'
+          + '<div style="font-size:.6rem;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+e(r.label)+'</div>'
+          + '<div style="background:#f0f0f2;border-radius:3px;overflow:hidden;height:18px">'
+          + '<div style="height:100%;width:'+pct+'%;background:'+r.cor+';border-radius:3px;display:flex;align-items:center;padding-left:6px">'
+          + '<span style="font-size:.55rem;font-weight:700;color:#fff;white-space:nowrap">'+valFmt+'</span>'
+          + '</div></div>'
+          + '<div style="font-size:.56rem;color:'+diasColor+';text-align:right">'+e(diasTxt)+diasFlag+'</div>'
+          + '</div>';
+      }).join('');
+      return '<div style="margin-top:12px">'
+        + '<div style="font-size:.52rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#888;margin-bottom:8px">Comparativo de Valores · R$</div>'
+        + barsRows
+        + '<div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap">'
+        + '<span style="display:flex;align-items:center;gap:4px;font-size:.5rem;color:#888"><span style="width:10px;height:10px;border-radius:2px;background:#16a34a;display:inline-block"></span>Valores sugeridos Liberty</span>'
+        + '<span style="display:flex;align-items:center;gap:4px;font-size:.5rem;color:#888"><span style="width:10px;height:10px;border-radius:2px;background:#1d3a1d;display:inline-block"></span>Vendidos (preço real)</span>'
+        + '<span style="display:flex;align-items:center;gap:4px;font-size:.5rem;color:#888"><span style="width:10px;height:10px;border-radius:2px;background:#27ae60;display:inline-block"></span>Concorrente &lt;30d</span>'
+        + '<span style="display:flex;align-items:center;gap:4px;font-size:.5rem;color:#888"><span style="width:10px;height:10px;border-radius:2px;background:#e67e22;display:inline-block"></span>Concorrente 60–90d</span>'
+        + '<span style="display:flex;align-items:center;gap:4px;font-size:.5rem;color:#888"><span style="width:10px;height:10px;border-radius:2px;background:#c0392b;display:inline-block"></span>Concorrente &gt;90d (rejeitado)</span>'
+        + '</div></div>';
+    })();
+
+    var s8Inner = rulerHtml + cardsHtml + justHtml + alertasHtml + barsHtml;
 
     slides.push('<div class="slide" id="s8">'
       + '<div class="s-head">'
