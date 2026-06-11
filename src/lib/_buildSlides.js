@@ -539,8 +539,11 @@ export function buildSlides(d, slides=[]){
       rulerDots += '<div style="position:absolute;top:24px;height:10px;left:'+zLeft+'%;width:'+zWidth+'%;background:rgba(22,163,74,0.2);border-radius:3px;border:1px solid #16a34a55"></div>';
     }
 
-    // Pontos dos concorrentes (bairro = cinza, amplo = amarelo) — com badge de dias
-    (d.nv||[]).forEach(function(r) {
+    // Pontos dos concorrentes — bairro primeiro, amplo depois
+    var nvBairro = (d.nv||[]).filter(function(r){ return (r.cat||'local') !== 'amplo'; });
+    var nvAmplo  = (d.nv||[]).filter(function(r){ return (r.cat||'local') === 'amplo'; });
+    var nvOrdered = nvBairro.concat(nvAmplo);
+    nvOrdered.forEach(function(r) {
       var v = parseVal(r.v);
       if (!v) return;
       var isCat = (r.cat || 'local') === 'amplo';
@@ -555,9 +558,13 @@ export function buildSlides(d, slides=[]){
       else if (diasNum < 180) cor = '#c0392b';
       else cor = '#7f0000';
       var left = pct(v);
-      var label = (r.n || 'Conc').split(' ')[0];
+      // Pega as 2 primeiras palavras do nome, remove "Condomínio"
+      var rawN = (r.n || 'Conc').replace(/Condom[íi]nio\s*/i,'').replace(/Vivendas\s*/i,'').trim();
+      var label = rawN.split(' ').slice(0,2).join(' ') || 'Conc';
+      if (label.length > 10) label = label.substring(0,9)+'…';
       var diasLabel = diasNum > 0 ? diasNum+'d' : '';
-      rulerDots += '<div style="position:absolute;left:'+left+'%;top:8px;transform:translateX(-50%);text-align:center">'
+      var fullName = (r.n || 'Concorrente') + (diasNum > 0 ? ' ('+diasNum+'d)' : '');
+      rulerDots += '<div title="'+e(fullName)+'" style="position:absolute;left:'+left+'%;top:8px;transform:translateX(-50%);text-align:center">'
         + '<div style="width:28px;height:28px;border-radius:50%;background:'+cor+';border:2.5px solid #fff;margin:0 auto;box-shadow:0 2px 6px rgba(0,0,0,.28)"></div>'
         + '<div style="font-size:.48rem;color:#333;margin-top:3px;white-space:nowrap;font-weight:700;max-width:40px;overflow:hidden;text-overflow:ellipsis">'+e(label)+'</div>'
         + (diasLabel ? '<div style="font-size:.46rem;color:'+cor+';font-weight:700;white-space:nowrap">'+diasLabel+'</div>' : '')
@@ -604,14 +611,17 @@ export function buildSlides(d, slides=[]){
     // --- Cards ---
     var cardsHtml = '';
     if (hasPric) {
-      // Garante totalFmt e vm2Fmt mesmo em dados antigos sem esse campo
+      // Garante totalFmt e vm2Fmt — normaliza R$ caso venha corrompido
       ['competitivo','mercado','otimista'].forEach(function(k) {
-        if (p[k] && !p[k].totalFmt && p[k].total) {
+        if (!p[k]) return;
+        if (!p[k].totalFmt && p[k].total)
           p[k].totalFmt = 'R$ ' + Math.round(p[k].total).toLocaleString('pt-BR');
-        }
-        if (p[k] && !p[k].vm2Fmt && p[k].vm2) {
+        else if (p[k].totalFmt)
+          p[k].totalFmt = p[k].totalFmt.replace(/^R[^\d]*/, 'R$ ');
+        if (!p[k].vm2Fmt && p[k].vm2)
           p[k].vm2Fmt = 'R$ ' + Math.round(p[k].vm2).toLocaleString('pt-BR') + '/m²';
-        }
+        else if (p[k].vm2Fmt)
+          p[k].vm2Fmt = p[k].vm2Fmt.replace(/^R[^\d]*/, 'R$ ');
       });
       var recKey = p.recomendacao || 'mercado';
       var faixas = [
