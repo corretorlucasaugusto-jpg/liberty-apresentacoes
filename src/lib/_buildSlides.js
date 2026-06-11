@@ -718,35 +718,40 @@ export function buildSlides(d, slides=[]){
   // ============================
   
   // S9 — PERFIL DO COMPRADOR
-  slides.push(`<div class="slide" id="s9">
-  <div class="s-head" style="display:flex;justify-content:space-between;align-items:flex-end">
-    <div>
-      <div class="s-tag s-tag-blue">Perfil</div>
-      <div class="s-title">Quem é o comprador ideal</div>
-    </div>
-    <div class="s-sub">Entender o perfil direciona toda a estratégia de comunicação e canais</div>
-  </div>
-  <div style="flex:1;display:grid;grid-template-columns:repeat(2,1fr);gap:16px;padding:0 56px 40px;align-content:stretch;min-height:0">
-    \${(d.comps&&d.comps.length?d.comps:[{t:'Perfil não informado',d:''}]).map(function(comp,i){
-      var icons = [
-        '<svg width="34" height="34" viewBox="0 0 34 34" fill="none" stroke="#1266CD" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M24 31v-3a6 6 0 00-6-6H8a6 6 0 00-6 6v3"/><circle cx="13" cy="10" r="6"/><path d="M28 11c2 .8 3 2.5 3 4.5v2"/><path d="M22 4c2 .8 3.5 2.8 3.5 5S24 12.5 22 13"/></svg>',
-        '<svg width="34" height="34" viewBox="0 0 34 34" fill="none" stroke="#1266CD" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M31 15c0 10.5-14 18-14 18S3 25.5 3 15a14 14 0 0128 0z"/><circle cx="17" cy="15" r="5"/></svg>',
-        '<svg width="34" height="34" viewBox="0 0 34 34" fill="none" stroke="#1266CD" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="10" width="28" height="20" rx="3"/><path d="M23 10V8a6 6 0 00-12 0v2"/><circle cx="17" cy="20" r="3"/><path d="M17 23v3"/></svg>'
-      ];
-      return '<div style="display:flex;align-items:flex-start;gap:20px;padding:24px 28px;border:1px solid #e8e8ed;border-radius:12px;background:#fafafa;transition:border-color .2s;height:100%;box-sizing:border-box" onmouseenter="this.style.borderColor=\'#1266CD\';this.style.background=\'#f0f6ff\'" onmouseleave="this.style.borderColor=\'#e8e8ed\';this.style.background=\'#fafafa\'">' +
-        '<div style="width:56px;height:56px;border-radius:16px;background:#eef4fd;display:flex;align-items:center;justify-content:center;flex-shrink:0">' +
-          (icons[i%3]||icons[0]) +
-        '</div>' +
-        '<div style="padding-top:2px;flex:1">' +
-          '<div style="font-size:.95rem;font-weight:800;color:#1d1d1f;margin-bottom:6px">' + e(comp.t||comp) + '</div>' +
-          '<div style="font-size:.76rem;color:#6e6e73;line-height:1.6">' + e(comp.d||'') + '</div>' +
-        '</div>' +
-      '</div>';
-    }).join('')}
-  </div>
-</div>
+  (function() {
+    var comps = (d.comps && d.comps.length) ? d.comps : [{t:'Perfil não informado', d:''}];
+    var icons = [
+      '<svg width="34" height="34" viewBox="0 0 34 34" fill="none" stroke="#1266CD" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M24 31v-3a6 6 0 00-6-6H8a6 6 0 00-6 6v3"/><circle cx="13" cy="10" r="6"/><path d="M28 11c2 .8 3 2.5 3 4.5v2"/><path d="M22 4c2 .8 3.5 2.8 3.5 5S24 12.5 22 13"/></svg>',
+      '<svg width="34" height="34" viewBox="0 0 34 34" fill="none" stroke="#1266CD" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M31 15c0 10.5-14 18-14 18S3 25.5 3 15a14 14 0 0128 0z"/><circle cx="17" cy="15" r="5"/></svg>',
+      '<svg width="34" height="34" viewBox="0 0 34 34" fill="none" stroke="#1266CD" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="10" width="28" height="20" rx="3"/><path d="M23 10V8a6 6 0 00-12 0v2"/><circle cx="17" cy="20" r="3"/><path d="M17 23v3"/></svg>'
+    ];
+    var cardsHtml = comps.map(function(comp, i) {
+      return '<div style="display:flex;align-items:flex-start;gap:20px;padding:24px 28px;border:1px solid #e8e8ed;border-radius:12px;background:#fafafa;height:100%;box-sizing:border-box">'
+        + '<div style="width:56px;height:56px;border-radius:16px;background:#eef4fd;display:flex;align-items:center;justify-content:center;flex-shrink:0">'
+        + (icons[i%3] || icons[0])
+        + '</div>'
+        + '<div style="padding-top:2px;flex:1">'
+        + '<div style="font-size:.95rem;font-weight:800;color:#1d1d1f;margin-bottom:6px">' + e(comp.t || comp) + '</div>'
+        + '<div style="font-size:.76rem;color:#6e6e73;line-height:1.6">' + e(comp.d || '') + '</div>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+    slides.push(
+      '<div class="slide" id="s9">'
+      + '<div class="s-head" style="display:flex;justify-content:space-between;align-items:flex-end">'
+      + '<div>'
+      + '<div class="s-tag s-tag-blue">Perfil</div>'
+      + '<div class="s-title">Quem \u00e9 o comprador ideal</div>'
+      + '</div>'
+      + '<div class="s-sub">Entender o perfil direciona toda a estrat\u00e9gia de comunica\u00e7\u00e3o e canais</div>'
+      + '</div>'
+      + '<div style="flex:1;display:grid;grid-template-columns:repeat(2,1fr);gap:16px;padding:0 56px 40px;align-content:stretch;min-height:0">'
+      + cardsHtml
+      + '</div>'
+      + '</div>'
+    );
+  })();
 
-<!-- ═══ S10 SOBRE A LIBERTY ═══ -->`);
 
 slides.push(`<div class="slide" id="s10">
   <div style="width:100%;height:100%;display:grid;grid-template-columns:1fr 1fr">
