@@ -3,16 +3,16 @@ import React from 'react'
 
 export const Field = ({ label, children, hint }) => (
   <div className="flex flex-col gap-1">
-    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+    <label className="lv-label">
       {label}
     </label>
     {children}
-    {hint && <p className="text-xs text-gray-400">{hint}</p>}
+    {hint && <p className="text-xs" style={{color:"var(--text3)"}}>{hint}</p>}
   </div>
 )
 
 export const Input = (props) => (
-  <input {...props} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-liberty-blue focus:border-transparent transition" />
+  <input {...props} className="lv-input" />
 )
 
 // Retorna true quando o tipo é Terreno
@@ -23,14 +23,14 @@ export const NVRow = ({ idx, onRemove, onExtract, extracting, tipoImovel, notFou
   const isTer = isTerrenoType(tipoImovel)
 
   return (
-    <div className="border border-gray-100 rounded-lg p-3 space-y-2 bg-gray-50/30">
+    <div className="lv-row p-3 space-y-2">
       <div className="flex justify-between items-center">
-        <span className="text-xs font-medium text-gray-400">Concorrente #{idx}</span>
+        <span className="text-xs font-medium" style={{color:"var(--text3)"}}>Concorrente #{idx}</span>
         {idx > 1 && (
           <button
             type="button"
             onClick={onRemove}
-            className="text-gray-300 hover:text-red-400 text-sm transition"
+            className="text-sm transition" style={{color:"var(--text3)"}}
           >
             ✕ Remover
           </button>
@@ -73,7 +73,7 @@ export const NVRow = ({ idx, onRemove, onExtract, extracting, tipoImovel, notFou
         )}
         {!isTer && (
           <Field label={<span className={notFound.conservacao ? 'text-amber-500' : ''}>Conservação</span>}>
-            <select name={`nv_cons_${idx}`} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-liberty-blue focus:border-transparent transition" style={{cursor:'pointer'}}>
+            <select name={`nv_cons_${idx}`} className="lv-input" style={{cursor:'pointer'}}>
               <option value="">Selecione...</option>
               <option>Alto padrão</option>
               <option>Reformado</option>
@@ -102,14 +102,14 @@ export const NVRow = ({ idx, onRemove, onExtract, extracting, tipoImovel, notFou
           name={`nv_content_${idx}`}
           rows={2}
           placeholder="Cole aqui o conteúdo do anúncio para a IA extrair os dados automaticamente..."
-          className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-liberty-blue focus:border-transparent transition resize-none"
+          className="lv-input flex-1 resize-none"
         />
         {onExtract && (
           <button
             type="button"
             onClick={() => onExtract(idx)}
             disabled={extracting}
-            className="shrink-0 px-3 py-2 rounded-lg border border-blue-200 text-blue-500 text-xs font-medium hover:bg-blue-50 transition disabled:opacity-50"
+            className="btn-ghost shrink-0 text-xs font-medium disabled:opacity-50" style={{color:"var(--blue)"}}
           >
             {extracting ? '...' : '✦ Extrair'}
           </button>
@@ -117,7 +117,7 @@ export const NVRow = ({ idx, onRemove, onExtract, extracting, tipoImovel, notFou
       </div>
 
       {/* Categoria */}
-      <div className="flex gap-4 text-xs text-gray-400">
+      <div className="flex gap-4 text-xs" style={{color:"var(--text3)"}}>
         {['local','regiao','bairro'].map(cat => (
           <label key={cat} className="flex items-center gap-1 cursor-pointer">
             <input type="radio" name={`nv_cat_${idx}`} value={cat} defaultChecked={cat==='local'} />
@@ -133,14 +133,14 @@ export const VRow = ({ idx, onRemove, onExtract, extracting, tipoImovel, notFoun
   const isTer = isTerrenoType(tipoImovel)
 
   return (
-    <div className="border border-gray-100 rounded-lg p-3 space-y-2 bg-green-50/20">
+    <div className="lv-row p-3 space-y-2">
       <div className="flex justify-between items-center">
-        <span className="text-xs font-medium text-gray-400">Vendido #{idx}</span>
+        <span className="text-xs font-medium" style={{color:"var(--text3)"}}>Vendido #{idx}</span>
         {idx > 1 && (
           <button
             type="button"
             onClick={onRemove}
-            className="text-gray-300 hover:text-red-400 text-sm transition"
+            className="text-sm transition" style={{color:"var(--text3)"}}
           >
             ✕ Remover
           </button>
@@ -181,7 +181,7 @@ export const VRow = ({ idx, onRemove, onExtract, extracting, tipoImovel, notFoun
             <Input name={`v_vagas_${idx}`} placeholder="Ex: 2" />
           </Field>
           <Field label={<span className={notFound.conservacao ? 'text-amber-500' : ''}>Conservação</span>}>
-            <select name={`v_cons_${idx}`} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-liberty-blue focus:border-transparent transition" style={{cursor:'pointer'}}>
+            <select name={`v_cons_${idx}`} className="lv-input" style={{cursor:'pointer'}}>
               <option value="">Selecione...</option>
               <option>Alto padrão</option>
               <option>Reformado</option>
@@ -204,14 +204,14 @@ export const VRow = ({ idx, onRemove, onExtract, extracting, tipoImovel, notFoun
           name={`v_content_${idx}`}
           rows={2}
           placeholder="Cole aqui o conteúdo do anúncio para a IA extrair os dados automaticamente..."
-          className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-liberty-blue focus:border-transparent transition resize-none"
+          className="lv-input flex-1 resize-none"
         />
         {onExtract && (
           <button
             type="button"
             onClick={() => onExtract(idx)}
             disabled={extracting}
-            className="shrink-0 px-3 py-2 rounded-lg border border-blue-200 text-blue-500 text-xs font-medium hover:bg-blue-50 transition disabled:opacity-50"
+            className="btn-ghost shrink-0 text-xs font-medium disabled:opacity-50" style={{color:"var(--blue)"}}
           >
             {extracting ? '...' : '✦ Extrair'}
           </button>
@@ -223,7 +223,7 @@ export const VRow = ({ idx, onRemove, onExtract, extracting, tipoImovel, notFoun
 
 export const PerfilRow = ({ idx }) => (
   <div className="flex items-center gap-2">
-    <span className="text-xs font-medium text-gray-400 w-6">{idx}</span>
+    <span className="text-xs font-medium w-6" style={{color:"var(--text3)"}}>{idx}</span>
     <Input name={`c${idx}t`} placeholder={`Ex: Jovens profissionais, Famílias, Investidores, Moradores locais`} />
   </div>
 )
