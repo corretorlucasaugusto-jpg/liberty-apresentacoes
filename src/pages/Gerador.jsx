@@ -442,7 +442,7 @@ export default function Gerador() {
             ...rawData,
             posEnriched: data.enriched.posEnriched || rawData.pos.map(t=>({t,d:''})),
             negEnriched: data.enriched.negEnriched || rawData.neg.map(t=>({t,d:''})),
-            comps:       data.enriched.comps?.length ? data.enriched.comps : rawData.comps,
+            comps:       (data.enriched.comps?.length >= rawData.comps?.length && rawData.comps?.length > 0) ? data.enriched.comps : rawData.comps,
             nv:          data.enriched.nv || rawData.nv,
           }
         }
