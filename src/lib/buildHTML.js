@@ -42,9 +42,8 @@ export function buildHTML(d) {
   const N = lastSlides.length
 
   const navJsFinal   = NAVJS.replace(/liberty_video\.mp4/g, VIDEO_PRODUCAO).replace(/liberty_trafego\.mov/g, VIDEO_TRAFEGO)
-  // vmodal1/2 are now included in slideDivsFinal from _buildSlides.js (no duplicate IDs)
-  const vmodal1Final = ''
-  const vmodal2Final = ''
+  const vmodal1Final = (VMODAL1_HTML||'').replace(/liberty_video\.mp4/g, VIDEO_PRODUCAO)
+  const vmodal2Final = (VMODAL2_HTML||'').replace(/liberty_trafego\.mov/g, VIDEO_TRAFEGO)
   // Replace video URLs also in slides HTML (buildSlides has hardcoded names)
   const slideDivsFinal = slideDivs
     .replace(/liberty_video\.mp4/g, VIDEO_PRODUCAO)
