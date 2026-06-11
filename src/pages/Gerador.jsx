@@ -328,9 +328,11 @@ export default function Gerador() {
       const v     = gv(`nv_v_${i}`)
       const dd    = gv(`nv_d_${i}`)
       const obs   = gv(`nv_obs_${i}`)   || parsed.obs
+      const ter   = gv(`nv_terreno_${i}`)
       const url   = gv(`lk_${i}`)
+      const cat   = (function(){ const els = document.getElementsByName(`nv_cat_${i}`); for(let e of els){ if(e.checked) return e.value; } return 'local'; })()
       const carac = rawC
-      if (a||v||n) d.nv.push({n, a, quartos:q, vagas:vag, conservacao:con, c:carac, v, d:dd, obs, url})
+      if (a||v||n) d.nv.push({n, a, terreno:ter, quartos:q, vagas:vag, conservacao:con, c:carac, v, d:dd, obs, url, cat})
     }
     for (let i = 1; i <= vCount; i++) {
       const n     = gv(`v_n_${i}`)

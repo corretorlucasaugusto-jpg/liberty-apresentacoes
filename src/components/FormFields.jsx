@@ -137,9 +137,21 @@ export function NVRow({ idx, onRemove, onExtract, extracting, tipoImovel, notFou
           <ExtractedInput name={`nv_d_${idx}`} placeholder="Dias no mercado" notFound={nf.dias} />
         </div>
 
-        {/* Row 4: Observação */}
+        {/* Row 4: Categoria (mesmo bairro ou mercado amplo) */}
+        <div style={{ display:'flex', gap:'8px', marginBottom:'8px' }}>
+          <label style={{ fontSize:'11px', color:'var(--text3)', display:'flex', alignItems:'center', gap:'4px', cursor:'pointer' }}>
+            <input type="radio" name={`nv_cat_${idx}`} value="local" defaultChecked style={{ accentColor:'#1266CD' }} />
+            <span>Mesmo bairro / região</span>
+          </label>
+          <label style={{ fontSize:'11px', color:'var(--text3)', display:'flex', alignItems:'center', gap:'4px', cursor:'pointer' }}>
+            <input type="radio" name={`nv_cat_${idx}`} value="amplo" style={{ accentColor:'#f59e0b' }} />
+            <span>Mercado amplo</span>
+          </label>
+        </div>
+
+        {/* Row 5: Observação */}
         <input className="lv-input" name={`nv_obs_${idx}`}
-          placeholder="Observação livre (posição, andar, diferencial...)"
+          placeholder={isCasa ? "Observação livre (piscina, suíte, lazer, diferenciais...)" : "Observação livre (posição, andar, diferencial...)"}
           style={{ fontSize:'12px' }}
         />
       </div>
