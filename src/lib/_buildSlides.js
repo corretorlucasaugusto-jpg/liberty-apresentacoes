@@ -495,182 +495,172 @@ export function buildSlides(d, slides=[]){
 
 <!-- ═══ S8 SUGESTÃO DE VALORES ═══ -->`);
 
-  // S8 COMPRADOR
-  const comps=d.comps.length>0?d.comps:[{t:'Solteiros ou casal jovem',d:'Perfil 25–35 anos, busca independência'},{t:'Primeiro imóvel',d:'Compra emocionalmente motivada'},{t:'Familiares próximos',d:'Compra para filho ou familiar da região'},{t:'Realizará financiamento',d:'FGTS + financiamento bancário'}];
-  // Build pricing display — use IA faixas if available, else manual values
-  var s8PrecHtml = '';
-  if (d.prec && d.prec.competitivo) {
-    var p = d.prec;
-    var recKey = p.recomendacao || 'mercado';
-    // Pre-calculate vm2 for samples for the chart
-    var nvSamplesForChart = (d.nv||[]).map(function(r){
-      var val = parseInt((r.v||'').replace(/[^0-9]/g,'')||'0');
-      var area = parseFloat((r.a||'').replace(/[^0-9.,]/g,'').replace(',','.')||'0');
-      return {n:r.n, d:r.d||'', c:r.c||'', vm2: area>0&&val>0 ? Math.round(val/area) : 0};
-    }).filter(function(r){return r.vm2>0;});
-    var vSamplesForChart = (d.v||[]).map(function(r){
-      var val = parseInt((r.v||'').replace(/[^0-9]/g,'')||'0');
-      var area = parseFloat((r.a||'').replace(/[^0-9.,]/g,'').replace(',','.')||'0');
-      return {n:r.n, vm2: area>0&&val>0 ? Math.round(val/area) : 0};
-    }).filter(function(r){return r.vm2>0;});
-    var faixas = [
-      { key:'competitivo', label:'Competitivo',  color:'#2563eb', bg:'rgba(37,99,235,0.08)' },
-      { key:'mercado',     label:'Mercado',      color:'#059669', bg:'rgba(5,150,105,0.08)' },
-      { key:'otimista',    label:'Otimista',     color:'#d97706', bg:'rgba(217,119,6,0.08)'  },
-    ];
-    var faixaCards = faixas.map(function(f) {
-      var fx = p[f.key] || {};
-      var recBadge = (f.key === recKey) ? '<div style="position:absolute;top:-8px;right:8px;background:'+f.color+';color:#fff;font-size:.5rem;font-weight:700;padding:2px 7px;border-radius:10px;letter-spacing:.05em">SUGERIDO</div>' : '';
-      return '<div style="position:relative;flex:1;background:'+f.bg+';border:1px solid '+f.color+'30;border-radius:12px;padding:16px">'
-        + recBadge
-        + '<div style="font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:'+f.color+';margin-bottom:6px">'+f.label+'</div>'
-        + '<div style="font-size:1.15rem;font-weight:800;color:#1d1d1f;margin-bottom:2px">'+(fx.totalFmt||'—')+'</div>'
-        + '<div style="font-size:.65rem;color:#6e6e73">'+(fx.vm2Fmt||'—')+'</div>'
-        + '<div style="font-size:.6rem;color:#8e8e93;margin-top:6px;line-height:1.4">'+(fx.descricao||'')+'</div>'
+  // S8 — SUGESTÃO DE VALOR com régua de posicionamento
+  (function() {
+    var p = d.prec || null;
+    var hasPric = p && p.competitivo && p.mercado && p.otimista;
+
+    // Helpers
+    var parseVal  = function(s){ return parseInt((s||'').replace(/[^0-9]/g,''))||0; };
+    var parseArea = function(s){ return parseFloat((s||'').replace(/[^0-9.,]/g,'').replace(',','.'))||0; };
+    var fmtMoney  = function(n){ return 'R$\u00a0' + Math.round(n/1000).toLocaleString('pt-BR') + 'k'; };
+
+    // Todos os valores para determinar escala da régua
+    var allVals = [];
+    if (hasPric) {
+      allVals.push(p.competitivo.total, p.mercado.total, p.otimista.total);
+    }
+    (d.nv||[]).forEach(function(r){ var v = parseVal(r.v); if(v>0) allVals.push(v); });
+    (d.v||[]).forEach(function(r){ var v = parseVal(r.v); if(v>0) allVals.push(v); });
+
+    var minVal = allVals.length ? Math.min.apply(null, allVals) : 0;
+    var maxVal = allVals.length ? Math.max.apply(null, allVals) : 0;
+    var range  = maxVal - minVal || 1;
+    // Padding 10% em cada lado
+    var vizMin = minVal - range * 0.10;
+    var vizMax = maxVal + range * 0.10;
+    var vizRange = vizMax - vizMin;
+
+    var pct = function(v) { return Math.max(0, Math.min(100, ((v - vizMin) / vizRange) * 100)).toFixed(1); };
+
+    // Escala legível (5 pontos)
+    var scalePoints = [];
+    for (var i = 0; i <= 4; i++) {
+      scalePoints.push(vizMin + vizRange * (i / 4));
+    }
+
+    // --- Régua ---
+    var rulerDots = '';
+
+    // Zona verde (faixa sugerida)
+    if (hasPric) {
+      var zLeft  = pct(p.competitivo.total);
+      var zWidth = (pct(p.otimista.total) - pct(p.competitivo.total)).toFixed(1);
+      rulerDots += '<div style="position:absolute;top:24px;height:10px;left:'+zLeft+'%;width:'+zWidth+'%;background:rgba(22,163,74,0.2);border-radius:3px;border:1px solid #16a34a55"></div>';
+    }
+
+    // Pontos dos concorrentes (bairro = cinza, amplo = amarelo)
+    (d.nv||[]).forEach(function(r) {
+      var v = parseVal(r.v);
+      if (!v) return;
+      var isCat = (r.cat || 'local') === 'amplo';
+      var cor = isCat ? '#f59e0b' : '#9ca3af';
+      var left = pct(v);
+      var label = (r.n || 'Conc').split(' ')[0];
+      rulerDots += '<div style="position:absolute;left:'+left+'%;top:19px;transform:translateX(-50%)">'
+        + '<div style="width:14px;height:14px;border-radius:50%;background:'+cor+';border:2px solid #fff;margin:0 auto"></div>'
+        + '<div style="font-size:.42rem;color:#888;text-align:center;margin-top:2px;white-space:nowrap">'+e(label)+'</div>'
         + '</div>';
+    });
+
+    // Marcadores sugeridos
+    if (hasPric) {
+      var sugs = [
+        { key:'competitivo', cor:'#2563eb', label:'Comp.' },
+        { key:'mercado',     cor:'#16a34a', label:'Merc.' },
+        { key:'otimista',    cor:'#ea580c', label:'Otim.' },
+      ];
+      sugs.forEach(function(s) {
+        var v = p[s.key].total;
+        var left = pct(v);
+        rulerDots += '<div style="position:absolute;left:'+left+'%;top:12px;transform:translateX(-50%)">'
+          + '<div style="width:26px;height:26px;border-radius:50%;background:'+s.cor+';display:flex;align-items:center;justify-content:center;margin:0 auto">'
+          + '<span style="font-size:.38rem;font-weight:700;color:#fff">'+s.label+'</span>'
+          + '</div>'
+          + '</div>';
+      });
+    }
+
+    var scaleHtml = scalePoints.map(function(v) {
+      return '<span>'+fmtMoney(v)+'</span>';
     }).join('');
-    var alertasHtml = (p.alertas||[]).length > 0
-      ? '<div style="margin-top:10px;padding:10px 14px;border-radius:10px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3)">'
-        + (p.alertas||[]).map(function(a){ return '<p style="font-size:.62rem;color:#d97706;margin:0 0 2px;line-height:1.4">⚠️ '+a+'</p>'; }).join('')
+
+    var rulerHtml = '<div style="margin-bottom:28px">'
+      + '<div style="position:relative;height:60px;margin:0 4px">'
+      + '<div style="position:absolute;top:28px;left:0;right:0;height:2px;background:#e5e5e5;border-radius:2px"></div>'
+      + rulerDots
+      + '</div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:.5rem;color:#bbb;padding:0 4px">'+scaleHtml+'</div>'
+      + '<div style="display:flex;gap:14px;margin-top:8px;flex-wrap:wrap">'
+      + '<span style="display:flex;align-items:center;gap:4px;font-size:.52rem;color:#888"><span style="width:10px;height:10px;border-radius:50%;background:#9ca3af;display:inline-block"></span>Bairro</span>'
+      + '<span style="display:flex;align-items:center;gap:4px;font-size:.52rem;color:#888"><span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block"></span>Mercado amplo</span>'
+      + '<span style="display:flex;align-items:center;gap:4px;font-size:.52rem;color:#888"><span style="width:20px;height:8px;border-radius:3px;background:rgba(22,163,74,0.2);border:1px solid #16a34a55;display:inline-block"></span>Faixa sugerida</span>'
+      + '</div></div>';
+
+    // --- Cards ---
+    var cardsHtml = '';
+    if (hasPric) {
+      var recKey = p.recomendacao || 'mercado';
+      var faixas = [
+        { key:'competitivo', label:'Competitivo', cor:'#2563eb', bg:'rgba(37,99,235,0.08)', bord:'rgba(37,99,235,0.25)' },
+        { key:'mercado',     label:'Mercado',     cor:'#16a34a', bg:'rgba(22,163,74,0.08)',  bord:'rgba(22,163,74,0.35)',  rec:true },
+        { key:'otimista',    label:'Otimista',    cor:'#ea580c', bg:'rgba(234,88,12,0.08)',  bord:'rgba(234,88,12,0.25)' },
+      ];
+      cardsHtml = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">'
+        + faixas.map(function(f) {
+          var fx = p[f.key] || {};
+          var isRec = f.key === recKey;
+          return '<div style="position:relative;padding:14px;border-radius:10px;background:'+f.bg+';border:'+(isRec?'1.5px':'1px')+' solid '+f.bord+'">'
+            + (isRec ? '<div style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:'+f.cor+';color:#fff;font-size:.45rem;font-weight:700;padding:2px 10px;border-radius:10px;letter-spacing:.05em;white-space:nowrap">SUGERIDO</div>' : '')
+            + '<div style="font-size:.52rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:'+f.cor+';margin-bottom:6px">'+f.label+'</div>'
+            + '<div style="font-size:1.05rem;font-weight:700;color:#1d1d1f;margin-bottom:2px">'+(fx.totalFmt||'—')+'</div>'
+            + '<div style="font-size:.58rem;color:#888;margin-bottom:6px">'+(fx.vm2Fmt||'—')+'</div>'
+            + '<div style="font-size:.58rem;color:#555;line-height:1.4">'+(fx.descricao||'')+'</div>'
+            + '</div>';
+        }).join('')
+        + '</div>';
+    } else {
+      // Sem precificação IA — mostra valores manuais
+      cardsHtml = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">'
+        + '<div style="padding:14px;border-radius:10px;background:rgba(37,99,235,0.08);border:1px solid rgba(37,99,235,0.2)">'
+        + '<div style="font-size:.52rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#2563eb;margin-bottom:6px">Divulga\u00e7\u00e3o</div>'
+        + '<div style="font-size:1.05rem;font-weight:700;color:#1d1d1f">'+e(d.vl_div||'—')+'</div>'
         + '</div>'
-      : '';
-
-    // Build bar chart comparing our values vs samples
-    var allVm2 = [];
-    ['competitivo','mercado','otimista'].forEach(function(k){
-      if(p[k]&&p[k].vm2) allVm2.push(p[k].vm2);
-    });
-    (nvSamplesForChart||[]).forEach(function(r){ if(r.vm2) allVm2.push(r.vm2); });
-    (vSamplesForChart||[]).forEach(function(r){ if(r.vm2) allVm2.push(r.vm2); });
-    var maxVm2 = allVm2.length ? Math.max.apply(null,allVm2)*1.08 : 1;
-
-    function barRow(label, vm2, color, bgColor, bold) {
-      var pct = Math.round((vm2/maxVm2)*100);
-      var fmtd = 'R$\u00a0' + vm2.toLocaleString('pt-BR') + '/m\u00b2';
-      return '<div style="display:grid;grid-template-columns:160px 1fr;align-items:center;gap:8px;margin-bottom:5px">'
-        + '<div style="font-size:.6rem;font-weight:'+(bold?'700':'500')+';color:#3a3a3c;text-align:right;white-space:nowrap">'+label+'</div>'
-        + '<div style="background:#f0f0f2;border-radius:4px;height:22px;position:relative">'
-        + '<div style="position:absolute;left:0;top:0;height:100%;width:'+pct+'%;background:'+bgColor+';border-radius:4px;display:flex;align-items:center;padding-left:8px;transition:width .5s">'
-        + '<span style="font-size:.58rem;font-weight:700;color:#fff;white-space:nowrap">'+fmtd+'</span>'
-        + '</div></div></div>';
-    }
-
-    // Color helpers
-    function diasColor(dias) {
-      // Interpolate from #94a3b8 (cinza, 0d) → #f97316 (laranja, 90d) → #991b1b (vermelho escuro, 365d)
-      var d = Math.max(0, parseInt(dias)||0);
-      if (d <= 0)   return '#94a3b8'; // cinza — sem info
-      if (d < 30)   return '#94a3b8'; // cinza neutro — recente
-      if (d < 60)   return '#ca8a04'; // amarelo — atenção
-      if (d < 90)   return '#ea580c'; // laranja — resistência
-      if (d < 180)  return '#dc2626'; // vermelho — rejeição
-      return '#7f1d1d';               // vermelho escuro — mercado disse não
-    }
-    function diasLabel(dias) {
-      var d = parseInt(dias)||0;
-      if (!d)      return '';
-      if (d < 30)  return d+'d';
-      if (d < 90)  return d+'d ⚠';
-      if (d < 180) return d+'d ●';
-      return d+'d ✕';
-    }
-
-    // Extended barRow with optional days badge
-    function barRowFull(label, vm2, bgColor, bold, dias) {
-      var pct  = Math.round((vm2/maxVm2)*100);
-      var fmtd = 'R ' + vm2.toLocaleString('pt-BR') + '/m²';
-      var badgeHtml = '';
-      if (dias) {
-        var d = parseInt(dias)||0;
-        var bc = diasColor(d);
-        var dl = diasLabel(d);
-        badgeHtml = '<div style="position:absolute;right:-72px;top:50%;transform:translateY(-50%);'
-          + 'background:'+bc+';color:#fff;font-size:.52rem;font-weight:700;'
-          + 'padding:2px 6px;border-radius:6px;white-space:nowrap;min-width:52px;text-align:center">'
-          + dl+'</div>';
-      }
-      return '<div style="display:grid;grid-template-columns:160px 1fr 80px;align-items:center;gap:8px;margin-bottom:6px">'
-        + '<div style="font-size:.6rem;font-weight:'+(bold?'700':'500')+';color:#3a3a3c;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+label+'</div>'
-        + '<div style="background:#f0f0f2;border-radius:4px;height:24px;position:relative">'
-        + '<div style="position:absolute;left:0;top:0;height:100%;width:'+pct+'%;background:'+bgColor+';border-radius:4px;display:flex;align-items:center;padding-left:8px;transition:width .5s">'
-        + '<span style="font-size:.58rem;font-weight:700;color:#fff;white-space:nowrap">'+fmtd+'</span>'
-        + '</div></div>'
-        + '<div style="font-size:.55rem;font-weight:700;color:'+(dias?diasColor(parseInt(dias)||0):'transparent')+';white-space:nowrap;text-align:left">'
-        + (dias ? diasLabel(parseInt(dias)||0) : '')
+        + '<div style="position:relative;padding:14px;border-radius:10px;background:rgba(22,163,74,0.08);border:1.5px solid rgba(22,163,74,0.35)">'
+        + '<div style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:#16a34a;color:#fff;font-size:.45rem;font-weight:700;padding:2px 10px;border-radius:10px;letter-spacing:.05em;white-space:nowrap">REFER\u00caNCIA</div>'
+        + '<div style="font-size:.52rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#16a34a;margin-bottom:6px">Fechamento esperado</div>'
+        + '<div style="font-size:1.05rem;font-weight:700;color:#1d1d1f">'+e(d.vl_fec||'—')+'</div>'
+        + '</div>'
+        + '<div style="padding:14px;border-radius:10px;background:rgba(107,114,128,0.08);border:1px solid rgba(107,114,128,0.2)">'
+        + '<div style="font-size:.52rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin-bottom:6px">R\u00e9f. mercado</div>'
+        + '<div style="font-size:1.05rem;font-weight:700;color:#1d1d1f">'+e(d.vl_med||'—')+'</div>'
         + '</div>'
         + '</div>';
     }
 
-    var chartRows = '';
-    var faixaCfg = [
-      {key:'competitivo', label:'VALOR COMPETITIVO', bg:'#3b82f6'},
-      {key:'mercado',     label:'VALOR DE MERCADO',  bg:'#10b981'},
-      {key:'otimista',    label:'VALOR OTIMISTA',    bg:'#22c55e'},
-    ];
-    faixaCfg.forEach(function(f){
-      if(p[f.key]&&p[f.key].vm2) chartRows += barRowFull(f.label, p[f.key].vm2, f.bg, true, null);
-    });
-    // Vendidos — azul grafite sólido (fato consumado)
-    (vSamplesForChart||[]).forEach(function(r,i){
-      if(r.vm2) chartRows += barRowFull(
-        'Vendido '+(i+1)+(r.n?' · '+r.n.split(' ')[0]:''),
-        r.vm2, '#334155', false, null
-      );
-    });
-    // Concorrentes — gradiente cinza→vermelho pelo tempo parado
-    (nvSamplesForChart||[]).forEach(function(r,i){
-      if(r.vm2) {
-        // Try r.d first, fallback to extracting from carac string
-        console.log('NV'+i, 'r.d=', r.d, 'r.c=', r.c, 'r.obs=', r.obs, 'full=', JSON.stringify(r));
-        var diasStr = r.d || '';
-        if (!diasStr) {
-          var m = (r.c||'').match(/(\d+)\s*dia/i);
-          if (m) diasStr = m[1] + ' dias';
-        }
-        var diasNum = parseInt((diasStr).replace(/[^0-9]/g,''))||0;
-        var barColor = diasColor(diasNum);
-        chartRows += barRowFull(
-          'Concorrente '+(i+1)+(r.n?' · '+r.n.split(' ')[0]:''),
-          r.vm2, barColor, false, diasStr
-        );
-      }
-    });
+    // --- Justificativa ---
+    var justHtml = '';
+    if (hasPric && p.justificativa) {
+      justHtml = '<div style="background:rgba(22,163,74,0.06);border:1px solid rgba(22,163,74,0.2);border-radius:8px;padding:12px 16px;margin-bottom:12px">'
+        + '<div style="font-size:.52rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#16a34a;margin-bottom:6px">Por que esse valor faz sentido</div>'
+        + '<div style="font-size:.65rem;color:#3a3a3c;line-height:1.6">'+e(p.justificativa)+'</div>'
+        + '</div>';
+    }
 
-    var chartHtml = chartRows ? '<div style="margin-top:12px;padding:14px 16px;background:rgba(0,0,0,0.02);border-radius:12px;border:1px solid rgba(0,0,0,0.06)">'
-      + '<p style="font-size:.55rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1266CD;margin:0 0 10px">Comparativo de Valores · R$/m²</p>'
-      + chartRows
-      + '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.06)">'
-      + '<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:2px;background:#10b981"></div><span style="font-size:.55rem;color:#6b7280">Valores sugeridos Liberty</span></div>'
-      + '<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:2px;background:#334155"></div><span style="font-size:.55rem;color:#6b7280">Vendidos (preço real)</span></div>'
-      + '<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:2px;background:#94a3b8"></div><span style="font-size:.55rem;color:#6b7280">Concorrente &lt;30d</span></div>'
-      + '<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:2px;background:#ea580c"></div><span style="font-size:.55rem;color:#6b7280">Concorrente 60–90d</span></div>'
-      + '<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:2px;background:#dc2626"></div><span style="font-size:.55rem;color:#6b7280">Concorrente &gt;90d (rejeitado)</span></div>'
-      + '</div></div>'
-      : '';
+    // --- Alertas ---
+    var alertasHtml = '';
+    if (hasPric && p.alertas && p.alertas.length) {
+      alertasHtml = '<div style="display:flex;flex-direction:column;gap:5px">'
+        + p.alertas.map(function(a) {
+          return '<div style="display:flex;align-items:flex-start;gap:6px;padding:7px 12px;border-radius:7px;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.25)">'
+            + '<span style="font-size:.7rem;color:#d97706;flex-shrink:0;margin-top:1px">\u26a0</span>'
+            + '<span style="font-size:.6rem;color:#92400e;line-height:1.4">'+e(a)+'</span>'
+            + '</div>';
+        }).join('')
+        + '</div>';
+    }
 
-    s8PrecHtml = '<div style="display:flex;gap:12px;margin-bottom:12px">' + faixaCards + '</div>'
-      + (p.justificativa ? '<div style="background:rgba(0,0,0,0.03);border-radius:10px;padding:12px 16px;font-size:.68rem;color:#3a3a3c;line-height:1.6">'
-        + '<span style="font-size:.55rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1266CD;display:block;margin-bottom:4px">Análise de mercado</span>'
-        + e(p.justificativa) + '</div>' : '')
-      + chartHtml
-      + alertasHtml;
-  } else {
-    s8PrecHtml = '<div class="s8-body">'
-      + '<div class="s8-l">'
-      + '<div class="s8-vcard s8-vc-div"><div class="s8-vc-lbl">Valor de divulgação</div><div class="s8-vc-val">'+e(d.vl_div)+'</div><div class="s8-vc-note">Valor de entrada nos portais e anúncios</div></div>'
-      + '<div class="s8-vcard s8-vc-fec"><div class="s8-vc-lbl">Expectativa de fechamento</div><div class="s8-vc-val">'+e(d.vl_fec)+'</div><div class="s8-vc-note">Ou algo próximo — com margem técnica de negociação</div></div>'
-      + '<div class="s8-vcard s8-vc-med"><div class="s8-vc-lbl">Referência · Últimos fechamentos</div><div class="s8-vc-val">'+e(d.vl_med)+'</div><div class="s8-vc-note">Média real de negócios em imóveis similares</div></div>'
+    var s8Inner = rulerHtml + cardsHtml + justHtml + alertasHtml;
+
+    slides.push('<div class="slide" id="s8">'
+      + '<div class="s-head">'
+      + '<div><div class="s-tag s-tag-blue">Sugest\u00e3o de valor</div><div class="s-title">Onde seu im\u00f3vel precisa estar</div></div>'
+      + '<div class="s-sub">Para ser a melhor escolha dentre tudo que o comprador est\u00e1 vendo.</div>'
       + '</div>'
-      + '<div class="s8-r"></div>'
-      + '</div>';
-  }
-  slides.push(s8PrecHtml.startsWith('<div class="slide"') ? s8PrecHtml : `<div class="slide" id="s8">
-  <div class="s-head">
-    <div><div class="s-tag s-tag-blue">Precificação</div><div class="s-title">Sugestão de valores</div></div>
-    <div class="s-sub">Baseada em dados reais de mercado</div>
-  </div>
-  <div style="padding:0 40px 32px">${s8PrecHtml}</div>
-</div>`);
+      + '<div style="padding:0 40px 24px">'+s8Inner+'</div>'
+      + '</div>');
+  })();
+
 
 // S9 — FASE 1: FUNDAÇÃO (Apple white)
   // ============================
