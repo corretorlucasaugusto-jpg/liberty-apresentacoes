@@ -586,17 +586,81 @@ export function buildSlides(d, slides=[]){
       return '<span>'+fmtMoney(v)+'</span>';
     }).join('');
 
-    var rulerHtml = '<div style="margin-bottom:28px">'
-      + '<div style="position:relative;height:60px;margin:0 4px">'
-      + '<div style="position:absolute;top:28px;left:0;right:0;height:2px;background:#e5e5e5;border-radius:2px"></div>'
-      + rulerDots
-      + '</div>'
-      + '<div style="display:flex;justify-content:space-between;font-size:.5rem;color:#bbb;padding:0 4px">'+scaleHtml+'</div>'
-      + '<div style="display:flex;gap:14px;margin-top:8px;flex-wrap:wrap">'
-      + '<span style="display:flex;align-items:center;gap:4px;font-size:.52rem;color:#888"><span style="width:10px;height:10px;border-radius:50%;background:#9ca3af;display:inline-block"></span>Bairro</span>'
-      + '<span style="display:flex;align-items:center;gap:4px;font-size:.52rem;color:#888"><span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block"></span>Mercado amplo</span>'
-      + '<span style="display:flex;align-items:center;gap:4px;font-size:.52rem;color:#888"><span style="width:20px;height:8px;border-radius:3px;background:rgba(22,163,74,0.2);border:1px solid #16a34a55;display:inline-block"></span>Faixa sugerida</span>'
-      + '</div></div>';
+    // Régua redesenhada — bolinhas grandes, dias em badge, sem sobreposição
+    var rulerHtml = (function() {
+      // Altura total da régua: linha no meio, bolinhas acima, badges abaixo
+      var lineTop = 36;  // px — posição da linha horizontal
+      var dotsHtml = '';
+
+      // Concorrentes
+      (d.nv||[]).forEach(function(r) {
+        var v = parseVal(r.v);
+        if (!v) return;
+        var isCat = (r.cat || 'local') === 'amplo';
+        var diasNum = parseInt((r.d||'').replace(/[^0-9]/g,''))||0;
+        var cor;
+        if      (diasNum >= 180) cor = '#7f0000';
+        else if (diasNum >= 90)  cor = '#c0392b';
+        else if (diasNum >= 60)  cor = '#e67e22';
+        else if (diasNum >= 30)  cor = '#f59e0b';
+        else if (diasNum > 0)    cor = '#27ae60';
+        else                     cor = isCat ? '#f59e0b' : '#9ca3af';
+        if (isCat) cor = '#f59e0b';
+        var left = pct(v);
+        var shortName = (r.n || 'Conc').replace(/condom[íi]nio\s*/i,'').replace(/\s+/g,' ').trim().slice(0,10);
+        var diasBadge = diasNum > 0
+          ? '<div style="background:'+cor+';color:#fff;font-size:.48rem;font-weight:800;padding:1px 5px;border-radius:8px;margin-top:2px;white-space:nowrap">'+diasNum+'d</div>'
+          : '';
+        dotsHtml += '<div style="position:absolute;left:'+left+'%;top:'+(lineTop-14)+'px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;pointer-events:none">'
+          + '<div style="font-size:.38rem;color:#666;white-space:nowrap;margin-bottom:2px;max-width:56px;overflow:hidden;text-overflow:ellipsis;text-align:center">'+e(shortName)+'</div>'
+          + '<div style="width:18px;height:18px;border-radius:50%;background:'+cor+';border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.25)"></div>'
+          + diasBadge
+          + '</div>';
+      });
+
+      // Marcadores sugeridos (Comp / Merc / Otim) — maiores, acima dos concorrentes
+      if (hasPric) {
+        var sugs = [
+          { key:'competitivo', cor:'#2563eb', label:'Comp.' },
+          { key:'mercado',     cor:'#16a34a', label:'Merc.' },
+          { key:'otimista',    cor:'#ea580c', label:'Otim.' },
+        ];
+        sugs.forEach(function(s) {
+          var v = p[s.key].total;
+          var left = pct(v);
+          dotsHtml += '<div style="position:absolute;left:'+left+'%;top:'+(lineTop-20)+'px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center">'
+            + '<div style="width:32px;height:32px;border-radius:50%;background:'+s.cor+';border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center">'
+            + '<span style="font-size:.42rem;font-weight:800;color:#fff;line-height:1">'+s.label+'</span>'
+            + '</div></div>';
+        });
+      }
+
+      // Zona verde (faixa sugerida)
+      var zoneHtml = '';
+      if (hasPric) {
+        var zLeft  = pct(p.competitivo.total);
+        var zWidth = (pct(p.otimista.total) - pct(p.competitivo.total)).toFixed(1);
+        zoneHtml = '<div style="position:absolute;top:'+(lineTop-3)+'px;height:8px;left:'+zLeft+'%;width:'+zWidth+'%;background:rgba(22,163,74,0.18);border-radius:3px;border:1px solid #16a34a55"></div>';
+      }
+
+      var scaleHtml = scalePoints.map(function(v) {
+        return '<span>'+fmtMoney(v)+'</span>';
+      }).join('');
+
+      return '<div style="margin-bottom:24px">'
+        + '<div style="position:relative;height:72px;margin:0 4px">'
+        + '<div style="position:absolute;top:'+lineTop+'px;left:0;right:0;height:2px;background:#e5e5e5;border-radius:2px"></div>'
+        + zoneHtml
+        + dotsHtml
+        + '</div>'
+        + '<div style="display:flex;justify-content:space-between;font-size:.48rem;color:#bbb;padding:0 4px;margin-top:2px">'+scaleHtml+'</div>'
+        + '<div style="display:flex;gap:12px;margin-top:6px;flex-wrap:wrap">'
+        + '<span style="display:flex;align-items:center;gap:4px;font-size:.5rem;color:#888"><span style="width:10px;height:10px;border-radius:50%;background:#9ca3af;display:inline-block"></span>Bairro</span>'
+        + '<span style="display:flex;align-items:center;gap:4px;font-size:.5rem;color:#888"><span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block"></span>Mercado amplo</span>'
+        + '<span style="display:flex;align-items:center;gap:4px;font-size:.5rem;color:#888"><span style="width:20px;height:8px;border-radius:3px;background:rgba(22,163,74,0.18);border:1px solid #16a34a55;display:inline-block"></span>Faixa sugerida</span>'
+        + '<span style="display:flex;align-items:center;gap:4px;font-size:.5rem;color:#888"><span style="width:10px;height:10px;border-radius:50%;background:#c0392b;display:inline-block"></span>&gt;90d parado</span>'
+        + '</div></div>';
+    })();
 
     // --- Cards ---
     var cardsHtml = '';
