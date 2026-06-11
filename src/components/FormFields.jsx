@@ -118,12 +118,14 @@ export const NVRow = ({ idx, onRemove, onExtract, extracting, tipoImovel, notFou
 
       {/* Categoria */}
       <div className="flex gap-4 text-xs" style={{color:"var(--text3)"}}>
-        {['local','regiao','bairro'].map(cat => (
-          <label key={cat} className="flex items-center gap-1 cursor-pointer">
-            <input type="radio" name={`nv_cat_${idx}`} value={cat} defaultChecked={cat==='local'} />
-            {cat.charAt(0).toUpperCase() + cat.slice(1)}
-          </label>
-        ))}
+        <label className="flex items-center gap-1 cursor-pointer">
+          <input type="radio" name={`nv_cat_${idx}`} value="local" defaultChecked />
+          Mesmo bairro
+        </label>
+        <label className="flex items-center gap-1 cursor-pointer">
+          <input type="radio" name={`nv_cat_${idx}`} value="amplo" />
+          Mercado amplo
+        </label>
       </div>
     </div>
   )
