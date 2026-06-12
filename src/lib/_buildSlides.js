@@ -3,83 +3,129 @@
 
 export function buildS5(d){
   var e2 = function(v){ return v ? String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''; };
-  
-  // Vendidos rows
-  var vRows = '';
-  (d.v||[]).forEach(function(r,i){
-    var rawVVal  = (r.v||'').replace(/[^0-9]/g,'');
-    var rawVArea = (r.a||'').replace(/[^0-9.,]/g,'').replace(',','.');
-    var vVm2 = (rawVVal && rawVArea && parseFloat(rawVArea)>0) ? 'R$\u00a0'+Math.round(parseInt(rawVVal)/parseFloat(rawVArea)).toLocaleString('pt-BR')+'/m²' : '—';
-    vRows += '<div class="s5-row s5-row-v" style="display:grid;grid-template-columns:1.6fr .55fr 2fr .85fr .72fr">' +
-      '<div class="s5-td"><strong>' + e2(r.n || (r.c ? r.c.split('·')[0].trim() : 'Imóvel '+(i+1))) + '</strong></div>' +
-      '<div class="s5-td">' + e2(r.a||'—') + '</div>' +
-      '<div class="s5-td carac">' + e2(r.c||'—') + '</div>' +
-      '<div class="s5-td val">' + e2(r.v||'—') + '</div>' +
-      '<div class="s5-td" style="font-size:.65rem;color:#27ae60;font-weight:600">' + vVm2 + '</div>' +
+  var parseVal  = function(s){ return parseInt((s||'').replace(/[^0-9]/g,''))||0; };
+  var parseArea = function(s){ return parseFloat((s||'').replace(/[^0-9.,]/g,'').replace(',','.'))||0; };
+
+  var nv    = d.nv || [];
+  var v     = d.v  || [];
+  var local = nv.filter(function(r){ return (r.cat||'local')==='local'; });
+  var amplo = nv.filter(function(r){ return (r.cat||'local')==='amplo'; });
+
+  var diasBadge = function(diasStr){
+    var n = parseInt((diasStr||'').replace(/[^0-9]/g,''))||0;
+    if(!n) return '';
+    var bg = n>=180?'#7f0000':n>=90?'#c0392b':n>=60?'#ea580c':n>=30?'#ca8a04':'#64748b';
+    var ico = n>=90?'⚠️ ':n>=60?'⚠️ ':'';
+    return '<span style="background:'+bg+';color:#fff;font-size:.58rem;font-weight:700;padding:2px 7px;border-radius:6px;white-space:nowrap">'+ico+e2(diasStr)+'</span>';
+  };
+  var verBtn = function(url){
+    if(!url) return '';
+    return '<button onclick="openAnuncio(this.dataset.url)" data-url="'+(url||'').replace(/"/g,'&quot;')+'" style="background:#1266CD;border:none;color:#fff;border-radius:6px;padding:3px 8px;font-size:.58rem;font-weight:700;cursor:pointer;white-space:nowrap">Ver ↗</button>';
+  };
+  var vm2Cell = function(val,area,color){
+    var v2=parseVal(val); var a2=parseArea(area);
+    if(!v2||!a2) return '—';
+    return '<span style="color:'+color+';font-weight:600;font-size:.65rem">R$ '+Math.round(v2/a2).toLocaleString('pt-BR')+'/m²</span>';
+  };
+
+  var thNV = '<div style="display:grid;grid-template-columns:1.5fr .5fr 1.8fr .9fr .72fr .72fr .35fr;padding:6px 14px;background:#f5f5f7;border-bottom:1px solid #e8e8ed">'+
+    ['Ímóvel','Área','Características','Valor anunciado','R$/m²','Parado',''].map(function(h){
+      return '<div style="font-size:.52rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#86868b">'+h+'</div>';
+    }).join('')+'</div>';
+  var thV = '<div style="display:grid;grid-template-columns:1.8fr .5fr 2fr .9fr .75fr;padding:6px 14px;background:#f0fff4;border-bottom:1px solid #c6f6d5">'+
+    ['Ímóvel','Área','Características','Valor negociado','R$/m²'].map(function(h){
+      return '<div style="font-size:.52rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#276749">'+h+'</div>';
+    }).join('')+'</div>';
+
+  var vSection='';
+  if(v.length){
+    var vRows='';
+    v.forEach(function(r,i){
+      var ai=r.ai?'<div style="padding:5px 14px 8px;background:#f0fff4;border-top:1px solid #c6f6d5;font-size:.65rem;color:#276749;font-style:italic">'+e2(r.ai)+'</div>':'';
+      vRows+='<div style="display:grid;grid-template-columns:1.8fr .5fr 2fr .9fr .75fr;align-items:center;padding:9px 14px;background:'+(i%2===0?'#fff':'#f9fefb')+';border-top:1px solid #e8e8ed">'+
+        '<div style="font-size:.75rem;font-weight:700;color:#1d1d1f">'+e2(r.n||(r.c?r.c.split('·')[0].trim():'Ímóvel '+(i+1)))+'</div>'+
+        '<div style="font-size:.75rem;color:#3a3a3c">'+e2(r.a||'—')+'</div>'+
+        '<div style="font-size:.7rem;color:#6e6e73">'+e2(r.c||'—')+'</div>'+
+        '<div style="font-size:.8rem;font-weight:700;color:#1d1d1f">'+e2(r.v||'—')+'</div>'+
+        '<div>'+vm2Cell(r.v,r.a,'#27ae60')+'</div>'+
+      '</div>'+ai;
+    });
+    vSection='<div style="margin-bottom:14px">'+
+      '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:#f0fff4;border-radius:8px 8px 0 0;border:1px solid #c6f6d5;border-bottom:none">'+
+        '<span style="width:8px;height:8px;border-radius:50%;background:#27ae60;flex-shrink:0;display:inline-block"></span>'+
+        '<span style="font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#276749">Vendidos — preço real de fechamento</span>'+
+      '</div>'+
+      '<div style="border:1px solid #c6f6d5;border-radius:0 0 8px 8px;overflow:hidden">'+thV+vRows+'</div>'+
     '</div>';
-  });
-  if(!vRows) vRows = '<div style="padding:12px 16px;font-size:.75rem;color:#a1a1a6">Nenhum vendido cadastrado</div>';
-
-  // NV rows
-  var nvRows = '';
-  (d.nv||[]).forEach(function(r,i){
-    var diasStr = r.d || "";
-    if (!diasStr) { var m = (r.c||"").match(/([0-9]+)\s*dia/i); if (m) diasStr = m[1] + " dias"; }
-    var diasNum = parseInt((diasStr).replace(/[^0-9]/g,""))||0;
-    var badgeColor = diasNum >= 180 ? "#7f0000" : diasNum >= 90 ? "#c0392b" : diasNum >= 60 ? "#ea580c" : diasNum >= 30 ? "#ca8a04" : "#94a3b8";
-    var badgeIcon = diasNum >= 180 ? "🔴 " : diasNum >= 90 ? "⚠️ " : "";
-    var badge = diasStr ? '<span class="s5-badge s5-badge-r" style="background:'+badgeColor+';color:#fff;font-weight:700;padding:3px 7px;border-radius:6px;font-size:.62rem">' + badgeIcon + e2(diasStr) + '</span>' : '—';
-    var verBtn = r.url ? '<button onclick="openAnuncio(this.dataset.url)" data-url="' + (r.url||'').replace(/"/g,'&quot;') + '" style="background:#1266CD;border:none;color:#fff;border-radius:6px;padding:4px 8px;font-size:.6rem;font-weight:700;cursor:pointer">Ver ↗</button>' : '';
-    var aiRow = r.ai ? '<div style="padding:6px 16px 10px;background:#fff0f0;border-top:1px solid #ffc0c0;font-size:.68rem;color:#c0392b;font-style:italic">' + e2(r.ai) + '</div>' : '';
-    var rawNVVal  = (r.v||'').replace(/[^0-9]/g,'');
-    var rawNVArea = (r.a||'').replace(/[^0-9.,]/g,'').replace(',','.');
-    var nvVm2 = (rawNVVal && rawNVArea && parseFloat(rawNVArea)>0) ? 'R$\u00a0'+Math.round(parseInt(rawNVVal)/parseFloat(rawNVArea)).toLocaleString('pt-BR')+'/m²' : '—';
-    nvRows += '<div style="display:grid;grid-template-columns:1.6fr .55fr 1.8fr .85fr .72fr .85fr .4fr;align-items:center;padding:10px 16px;background:#ffd6d6;border-top:1px solid #e8e8ed">' +
-      '<div class="s5-td"><strong>' + e2(r.n || (r.c ? r.c.split('·')[0].trim() : 'Imóvel '+(i+1))) + '</strong></div>' +
-      '<div class="s5-td">' + e2(r.a||'—') + '</div>' +
-      '<div class="s5-td carac">' + e2(r.c||'—') + '</div>' +
-      '<div class="s5-td val-r">' + e2(r.v||'—') + '</div>' +
-      '<div class="s5-td" style="font-size:.65rem;color:#c0392b;font-weight:600">' + nvVm2 + '</div>' +
-      '<div class="s5-td">' + badge + '</div>' +
-      '<div class="s5-td">' + verBtn + '</div>' +
-    '</div>' + aiRow;
-  });
-  if(!nvRows) nvRows = '<div style="padding:12px 16px;font-size:.75rem;color:#a1a1a6">Nenhum comparável cadastrado</div>';
-
-  // AI insight
-  var lastV = (d.v&&d.v.length) ? d.v[d.v.length-1] : null;
-  var lastNV = (d.nv&&d.nv.length) ? d.nv[0] : null;
-  var insight = '';
-  if(lastV && lastNV) {
-    insight = 'Os imóveis que venderam fecharam em ' + e2(lastV.v) + ' — os que estão parados há semanas foram anunciados acima da realidade. O preço certo é a diferença entre vender e não vender.';
-  } else {
-    insight = 'Leitura do mercado: imóveis bem precificados desde o primeiro dia vendem mais rápido e com menor deságio.';
   }
 
-  return '<div class="slide" id="s5">' +
-    '<div class="s-head"><div><div class="s-tag s-tag-blue">Inteligência de Mercado</div><div class="s-title">Análise de ofertas comparativas</div></div></div>' +
-    '<div class="s5-body">' +
-      '<div>' +
-        '<div class="s5-sec-lbl s5-lbl-g"><span class="dot"></span>Vendidos — preço real de fechamento</div>' +
-        '<div class="s5-tbl">' +
-          '<div class="s5-hdr s5-hdr-v"><div class="s5-th">Imóvel</div><div class="s5-th">Área</div><div class="s5-th">Características</div><div class="s5-th">Valor negociado</div><div class="s5-th">R$/m²</div></div>' +
-          vRows +
-        '</div>' +
-      '</div>' +
-      '<div>' +
-        '<div class="s5-sec-lbl s5-lbl-r"><span class="dot"></span>Não vendidos — ainda à venda</div>' +
-        '<div class="s5-tbl">' +
-          '<div class="s5-hdr" style="display:grid;grid-template-columns:1.6fr .55fr 1.8fr .85fr .72fr .85fr .4fr;padding:8px 16px;background:#f5f5f7">' +
-            '<div class="s5-th">Imóvel</div><div class="s5-th">Área</div><div class="s5-th">Características</div><div class="s5-th">Valor anunciado</div><div class="s5-th">R$/m²</div><div class="s5-th">Parado há</div><div class="s5-th"></div>' +
-          '</div>' +
-          nvRows +
-        '</div>' +
-      '</div>' +
-      '<div class="s5-insight">' +
-        '<div class="s5-insight-ico"><svg viewBox="0 0 12 12"><path d="M6 1L1 11h10L6 1z"/><path d="M6 5v3M6 9.5v.5"/></svg></div>' +
-        '<div class="s5-insight-txt"><strong>Leitura do mercado:</strong> ' + insight + '</div>' +
-      '</div>' +
-    '</div>' +
+  var localSection='';
+  if(local.length){
+    var localRows='';
+    local.forEach(function(r,i){
+      var ai=r.ai?'<div style="padding:5px 14px 8px;background:#fff8f0;border-top:1px solid #fed7aa;font-size:.65rem;color:#c0392b;font-style:italic">'+e2(r.ai)+'</div>':'';
+      localRows+='<div style="display:grid;grid-template-columns:1.5fr .5fr 1.8fr .9fr .72fr .72fr .35fr;align-items:center;padding:9px 14px;background:'+(i%2===0?'#fff':'#fafafa')+';border-top:1px solid #e8e8ed">'+
+        '<div style="font-size:.75rem;font-weight:700;color:#1d1d1f">'+e2(r.n||(r.c?r.c.split('·')[0].trim():'Ímóvel '+(i+1)))+'</div>'+
+        '<div style="font-size:.75rem;color:#3a3a3c">'+e2(r.a||'—')+'</div>'+
+        '<div style="font-size:.7rem;color:#6e6e73">'+e2(r.c||'—')+'</div>'+
+        '<div style="font-size:.8rem;font-weight:700;color:#c0392b">'+e2(r.v||'—')+'</div>'+
+        '<div>'+vm2Cell(r.v,r.a,'#c0392b')+'</div>'+
+        '<div>'+diasBadge(r.d||'')+'</div>'+
+        '<div>'+verBtn(r.url||r.lk||'')+'</div>'+
+      '</div>'+ai;
+    });
+    localSection='<div style="margin-bottom:14px">'+
+      '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:#f5f5f7;border-radius:8px 8px 0 0;border:1px solid #e8e8ed;border-bottom:none">'+
+        '<span style="width:8px;height:8px;border-radius:50%;background:#1266CD;flex-shrink:0;display:inline-block"></span>'+
+        '<span style="font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1d1d1f">No seu bairro e região</span>'+
+      '</div>'+
+      '<div style="border:1px solid #e8e8ed;border-radius:0 0 8px 8px;overflow:hidden">'+thNV+localRows+'</div>'+
+    '</div>';
+  }
+
+  var amploSection='';
+  if(amplo.length){
+    var amploRows='';
+    amplo.forEach(function(r,i){
+      var ai=r.ai?'<div style="padding:5px 14px 8px;background:#fff8f0;border-top:1px solid #fed7aa;font-size:.65rem;color:#c0392b;font-style:italic">'+e2(r.ai)+'</div>':'';
+      amploRows+='<div style="display:grid;grid-template-columns:1.5fr .5fr 1.8fr .9fr .72fr .72fr .35fr;align-items:center;padding:9px 14px;background:'+(i%2===0?'#fff':'#fafafa')+';border-top:1px solid #e8e8ed">'+
+        '<div style="font-size:.75rem;font-weight:700;color:#1d1d1f">'+e2(r.n||(r.c?r.c.split('·')[0].trim():'Ímóvel '+(i+1)))+'</div>'+
+        '<div style="font-size:.75rem;color:#3a3a3c">'+e2(r.a||'—')+'</div>'+
+        '<div style="font-size:.7rem;color:#6e6e73">'+e2(r.c||'—')+'</div>'+
+        '<div style="font-size:.8rem;font-weight:700;color:#c0392b">'+e2(r.v||'—')+'</div>'+
+        '<div>'+vm2Cell(r.v,r.a,'#c0392b')+'</div>'+
+        '<div>'+diasBadge(r.d||'')+'</div>'+
+        '<div>'+verBtn(r.url||r.lk||'')+'</div>'+
+      '</div>'+ai;
+    });
+    amploSection='<div style="margin-bottom:14px">'+
+      '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:#fffbf0;border-radius:8px 8px 0 0;border:1px solid #fed7aa;border-bottom:none">'+
+        '<span style="width:8px;height:8px;border-radius:50%;background:#f59e0b;flex-shrink:0;display:inline-block"></span>'+
+        '<span style="font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#92400e">O que o comprador do seu perfil também considera</span>'+
+      '</div>'+
+      '<div style="border:1px solid #fed7aa;border-radius:0 0 8px 8px;overflow:hidden">'+thNV+amploRows+'</div>'+
+    '</div>';
+  }
+
+  var lastV=v.length?v[v.length-1]:null;
+  var lastNV=local.length?local[0]:(nv.length?nv[0]:null);
+  var insight=lastV&&lastNV
+    ?'Os imóveis que venderam fecharam em '+e2(lastV.v)+' — os que estão parados há semanas foram anunciados acima da realidade. O preço certo é a diferença entre vender e não vender.'
+    :'Leitura do mercado: imóveis bem precificados desde o primeiro dia vendem mais rápido e com menor deságio.';
+
+  return '<div class="slide" id="s5">'+
+    '<div class="s-head" style="display:flex;justify-content:space-between;align-items:flex-end">'+
+      '<div><div class="s-tag s-tag-blue">Inteligência de mercado</div><div class="s-title">O que o comprador está vendo agora</div></div>'+
+      '<div class="s-sub">Antes de visitar seu imóvel, ele já pesquisou esses.</div>'+
+    '</div>'+
+    '<div style="flex:1;overflow-y:auto;padding:0 56px 24px;display:flex;flex-direction:column;gap:0;min-height:0">'+
+      vSection+localSection+amploSection+
+      (!v.length&&!local.length&&!amplo.length?'<div style="padding:32px;text-align:center;color:#a1a1a6;font-size:.8rem">Nenhum concorrente cadastrado</div>':'')+
+      '<div style="padding:12px 16px;background:#fffbf0;border:1px solid #fed7aa;border-radius:10px;display:flex;align-items:flex-start;gap:10px;margin-top:4px">'+
+        '<span style="font-size:1rem">⚠️</span>'+
+        '<div style="font-size:.72rem;color:#92400e;line-height:1.6"><strong>Leitura do mercado:</strong> '+insight+'</div>'+
+      '</div>'+
+    '</div>'+
   '</div>';
 }
 
