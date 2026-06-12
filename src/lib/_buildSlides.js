@@ -1,4 +1,3 @@
-// MANUAL_EDIT Ter  9 Jun 2026 22:22:04 -03
 // Auto-generated — do not edit
 
 export function buildS5(d){
@@ -6,127 +5,110 @@ export function buildS5(d){
   var parseVal  = function(s){ return parseInt((s||'').replace(/[^0-9]/g,''))||0; };
   var parseArea = function(s){ return parseFloat((s||'').replace(/[^0-9.,]/g,'').replace(',','.'))||0; };
 
-  var nv    = d.nv || [];
-  var v     = d.v  || [];
-  var local = nv.filter(function(r){ return (r.cat||'local')==='local'; });
-  var amplo = nv.filter(function(r){ return (r.cat||'local')==='amplo'; });
-
-  var diasBadge = function(diasStr){
-    var n = parseInt((diasStr||'').replace(/[^0-9]/g,''))||0;
-    if(!n) return '';
-    var bg = n>=180?'#7f0000':n>=90?'#c0392b':n>=60?'#ea580c':n>=30?'#ca8a04':'#64748b';
-    var ico = n>=90?'⚠️ ':n>=60?'⚠️ ':'';
-    return '<span style="background:'+bg+';color:#fff;font-size:.58rem;font-weight:700;padding:2px 7px;border-radius:6px;white-space:nowrap">'+ico+e2(diasStr)+'</span>';
-  };
-  var verBtn = function(url){
-    if(!url) return '';
-    return '<button onclick="openAnuncio(this.dataset.url)" data-url="'+(url||'').replace(/"/g,'&quot;')+'" style="background:#1266CD;border:none;color:#fff;border-radius:6px;padding:3px 8px;font-size:.58rem;font-weight:700;cursor:pointer;white-space:nowrap">Ver ↗</button>';
-  };
-  var vm2Cell = function(val,area,color){
-    var v2=parseVal(val); var a2=parseArea(area);
-    if(!v2||!a2) return '—';
-    return '<span style="color:'+color+';font-weight:600;font-size:.65rem">R$ '+Math.round(v2/a2).toLocaleString('pt-BR')+'/m²</span>';
+  var diasColor = function(d){
+    var n = parseInt((d||'').replace(/[^0-9]/g,''))||0;
+    if(n===0) return '#888';
+    if(n<30)  return '#27ae60';
+    if(n<90)  return '#e67e22';
+    if(n<180) return '#c0392b';
+    return '#7f0000';
   };
 
-  var thNV = '<div style="display:grid;grid-template-columns:1.5fr .5fr 1.8fr .9fr .72fr .72fr .35fr;padding:6px 14px;background:#f5f5f7;border-bottom:1px solid #e8e8ed">'+
-    ['Ímóvel','Área','Características','Valor anunciado','R$/m²','Parado',''].map(function(h){
-      return '<div style="font-size:.52rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#86868b">'+h+'</div>';
-    }).join('')+'</div>';
-  var thV = '<div style="display:grid;grid-template-columns:1.8fr .5fr 2fr .9fr .75fr;padding:6px 14px;background:#f0fff4;border-bottom:1px solid #c6f6d5">'+
-    ['Ímóvel','Área','Características','Valor negociado','R$/m²'].map(function(h){
-      return '<div style="font-size:.52rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#276749">'+h+'</div>';
-    }).join('')+'</div>';
+  var condColor = function(c){
+    var s = (c||'').toLowerCase();
+    if(s.includes('alto')||s.includes('reform')) return '#27ae60';
+    if(s.includes('bom')||s.includes('parcial')) return '#2980b9';
+    if(s.includes('original')) return '#888';
+    return '#c0392b';
+  };
 
-  var vSection='';
-  if(v.length){
-    var vRows='';
-    v.forEach(function(r,i){
-      var ai=r.ai?'<div style="padding:5px 14px 8px;background:#f0fff4;border-top:1px solid #c6f6d5;font-size:.65rem;color:#276749;font-style:italic">'+e2(r.ai)+'</div>':'';
-      vRows+='<div style="display:grid;grid-template-columns:1.8fr .5fr 2fr .9fr .75fr;align-items:center;padding:9px 14px;background:'+(i%2===0?'#fff':'#f9fefb')+';border-top:1px solid #e8e8ed">'+
-        '<div style="font-size:.75rem;font-weight:700;color:#1d1d1f">'+e2(r.n||(r.c?r.c.split('·')[0].trim():'Ímóvel '+(i+1)))+'</div>'+
-        '<div style="font-size:.75rem;color:#3a3a3c">'+e2(r.a||'—')+'</div>'+
-        '<div style="font-size:.7rem;color:#6e6e73">'+e2(r.c||'—')+'</div>'+
-        '<div style="font-size:.8rem;font-weight:700;color:#1d1d1f">'+e2(r.v||'—')+'</div>'+
-        '<div>'+vm2Cell(r.v,r.a,'#27ae60')+'</div>'+
-      '</div>'+ai;
-    });
-    vSection='<div style="margin-bottom:14px">'+
-      '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:#f0fff4;border-radius:8px 8px 0 0;border:1px solid #c6f6d5;border-bottom:none">'+
-        '<span style="width:8px;height:8px;border-radius:50%;background:#27ae60;flex-shrink:0;display:inline-block"></span>'+
-        '<span style="font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#276749">Vendidos — preço real de fechamento</span>'+
-      '</div>'+
-      '<div style="border:1px solid #c6f6d5;border-radius:0 0 8px 8px;overflow:hidden">'+thV+vRows+'</div>'+
+  var buildRow = function(r, i, isNV){
+    var val  = parseVal(r.v);
+    var area = parseArea(r.a);
+    var vm2  = area>0&&val>0 ? 'R$\u00a0'+Math.round(val/area).toLocaleString('pt-BR')+'/m\u00b2' : '\u2014';
+    var carac = (function(){
+      var parts=[];
+      if(r.quartos) parts.push(r.quartos+' qtos');
+      if(r.vagas!==undefined&&r.vagas!=='') parts.push(r.vagas==='0'?'sem vaga':r.vagas+' vaga(s)');
+      if(r.conservacao) parts.push(r.conservacao);
+      if(r.obs) parts.push(r.obs);
+      return e2(parts.length?parts.join(' \u00b7'):(r.c||'\u2014'));
+    })();
+
+    var diasNum = parseInt((r.d||'').replace(/[^0-9]/g,''))||0;
+    var diasBadge = r.d
+      ? '<span style="display:inline-block;background:'+diasColor(r.d)+';color:#fff;font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:20px">'+e2(r.d)+'</span>'
+      : '\u2014';
+    var verBtn = (isNV && r.url) ? '<button onclick="openAnuncio(this.dataset.url)" data-url="'+(r.url||'').replace(/"/g,'&quot;')+'" style="background:#1266CD;border:none;color:#fff;border-radius:5px;padding:3px 7px;font-size:.58rem;font-weight:700;cursor:pointer">Ver \u2197</button>' : '';
+    var aiRow = r.ai ? '<div style="padding:5px 16px 8px;background:#fff0f0;border-top:1px solid #ffc0c0;font-size:.65rem;color:#c0392b;font-style:italic">'+e2(r.ai)+'</div>' : '';
+    var bg = isNV ? (diasNum>=180?'#fff0f0':diasNum>=90?'#fff8f0':'#fff') : '#f0fff4';
+    var borderTop = i>0 ? 'border-top:1px solid #e8e8ed;' : '';
+    var grid = isNV ? '1.8fr .5fr 2fr .8fr .7fr .7fr .35fr' : '1.8fr .5fr 2fr .8fr .7fr .7fr';
+
+    return '<div style="display:grid;grid-template-columns:'+grid+';align-items:center;padding:8px 14px;background:'+bg+';'+borderTop+'">' +
+      '<div style="font-size:.72rem;"><strong>'+e2(r.n||('Im\u00f3vel '+(i+1)))+'</strong></div>' +
+      '<div style="font-size:.68rem;color:#444">'+e2(r.a||'\u2014')+'m\u00b2</div>' +
+      '<div style="font-size:.65rem;color:#555">'+carac+'</div>' +
+      '<div style="font-size:.7rem;font-weight:700;color:'+(isNV?'#c0392b':'#27ae60')+'">'+e2(r.v||'\u2014')+'</div>' +
+      '<div style="font-size:.62rem;color:#888">'+vm2+'</div>' +
+      '<div>'+diasBadge+'</div>' +
+      (isNV ? '<div>'+verBtn+'</div>' : '') +
+    '</div>' + aiRow;
+  };
+
+  var tblHdr = function(isNV){
+    var grid = isNV ? '1.8fr .5fr 2fr .8fr .7fr .7fr .35fr' : '1.8fr .5fr 2fr .8fr .7fr .7fr';
+    return '<div style="display:grid;grid-template-columns:'+grid+';padding:6px 14px;background:#f5f5f7;font-size:.6rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#888">' +
+      '<div>Im\u00f3vel</div><div>\u00c1rea</div><div>Caracter\u00edsticas</div>' +
+      (isNV ? '<div>Valor anunciado</div>' : '<div>Valor negociado</div>') +
+      '<div>R$/m\u00b2</div><div>Parado</div>' + (isNV ? '<div></div>' : '') +
     '</div>';
+  };
+
+  var nvLocal = (d.nv||[]).filter(function(r){ return (r.cat||'local')==='local'; });
+  var nvAmplo = (d.nv||[]).filter(function(r){ return r.cat==='amplo'; });
+  var localRows = nvLocal.map(function(r,i){ return buildRow(r,i,true); }).join('');
+  var amploRows = nvAmplo.map(function(r,i){ return buildRow(r,i,true); }).join('');
+  var vRows     = (d.v||[]).map(function(r,i){ return buildRow(r,i,false); }).join('');
+
+  if(!localRows && !amploRows) localRows = '<div style="padding:10px 14px;font-size:.72rem;color:#a1a1a6">Nenhum compar\u00e1vel cadastrado</div>';
+
+  var valorSugerido = (d.prec&&d.prec.mercado&&d.prec.mercado.total) ? d.prec.mercado.total : 0;
+  var insightRows = '';
+  if(valorSugerido > 0) {
+    var todos = (d.nv||[]).filter(function(r){ return parseVal(r.v) > valorSugerido && parseVal(r.v) <= valorSugerido + 500000; });
+    todos.sort(function(a,b){ return parseVal(a.v)-parseVal(b.v); });
+    todos.slice(0,3).forEach(function(r){
+      var diff = parseVal(r.v) - valorSugerido;
+      insightRows += '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;font-size:.7rem;color:#1d1d1f;line-height:1.5">' +
+        '<span style="color:#1266CD;font-size:.85rem;flex-shrink:0">\u2192</span>' +
+        '<span>Por <strong style="color:#1266CD">+R$\u00a0'+diff.toLocaleString('pt-BR')+'</strong> a mais, o comprador encontra '+e2(r.n||'um im\u00f3vel')+(r.obs?' \u2014 '+e2(r.obs.split(',')[0]):'')+'.</span>' +
+      '</div>';
+    });
   }
 
-  var localSection='';
-  if(local.length){
-    var localRows='';
-    local.forEach(function(r,i){
-      var ai=r.ai?'<div style="padding:5px 14px 8px;background:#fff8f0;border-top:1px solid #fed7aa;font-size:.65rem;color:#c0392b;font-style:italic">'+e2(r.ai)+'</div>':'';
-      localRows+='<div style="display:grid;grid-template-columns:1.5fr .5fr 1.8fr .9fr .72fr .72fr .35fr;align-items:center;padding:9px 14px;background:'+(i%2===0?'#fff':'#fafafa')+';border-top:1px solid #e8e8ed">'+
-        '<div style="font-size:.75rem;font-weight:700;color:#1d1d1f">'+e2(r.n||(r.c?r.c.split('·')[0].trim():'Ímóvel '+(i+1)))+'</div>'+
-        '<div style="font-size:.75rem;color:#3a3a3c">'+e2(r.a||'—')+'</div>'+
-        '<div style="font-size:.7rem;color:#6e6e73">'+e2(r.c||'—')+'</div>'+
-        '<div style="font-size:.8rem;font-weight:700;color:#c0392b">'+e2(r.v||'—')+'</div>'+
-        '<div>'+vm2Cell(r.v,r.a,'#c0392b')+'</div>'+
-        '<div>'+diasBadge(r.d||'')+'</div>'+
-        '<div>'+verBtn(r.url||r.lk||'')+'</div>'+
-      '</div>'+ai;
-    });
-    localSection='<div style="margin-bottom:14px">'+
-      '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:#f5f5f7;border-radius:8px 8px 0 0;border:1px solid #e8e8ed;border-bottom:none">'+
-        '<span style="width:8px;height:8px;border-radius:50%;background:#1266CD;flex-shrink:0;display:inline-block"></span>'+
-        '<span style="font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1d1d1f">No seu bairro e região</span>'+
-      '</div>'+
-      '<div style="border:1px solid #e8e8ed;border-radius:0 0 8px 8px;overflow:hidden">'+thNV+localRows+'</div>'+
-    '</div>';
-  }
+  var insightBlock = insightRows
+    ? '<div style="margin-top:16px;background:#f0f6ff;border-left:3px solid #1266CD;border-radius:0 8px 8px 0;padding:10px 14px">' +
+        '<div style="font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#1266CD;margin-bottom:8px">O olhar do comprador</div>' +
+        insightRows +
+        '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #d0e4ff;font-size:.68rem;color:#1266CD;font-weight:600">O pre\u00e7o certo n\u00e3o \u00e9 o que o propriet\u00e1rio quer \u2014 \u00e9 o que faz o comprador escolher seu im\u00f3vel.</div>' +
+      '</div>'
+    : '<div style="margin-top:16px;background:#f8f8fa;border-left:3px solid #c0c0c8;border-radius:0 8px 8px 0;padding:10px 14px;font-size:.68rem;color:#888">Preencha os dados de precifica\u00e7\u00e3o para ver o posicionamento de mercado.</div>';
 
-  var amploSection='';
-  if(amplo.length){
-    var amploRows='';
-    amplo.forEach(function(r,i){
-      var ai=r.ai?'<div style="padding:5px 14px 8px;background:#fff8f0;border-top:1px solid #fed7aa;font-size:.65rem;color:#c0392b;font-style:italic">'+e2(r.ai)+'</div>':'';
-      amploRows+='<div style="display:grid;grid-template-columns:1.5fr .5fr 1.8fr .9fr .72fr .72fr .35fr;align-items:center;padding:9px 14px;background:'+(i%2===0?'#fff':'#fafafa')+';border-top:1px solid #e8e8ed">'+
-        '<div style="font-size:.75rem;font-weight:700;color:#1d1d1f">'+e2(r.n||(r.c?r.c.split('·')[0].trim():'Ímóvel '+(i+1)))+'</div>'+
-        '<div style="font-size:.75rem;color:#3a3a3c">'+e2(r.a||'—')+'</div>'+
-        '<div style="font-size:.7rem;color:#6e6e73">'+e2(r.c||'—')+'</div>'+
-        '<div style="font-size:.8rem;font-weight:700;color:#c0392b">'+e2(r.v||'—')+'</div>'+
-        '<div>'+vm2Cell(r.v,r.a,'#c0392b')+'</div>'+
-        '<div>'+diasBadge(r.d||'')+'</div>'+
-        '<div>'+verBtn(r.url||r.lk||'')+'</div>'+
-      '</div>'+ai;
-    });
-    amploSection='<div style="margin-bottom:14px">'+
-      '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:#fffbf0;border-radius:8px 8px 0 0;border:1px solid #fed7aa;border-bottom:none">'+
-        '<span style="width:8px;height:8px;border-radius:50%;background:#f59e0b;flex-shrink:0;display:inline-block"></span>'+
-        '<span style="font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#92400e">O que o comprador do seu perfil também considera</span>'+
-      '</div>'+
-      '<div style="border:1px solid #fed7aa;border-radius:0 0 8px 8px;overflow:hidden">'+thNV+amploRows+'</div>'+
-    '</div>';
-  }
+  var secLabel = function(cor, txt){
+    return '<div style="display:flex;align-items:center;gap:6px;padding:10px 14px 6px;font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#555">' +
+      '<span style="width:7px;height:7px;border-radius:50%;background:'+cor+';flex-shrink:0"></span>'+txt+'</div>';
+  };
 
-  var lastV=v.length?v[v.length-1]:null;
-  var lastNV=local.length?local[0]:(nv.length?nv[0]:null);
-  var insight=lastV&&lastNV
-    ?'Os imóveis que venderam fecharam em '+e2(lastV.v)+' — os que estão parados há semanas foram anunciados acima da realidade. O preço certo é a diferença entre vender e não vender.'
-    :'Leitura do mercado: imóveis bem precificados desde o primeiro dia vendem mais rápido e com menor deságio.';
-
-  return '<div class="slide" id="s5">'+
-    '<div class="s-head" style="display:flex;justify-content:space-between;align-items:flex-end">'+
-      '<div><div class="s-tag s-tag-blue">Inteligência de mercado</div><div class="s-title">O que o comprador está vendo agora</div></div>'+
-      '<div class="s-sub">Antes de visitar seu imóvel, ele já pesquisou esses.</div>'+
-    '</div>'+
-    '<div style="flex:1;overflow-y:auto;padding:0 56px 24px;display:flex;flex-direction:column;gap:0;min-height:0">'+
-      vSection+localSection+amploSection+
-      (!v.length&&!local.length&&!amplo.length?'<div style="padding:32px;text-align:center;color:#a1a1a6;font-size:.8rem">Nenhum concorrente cadastrado</div>':'')+
-      '<div style="padding:12px 16px;background:#fffbf0;border:1px solid #fed7aa;border-radius:10px;display:flex;align-items:flex-start;gap:10px;margin-top:4px">'+
-        '<span style="font-size:1rem">⚠️</span>'+
-        '<div style="font-size:.72rem;color:#92400e;line-height:1.6"><strong>Leitura do mercado:</strong> '+insight+'</div>'+
-      '</div>'+
-    '</div>'+
-  '</div>';
+  return '<div class="slide" id="s5">' +
+    '<div class="s-head"><div><div class="s-tag s-tag-blue">Intelig\u00eancia de mercado</div><div class="s-title">O que o comprador est\u00e1 vendo agora</div></div>' +
+    '<div style="font-size:.72rem;color:#888;max-width:260px;text-align:right;line-height:1.4">Antes de visitar seu im\u00f3vel, ele j\u00e1 pesquisou esses.</div></div>' +
+    '<div class="s5-body" style="overflow-y:auto;max-height:calc(100% - 90px);padding-bottom:8px">' +
+    (vRows ? '<div style="margin-bottom:4px">'+secLabel('#27ae60','Vendidos recentes \u2014 pre\u00e7o real de fechamento')+tblHdr(false)+vRows+'</div>' : '') +
+    '<div style="margin-bottom:4px">'+secLabel('#1266CD','No seu bairro e regi\u00e3o')+tblHdr(true)+localRows+'</div>' +
+    (amploRows ? '<div style="margin-bottom:4px">'+secLabel('#f59e0b','O que o comprador do seu perfil tamb\u00e9m considera')+tblHdr(true)+amploRows+'</div>' : '') +
+    insightBlock +
+    '</div></div>';
 }
 
 
@@ -175,32 +157,10 @@ export function buildSlides(d, slides=[]){
         <div class="s1-prop-addr">${e(d.endereco)}<br>${e(d.bairro)}</div>
       </div>
       <div class="s1-stats">
-        ${(function(){
-          var tipo = (d.tipo_imovel||'').toLowerCase();
-          var isTer  = tipo.includes('terreno');
-          var isCasa = tipo.includes('casa') || tipo.includes('cobertura');
-          var isCom  = tipo.includes('comercial');
-          var stats  = '';
-          if (isTer) {
-            stats += '<div class="s1-stat"><div class="s1-stat-n">'+e(d.area||d.terreno||'—')+'m²</div><div class="s1-stat-d"><strong>Área do terreno</strong></div></div>';
-            stats += '<div class="s1-stat"><div class="s1-stat-n">'+e(d.bairro||'—')+'</div><div class="s1-stat-d"><strong>Localização</strong></div></div>';
-          } else if (isCasa) {
-            stats += '<div class="s1-stat"><div class="s1-stat-n">'+e(d.area)+'m²</div><div class="s1-stat-d"><strong>Área privativa</strong></div></div>';
-            if (d.terreno && d.terreno !== '—') stats += '<div class="s1-stat"><div class="s1-stat-n">'+e(d.terreno)+'m²</div><div class="s1-stat-d"><strong>Área do terreno</strong></div></div>';
-            stats += '<div class="s1-stat"><div class="s1-stat-n">'+e(d.quartos)+'</div><div class="s1-stat-d"><strong>Quartos</strong></div></div>';
-            stats += '<div class="s1-stat"><div class="s1-stat-n">'+(e(d.vagas)||'—')+'</div><div class="s1-stat-d"><strong>Vagas</strong></div></div>';
-          } else if (isCom) {
-            stats += '<div class="s1-stat"><div class="s1-stat-n">'+e(d.area)+'m²</div><div class="s1-stat-d"><strong>Área total</strong></div></div>';
-            stats += '<div class="s1-stat"><div class="s1-stat-n">'+(e(d.andar)||'—')+'</div><div class="s1-stat-d"><strong>Localização</strong></div></div>';
-            stats += '<div class="s1-stat"><div class="s1-stat-n">'+(e(d.vagas)||'—')+'</div><div class="s1-stat-d"><strong>Vagas</strong></div></div>';
-          } else {
-            stats += '<div class="s1-stat"><div class="s1-stat-n">'+e(d.area)+'m²</div><div class="s1-stat-d"><strong>Área privativa</strong></div></div>';
-            stats += '<div class="s1-stat"><div class="s1-stat-n">'+e(d.quartos)+'</div><div class="s1-stat-d"><strong>Quartos</strong></div></div>';
-            stats += '<div class="s1-stat"><div class="s1-stat-n">'+(e(d.vagas)||'—')+'</div><div class="s1-stat-d"><strong>Vagas de garagem</strong></div></div>';
-            stats += '<div class="s1-stat"><div class="s1-stat-n">'+e(d.andar)+'</div><div class="s1-stat-d"><strong>'+(e(d.andar)==='Térrea'?'Casa térrea':'Andar '+e(d.andar))+'</strong></div></div>';
-          }
-          return stats;
-        })()}
+        <div class="s1-stat"><div class="s1-stat-n">${e(d.area)}m²</div><div class="s1-stat-d"><strong>Área privativa</strong></div></div>
+        <div class="s1-stat"><div class="s1-stat-n">${e(d.quartos)}</div><div class="s1-stat-d"><strong>Quartos</strong></div></div>
+        <div class="s1-stat"><div class="s1-stat-n">${e(d.vagas)||"—"}</div><div class="s1-stat-d"><strong>Vagas de garagem</strong></div></div>
+        <div class="s1-stat"><div class="s1-stat-n">${e(d.andar)}</div><div class="s1-stat-d"><strong>${e(d.andar)==="Térrea"?"Casa térrea":"Andar "+e(d.andar)}</strong></div></div>
       </div>
       <div class="s1-foot">Liberty Imóveis · 10 anos de mercado</div>
     </div>
@@ -308,72 +268,19 @@ export function buildSlides(d, slides=[]){
     </div>
 
     <!-- 4 Depreciação -->
-    <div style="background:#fff;padding:28px 32px;display:flex;align-items:flex-start;gap:20px">
+    <div style="background:#fff;padding:32px 36px;display:flex;align-items:flex-start;gap:24px">
       <div style="display:flex;flex-direction:column;align-items:center;gap:10px;flex-shrink:0">
         <div style="width:76px;height:76px;border-radius:50%;background:linear-gradient(145deg,#52be80,#1e8449);box-shadow:0 8px 28px rgba(30,132,73,.25);display:flex;align-items:center;justify-content:center">
           <svg width="38" height="38" viewBox="0 0 40 40" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,10 6,34 34,34"/><polyline points="10,22 18,14 24,20 34,10"/><polyline points="28,10 34,10 34,16"/></svg>
         </div>
         <div style="font-size:.58rem;font-weight:700;letter-spacing:.1em;color:#a1a1a6">04</div>
       </div>
-      <div style="padding-top:2px;flex:1;min-width:0">
-        <div style="font-size:.56rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#1e8449;margin-bottom:4px">Financeiro</div>
-        <div style="font-size:1rem;font-weight:800;color:#1d1d1f;line-height:1.15;margin-bottom:6px">Custo de oportunidade</div>
-        <div style="font-size:.72rem;color:#6e6e73;line-height:1.5;margin-bottom:10px">16 meses parado a <strong style="color:#1d1d1f">1% ao mês</strong> (juros compostos) — quanto o proprietário perde enquanto espera.</div>
-
-        <!-- Slider interativo -->
-        <div style="background:#f8fdf9;border:1px solid rgba(30,132,73,.2);border-radius:12px;padding:14px 16px">
-
-          <!-- Faixas de valor -->
-          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="s3-faixas">
-            <button onclick="s3Calc(300000,this)" style="padding:4px 10px;border-radius:20px;border:1.5px solid #1e8449;background:#1e8449;color:#fff;font-size:.6rem;font-weight:700;cursor:pointer">R$ 300k</button>
-            <button onclick="s3Calc(500000,this)" style="padding:4px 10px;border-radius:20px;border:1.5px solid #e8e8ed;background:#fff;color:#555;font-size:.6rem;font-weight:700;cursor:pointer">R$ 500k</button>
-            <button onclick="s3Calc(1000000,this)" style="padding:4px 10px;border-radius:20px;border:1.5px solid #e8e8ed;background:#fff;color:#555;font-size:.6rem;font-weight:700;cursor:pointer">R$ 1M</button>
-            <button onclick="s3Calc(2000000,this)" style="padding:4px 10px;border-radius:20px;border:1.5px solid #e8e8ed;background:#fff;color:#555;font-size:.6rem;font-weight:700;cursor:pointer">R$ 2M</button>
-            <button onclick="s3Calc(5000000,this)" style="padding:4px 10px;border-radius:20px;border:1.5px solid #e8e8ed;background:#fff;color:#555;font-size:.6rem;font-weight:700;cursor:pointer">R$ 5M</button>
-            <button onclick="s3Calc(10000000,this)" style="padding:4px 10px;border-radius:20px;border:1.5px solid #e8e8ed;background:#fff;color:#555;font-size:.6rem;font-weight:700;cursor:pointer">R$ 10M</button>
-          </div>
-
-          <!-- Resultado -->
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-            <div style="text-align:center;padding:8px;background:#fff;border-radius:8px;border:1px solid #e8e8ed">
-              <div style="font-size:.52rem;color:#888;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Imóvel hoje</div>
-              <div id="s3-val" style="font-size:.88rem;font-weight:800;color:#1d1d1f">R$ 300.000</div>
-            </div>
-            <div style="text-align:center;padding:8px;background:#fff0f4;border-radius:8px;border:1px solid rgba(192,57,43,.2)">
-              <div style="font-size:.52rem;color:#c0392b;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Perde em 16 meses</div>
-              <div id="s3-perda" style="font-size:.88rem;font-weight:800;color:#c0392b">R$ 51.690</div>
-            </div>
-            <div style="text-align:center;padding:8px;background:#f0fff4;border-radius:8px;border:1px solid rgba(30,132,73,.2)">
-              <div style="font-size:.52rem;color:#1e8449;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Poderia ter</div>
-              <div id="s3-final" style="font-size:.88rem;font-weight:800;color:#1e8449">R$ 351.690</div>
-            </div>
-          </div>
-
-          <div style="margin-top:8px;font-size:.58rem;color:#aaa;text-align:center">Simulação: aplicação a 1% a.m. por 16 meses · juros compostos</div>
-        </div>
+      <div style="padding-top:4px">
+        <div style="font-size:.56rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#1e8449;margin-bottom:6px">Financeiro</div>
+        <div style="font-size:1.05rem;font-weight:800;color:#1d1d1f;line-height:1.15;margin-bottom:10px">Depreciação</div>
+        <div style="font-size:.76rem;color:#6e6e73;line-height:1.62">Cada mês parado é <strong style="color:#1d1d1f">custo de oportunidade real</strong>. Imóveis com longo tempo de anúncio são percebidos negativamente — compradores usam isso para pressionar descontos.</div>
       </div>
     </div>
-
-    <script>
-    function s3Calc(val, btn) {
-      // Atualiza botões
-      var btns = document.getElementById('s3-faixas').querySelectorAll('button');
-      btns.forEach(function(b) {
-        b.style.background = '#fff'; b.style.color = '#555'; b.style.borderColor = '#e8e8ed';
-      });
-      btn.style.background = '#1e8449'; btn.style.color = '#fff'; btn.style.borderColor = '#1e8449';
-      // Cálculo juros compostos: val * (1.01^16 - 1)
-      var rendimento = val * (Math.pow(1.01, 16) - 1);
-      var final = val + rendimento;
-      var fmt = function(n) {
-        if (n >= 1000000) return 'R$ ' + (n/1000000).toFixed(2).replace('.',',') + 'M';
-        return 'R$ ' + Math.round(n).toLocaleString('pt-BR');
-      };
-      document.getElementById('s3-val').textContent    = fmt(val);
-      document.getElementById('s3-perda').textContent  = fmt(rendimento);
-      document.getElementById('s3-final').textContent  = fmt(final);
-    }
-    </script>
 
   </div>
 </div>
@@ -588,185 +495,298 @@ export function buildSlides(d, slides=[]){
 
 <!-- ═══ S8 SUGESTÃO DE VALORES ═══ -->`);
 
-  // S8 COMPRADOR
-  const comps=d.comps.length>0?d.comps:[{t:'Solteiros ou casal jovem',d:'Perfil 25–35 anos, busca independência'},{t:'Primeiro imóvel',d:'Compra emocionalmente motivada'},{t:'Familiares próximos',d:'Compra para filho ou familiar da região'},{t:'Realizará financiamento',d:'FGTS + financiamento bancário'}];
-  // Build pricing display — use IA faixas if available, else manual values
-  var s8PrecHtml = '';
-  if (d.prec && d.prec.competitivo) {
-    var p = d.prec;
-    var recKey = p.recomendacao || 'mercado';
-    // Pre-calculate vm2 for samples for the chart
-    var nvSamplesForChart = (d.nv||[]).map(function(r){
-      var val = parseInt((r.v||'').replace(/[^0-9]/g,'')||'0');
-      var area = parseFloat((r.a||'').replace(/[^0-9.,]/g,'').replace(',','.')||'0');
-      return {n:r.n, d:r.d||'', c:r.c||'', vm2: area>0&&val>0 ? Math.round(val/area) : 0};
-    }).filter(function(r){return r.vm2>0;});
-    var vSamplesForChart = (d.v||[]).map(function(r){
-      var val = parseInt((r.v||'').replace(/[^0-9]/g,'')||'0');
-      var area = parseFloat((r.a||'').replace(/[^0-9.,]/g,'').replace(',','.')||'0');
-      return {n:r.n, d:r.d||'', c:r.c||'', vm2: area>0&&val>0 ? Math.round(val/area) : 0};
-    }).filter(function(r){return r.vm2>0;});
-    var faixas = [
-      { key:'competitivo', label:'Competitivo',  color:'#2563eb', bg:'rgba(37,99,235,0.08)' },
-      { key:'mercado',     label:'Mercado',      color:'#059669', bg:'rgba(5,150,105,0.08)' },
-      { key:'otimista',    label:'Otimista',     color:'#d97706', bg:'rgba(217,119,6,0.08)'  },
-    ];
-    var faixaCards = faixas.map(function(f) {
-      var fx = p[f.key] || {};
-      var recBadge = (f.key === recKey) ? '<div style="position:absolute;top:-8px;right:8px;background:'+f.color+';color:#fff;font-size:.5rem;font-weight:700;padding:2px 7px;border-radius:10px;letter-spacing:.05em">SUGERIDO</div>' : '';
-      return '<div style="position:relative;flex:1;background:'+f.bg+';border:1px solid '+f.color+'30;border-radius:12px;padding:16px">'
-        + recBadge
-        + '<div style="font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:'+f.color+';margin-bottom:6px">'+f.label+'</div>'
-        + '<div style="font-size:1.15rem;font-weight:800;color:#1d1d1f;margin-bottom:2px">'+(fx.totalFmt||'—')+'</div>'
-        + '<div style="font-size:.65rem;color:#6e6e73">'+(fx.vm2Fmt||'—')+'</div>'
-        + '<div style="font-size:.6rem;color:#8e8e93;margin-top:6px;line-height:1.4">'+(fx.descricao||'')+'</div>'
+  // S8 — SUGESTÃO DE VALOR com régua de posicionamento
+  (function() {
+    var p = d.prec || null;
+    var hasPric = p && p.competitivo && p.mercado && p.otimista;
+
+    // Helpers
+    var parseVal  = function(s){ return parseInt((s||'').replace(/[^0-9]/g,''))||0; };
+    var parseArea = function(s){ return parseFloat((s||'').replace(/[^0-9.,]/g,'').replace(',','.'))||0; };
+    var fmtMoney  = function(n){ return 'R$\u00a0' + Math.round(n/1000).toLocaleString('pt-BR') + 'k'; };
+
+    // Todos os valores para determinar escala da régua
+    var allVals = [];
+    if (hasPric) {
+      allVals.push(p.competitivo.total, p.mercado.total, p.otimista.total);
+    }
+    (d.nv||[]).forEach(function(r){ var v = parseVal(r.v); if(v>0) allVals.push(v); });
+    (d.v||[]).forEach(function(r){ var v = parseVal(r.v); if(v>0) allVals.push(v); });
+
+    var minVal = allVals.length ? Math.min.apply(null, allVals) : 0;
+    var maxVal = allVals.length ? Math.max.apply(null, allVals) : 0;
+    var range  = maxVal - minVal || 1;
+    // Padding 10% em cada lado
+    var vizMin = minVal - range * 0.10;
+    var vizMax = maxVal + range * 0.10;
+    var vizRange = vizMax - vizMin;
+
+    var pct = function(v) { return Math.max(0, Math.min(100, ((v - vizMin) / vizRange) * 100)).toFixed(1); };
+
+    // Escala legível (5 pontos)
+    var scalePoints = [];
+    for (var i = 0; i <= 4; i++) {
+      scalePoints.push(vizMin + vizRange * (i / 4));
+    }
+
+    // --- Régua ---
+    var rulerDots = '';
+
+    // Zona verde (faixa sugerida)
+    if (hasPric) {
+      var zLeft  = pct(p.competitivo.total);
+      var zWidth = (pct(p.otimista.total) - pct(p.competitivo.total)).toFixed(1);
+      rulerDots += '<div style="position:absolute;top:24px;height:10px;left:'+zLeft+'%;width:'+zWidth+'%;background:rgba(22,163,74,0.2);border-radius:3px;border:1px solid #16a34a55"></div>';
+    }
+
+    // Pontos dos concorrentes (bairro = cinza, amplo = amarelo) — com badge de dias
+    (d.nv||[]).forEach(function(r) {
+      var v = parseVal(r.v);
+      if (!v) return;
+      var isCat = (r.cat || 'local') === 'amplo';
+      var diasNum = parseInt((r.d||'').replace(/[^0-9]/g,''))||0;
+      // Cor por dias parados
+      var cor;
+      if (isCat) cor = '#f59e0b';
+      else if (diasNum === 0) cor = '#9ca3af';
+      else if (diasNum < 30) cor = '#27ae60';
+      else if (diasNum < 60) cor = '#f59e0b';
+      else if (diasNum < 90) cor = '#e67e22';
+      else if (diasNum < 180) cor = '#c0392b';
+      else cor = '#7f0000';
+      var left = pct(v);
+      var label = (r.n || 'Conc').split(' ')[0];
+      var diasLabel = diasNum > 0 ? diasNum+'d' : '';
+      rulerDots += '<div style="position:absolute;left:'+left+'%;top:8px;transform:translateX(-50%);text-align:center">'
+        + '<div style="width:28px;height:28px;border-radius:50%;background:'+cor+';border:2.5px solid #fff;margin:0 auto;box-shadow:0 2px 6px rgba(0,0,0,.28)"></div>'
+        + '<div style="font-size:.48rem;color:#333;margin-top:3px;white-space:nowrap;font-weight:700;max-width:40px;overflow:hidden;text-overflow:ellipsis">'+e(label)+'</div>'
+        + (diasLabel ? '<div style="font-size:.46rem;color:'+cor+';font-weight:700;white-space:nowrap">'+diasLabel+'</div>' : '')
         + '</div>';
+    });
+
+    // Marcadores sugeridos
+    if (hasPric) {
+      var sugs = [
+        { key:'competitivo', cor:'#2563eb', label:'Comp.' },
+        { key:'mercado',     cor:'#16a34a', label:'Merc.' },
+        { key:'otimista',    cor:'#ea580c', label:'Otim.' },
+      ];
+      sugs.forEach(function(s) {
+        var v = p[s.key].total;
+        var left = pct(v);
+        var sv = p[s.key] ? p[s.key].total : 0;
+        var svFmt = sv ? 'R$\u00a0'+Math.round(sv/1000).toLocaleString('pt-BR')+'k' : '';
+        rulerDots += '<div style="position:absolute;left:'+left+'%;top:8px;transform:translateX(-50%);text-align:center">'
+          + '<div style="width:32px;height:32px;border-radius:50%;background:'+s.cor+';display:flex;align-items:center;justify-content:center;margin:0 auto;box-shadow:0 2px 8px rgba(0,0,0,.25)">'
+          + '<span style="font-size:.42rem;font-weight:800;color:#fff;letter-spacing:-.01em">'+s.label+'</span>'
+          + '</div>'
+          + (svFmt ? '<div style="font-size:.48rem;color:'+s.cor+';font-weight:700;margin-top:2px;white-space:nowrap">'+svFmt+'</div>' : '')
+          + '</div>';
+      });
+    }
+
+    var scaleHtml = scalePoints.map(function(v) {
+      return '<span>'+fmtMoney(v)+'</span>';
     }).join('');
-    var alertasHtml = (p.alertas||[]).length > 0
-      ? '<div style="margin-top:10px;padding:10px 14px;border-radius:10px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3)">'
-        + (p.alertas||[]).map(function(a){ return '<p style="font-size:.62rem;color:#d97706;margin:0 0 2px;line-height:1.4">⚠️ '+a+'</p>'; }).join('')
+
+    var rulerHtml = '<div style="margin-bottom:28px">'
+      + '<div style="position:relative;height:72px;margin:0 4px">'
+      + '<div style="position:absolute;top:32px;left:0;right:0;height:3px;background:#e5e5e5;border-radius:2px"></div>'
+      + rulerDots
+      + '</div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:.55rem;color:#999;padding:0 4px;font-weight:600">'+scaleHtml+'</div>'
+      + '<div style="display:flex;gap:14px;margin-top:8px;flex-wrap:wrap">'
+      + '<span style="display:flex;align-items:center;gap:4px;font-size:.52rem;color:#888"><span style="width:10px;height:10px;border-radius:50%;background:#9ca3af;display:inline-block"></span>Bairro</span>'
+      + '<span style="display:flex;align-items:center;gap:4px;font-size:.52rem;color:#888"><span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block"></span>Mercado amplo</span>'
+      + '<span style="display:flex;align-items:center;gap:4px;font-size:.52rem;color:#888"><span style="width:20px;height:8px;border-radius:3px;background:rgba(22,163,74,0.2);border:1px solid #16a34a55;display:inline-block"></span>Faixa sugerida</span>'
+      + '</div></div>';
+
+    // --- Cards ---
+    var cardsHtml = '';
+    if (hasPric) {
+      // Garante totalFmt e vm2Fmt mesmo em dados antigos sem esse campo
+      ['competitivo','mercado','otimista'].forEach(function(k) {
+        if (p[k] && !p[k].totalFmt && p[k].total) {
+          p[k].totalFmt = 'R$ ' + Math.round(p[k].total).toLocaleString('pt-BR');
+        }
+        if (p[k] && !p[k].vm2Fmt && p[k].vm2) {
+          p[k].vm2Fmt = 'R$ ' + Math.round(p[k].vm2).toLocaleString('pt-BR') + '/m²';
+        }
+      });
+      var recKey = p.recomendacao || 'mercado';
+      var faixas = [
+        { key:'competitivo', label:'Competitivo', cor:'#2563eb', bg:'rgba(37,99,235,0.08)', bord:'rgba(37,99,235,0.25)' },
+        { key:'mercado',     label:'Mercado',     cor:'#16a34a', bg:'rgba(22,163,74,0.08)',  bord:'rgba(22,163,74,0.35)',  rec:true },
+        { key:'otimista',    label:'Otimista',    cor:'#ea580c', bg:'rgba(234,88,12,0.08)',  bord:'rgba(234,88,12,0.25)' },
+      ];
+      cardsHtml = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">'
+        + faixas.map(function(f) {
+          var fx = p[f.key] || {};
+          var isRec = f.key === recKey;
+          return '<div style="position:relative;padding:14px;border-radius:10px;background:'+f.bg+';border:'+(isRec?'1.5px':'1px')+' solid '+f.bord+'">'
+            + (isRec ? '<div style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:'+f.cor+';color:#fff;font-size:.45rem;font-weight:700;padding:2px 10px;border-radius:10px;letter-spacing:.05em;white-space:nowrap">SUGERIDO</div>' : '')
+            + '<div style="font-size:.52rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:'+f.cor+';margin-bottom:6px">'+f.label+'</div>'
+            + '<div style="font-size:1.22rem;font-weight:800;color:#1d1d1f;margin-bottom:3px">'+(fx.totalFmt||'—')+'</div>'
+            + '<div style="font-size:.67rem;color:#555;margin-bottom:7px;font-weight:600">'+(fx.vm2Fmt||'—')+'</div>'
+            + '<div style="font-size:.62rem;color:#555;line-height:1.45">'+(fx.descricao||'')+'</div>'
+            + '</div>';
+        }).join('')
+        + '</div>';
+    } else {
+      // Sem precificação IA — mostra valores manuais
+      cardsHtml = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">'
+        + '<div style="padding:14px;border-radius:10px;background:rgba(37,99,235,0.08);border:1px solid rgba(37,99,235,0.2)">'
+        + '<div style="font-size:.52rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#2563eb;margin-bottom:6px">Divulga\u00e7\u00e3o</div>'
+        + '<div style="font-size:1.05rem;font-weight:700;color:#1d1d1f">'+e(d.vl_div||'—')+'</div>'
         + '</div>'
-      : '';
-
-    // Build bar chart comparing our values vs samples
-    var allVm2 = [];
-    ['competitivo','mercado','otimista'].forEach(function(k){
-      if(p[k]&&p[k].vm2) allVm2.push(p[k].vm2);
-    });
-    (nvSamplesForChart||[]).forEach(function(r){ if(r.vm2) allVm2.push(r.vm2); });
-    (vSamplesForChart||[]).forEach(function(r){ if(r.vm2) allVm2.push(r.vm2); });
-    var maxVm2 = allVm2.length ? Math.max.apply(null,allVm2)*1.08 : 1;
-
-    function barRow(label, vm2, color, bgColor, bold) {
-      var pct = Math.round((vm2/maxVm2)*100);
-      var fmtd = 'R$\u00a0' + vm2.toLocaleString('pt-BR') + '/m\u00b2';
-      return '<div style="display:grid;grid-template-columns:200px 1fr;align-items:center;gap:8px;margin-bottom:5px">'
-        + '<div style="font-size:.6rem;font-weight:'+(bold?'700':'500')+';color:#3a3a3c;text-align:right;white-space:nowrap">'+label+'</div>'
-        + '<div style="background:#f0f0f2;border-radius:4px;height:22px;position:relative">'
-        + '<div style="position:absolute;left:0;top:0;height:100%;width:'+pct+'%;background:'+bgColor+';border-radius:4px;display:flex;align-items:center;padding-left:8px;transition:width .5s">'
-        + '<span style="font-size:.58rem;font-weight:700;color:#fff;white-space:nowrap">'+fmtd+'</span>'
-        + '</div></div></div>';
-    }
-
-    function diasColor(d) {
-      d = Math.max(0, parseInt(d)||0);
-      if (d < 30)  return '#94a3b8';
-      if (d < 60)  return '#ca8a04';
-      if (d < 90)  return '#ea580c';
-      if (d < 180) return '#dc2626';
-      return '#7f1d1d';
-    }
-    function barRowFull(label, vm2, bgColor, bold, diasStr) {
-      var pct  = Math.round((vm2/maxVm2)*100);
-      var fmtd = 'R ' + vm2.toLocaleString('pt-BR') + '/m²';
-      var diasNum = parseInt((diasStr||'').replace(/[^0-9]/g,''))||0;
-      var badgeHtml = diasStr
-        ? '<div style="font-size:.55rem;font-weight:700;color:'+diasColor(diasNum)+';white-space:nowrap;text-align:left;min-width:52px">'+diasStr+'</div>'
-        : '<div style="min-width:52px"></div>';
-      return '<div style="display:grid;grid-template-columns:200px 1fr 60px;align-items:center;gap:8px;margin-bottom:6px">'
-        + '<div style="font-size:.6rem;font-weight:'+(bold?'700':'500')+';color:#3a3a3c;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+label+'</div>'
-        + '<div style="background:#f0f0f2;border-radius:4px;height:24px;position:relative">'
-        + '<div style="position:absolute;left:0;top:0;height:100%;width:'+pct+'%;background:'+bgColor+';border-radius:4px;display:flex;align-items:center;padding-left:8px">'
-        + '<span style="font-size:.58rem;font-weight:700;color:#fff;white-space:nowrap">'+fmtd+'</span>'
-        + '</div></div>'
-        + badgeHtml
+        + '<div style="position:relative;padding:14px;border-radius:10px;background:rgba(22,163,74,0.08);border:1.5px solid rgba(22,163,74,0.35)">'
+        + '<div style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:#16a34a;color:#fff;font-size:.45rem;font-weight:700;padding:2px 10px;border-radius:10px;letter-spacing:.05em;white-space:nowrap">REFER\u00caNCIA</div>'
+        + '<div style="font-size:.52rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#16a34a;margin-bottom:6px">Fechamento esperado</div>'
+        + '<div style="font-size:1.05rem;font-weight:700;color:#1d1d1f">'+e(d.vl_fec||'—')+'</div>'
+        + '</div>'
+        + '<div style="padding:14px;border-radius:10px;background:rgba(107,114,128,0.08);border:1px solid rgba(107,114,128,0.2)">'
+        + '<div style="font-size:.52rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin-bottom:6px">R\u00e9f. mercado</div>'
+        + '<div style="font-size:1.05rem;font-weight:700;color:#1d1d1f">'+e(d.vl_med||'—')+'</div>'
+        + '</div>'
         + '</div>';
     }
-    var chartRows = '';
-    var faixaCfg = [
-      {key:'otimista',    label:'VALOR OTIMISTA',    bg:'#22c55e'},
-      {key:'mercado',     label:'VALOR DE MERCADO',  bg:'#10b981'},
-      {key:'competitivo', label:'VALOR COMPETITIVO', bg:'#3b82f6'},
-    ];
-    faixaCfg.forEach(function(f){
-      if(p[f.key]&&p[f.key].vm2) chartRows += barRowFull(f.label, p[f.key].vm2, f.bg, true, null);
-    });
-    chartRows += '<div style="height:1px;background:rgba(0,0,0,0.08);margin:6px 0 6px 168px"></div>';
-    var nvSorted = (nvSamplesForChart||[]).slice().sort(function(a,b){
-      var da = parseInt((a.d||'').replace(/[^0-9]/g,''))||0;
-      var db = parseInt((b.d||'').replace(/[^0-9]/g,''))||0;
-      return db - da;
-    });
-    nvSorted.forEach(function(r,i){
-      if(r.vm2) {
-        var ds = r.d || '';
-        if (!ds) { var m = (r.c||'').match(/([0-9]+) dia/i); if (m) ds = m[1]+' dias'; }
-        var diasNum = parseInt((ds).replace(/[^0-9]/g,''))||0;
-        chartRows += barRowFull('Concorrente '+(i+1)+(r.n?' · '+r.n.split(' ')[0]:''), r.vm2, diasColor(diasNum), false, ds);
+
+    // --- Justificativa ---
+    var justHtml = '';
+    if (hasPric && p.justificativa) {
+      justHtml = '<div style="background:rgba(22,163,74,0.06);border:1px solid rgba(22,163,74,0.2);border-radius:8px;padding:12px 16px;margin-bottom:12px">'
+        + '<div style="font-size:.52rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#16a34a;margin-bottom:6px">Por que esse valor faz sentido</div>'
+        + '<div style="font-size:.65rem;color:#3a3a3c;line-height:1.6">'+e(p.justificativa)+'</div>'
+        + '</div>';
+    }
+
+    // --- Alertas ---
+    var alertasHtml = '';
+    if (hasPric && p.alertas && p.alertas.length) {
+      alertasHtml = '<div style="display:flex;flex-direction:column;gap:5px">'
+        + p.alertas.map(function(a) {
+          return '<div style="display:flex;align-items:flex-start;gap:6px;padding:7px 12px;border-radius:7px;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.25)">'
+            + '<span style="font-size:.7rem;color:#d97706;flex-shrink:0;margin-top:1px">\u26a0</span>'
+            + '<span style="font-size:.6rem;color:#92400e;line-height:1.4">'+e(a)+'</span>'
+            + '</div>';
+        }).join('')
+        + '</div>';
+    }
+
+    // --- Grafico de barras por valor total ---
+    var barsHtml = (function() {
+      var rows = [];
+      if (hasPric) {
+        var faixasCores = { competitivo:'#2563eb', mercado:'#16a34a', otimista:'#ea580c' };
+        var faixasLabel = { competitivo:'Valor Competitivo', mercado:'Valor de Mercado', otimista:'Valor Otimista' };
+        ['competitivo','mercado','otimista'].forEach(function(k) {
+          var fx = p[k] || {};
+          if (fx.total) rows.push({ label: faixasLabel[k], val: fx.total, cor: faixasCores[k], dias: null, isSug: true });
+        });
       }
-    });
-    chartRows += '<div style="height:1px;background:rgba(0,0,0,0.08);margin:6px 0 6px 168px"></div>';
-    (vSamplesForChart||[]).forEach(function(r,i){
-      if(r.vm2) chartRows += barRowFull('Vendido '+(i+1)+(r.n?' · '+r.n.split(' ')[0]:''), r.vm2, '#334155', false, null);
-    });;
+      (d.v||[]).forEach(function(r,i) {
+        var v = parseVal(r.v);
+        if (!v) return;
+        rows.push({ label: (r.n||('Vendido '+(i+1))), val: v, cor: '#1d3a1d', dias: null, isVend: true });
+      });
+      (d.nv||[]).forEach(function(r,i) {
+        var v = parseVal(r.v);
+        if (!v) return;
+        var diasNum = parseInt((r.d||'').replace(/[^0-9]/g,''))||0;
+        var barCor = diasNum === 0 ? '#888' : diasNum < 30 ? '#27ae60' : diasNum < 60 ? '#e67e22' : diasNum < 90 ? '#c0392b' : '#7f0000';
+        rows.push({ label: (r.n||('Concorrente '+(i+1))), val: v, cor: barCor, dias: diasNum });
+      });
+      if (!rows.length) return '';
+      var maxV = Math.max.apply(null, rows.map(function(r){ return r.val; }));
+      var barsRows = rows.map(function(r) {
+        var pct = Math.round((r.val / maxV) * 100);
+        var valFmt = 'R$ ' + Math.round(r.val/1000).toLocaleString('pt-BR') + 'k';
+        // Dias: badge colorido e proeminente
+        var diasBadge = '';
+        if (r.dias !== null && r.dias > 0) {
+          var dCor, dBg, dIcon;
+          if (r.dias >= 180) { dCor='#fff'; dBg='#7f0000'; dIcon='✕✕'; }
+          else if (r.dias >= 90) { dCor='#fff'; dBg='#c0392b'; dIcon='✕'; }
+          else if (r.dias >= 60) { dCor='#fff'; dBg='#e67e22'; dIcon='●'; }
+          else if (r.dias >= 30) { dCor='#fff'; dBg='#f59e0b'; dIcon=''; }
+          else { dCor='#fff'; dBg='#27ae60'; dIcon=''; }
+          diasBadge = '<span style="display:inline-block;background:'+dBg+';color:'+dCor+';font-size:.55rem;font-weight:700;padding:2px 7px;border-radius:12px;white-space:nowrap;letter-spacing:.03em">'
+            + dIcon+(dIcon?' ':'')+r.dias+'d'
+            + '</span>';
+        } else if (r.dias === 0) {
+          diasBadge = '<span style="font-size:.52rem;color:#888">—</span>';
+        }
+        return '<div style="display:grid;grid-template-columns:160px 1fr auto;align-items:center;gap:8px;margin-bottom:5px">'
+          + '<div style="font-size:.6rem;color:#444;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:'+(r.isSug?'700':'400')+'">'+e(r.label)+'</div>'
+          + '<div style="background:#f0f0f2;border-radius:3px;overflow:hidden;height:20px">'
+          + '<div style="height:100%;width:'+pct+'%;background:'+r.cor+';border-radius:3px;display:flex;align-items:center;padding-left:6px">'
+          + '<span style="font-size:.58rem;font-weight:700;color:#fff;white-space:nowrap">'+valFmt+'</span>'
+          + '</div></div>'
+          + '<div style="min-width:52px;text-align:right">'+diasBadge+'</div>'
+          + '</div>';
+      }).join('');
+      return '<div style="margin-top:12px">'
+        + '<div style="font-size:.52rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#888;margin-bottom:8px">Comparativo de Valores · R$</div>'
+        + barsRows
+        + '<div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap">'
+        + '<span style="display:flex;align-items:center;gap:4px;font-size:.5rem;color:#888"><span style="width:10px;height:10px;border-radius:2px;background:#16a34a;display:inline-block"></span>Valores sugeridos Liberty</span>'
+        + '<span style="display:flex;align-items:center;gap:4px;font-size:.5rem;color:#888"><span style="width:10px;height:10px;border-radius:2px;background:#1d3a1d;display:inline-block"></span>Vendidos (preço real)</span>'
+        + '<span style="display:flex;align-items:center;gap:4px;font-size:.5rem;color:#888"><span style="width:10px;height:10px;border-radius:2px;background:#27ae60;display:inline-block"></span>Concorrente &lt;30d</span>'
+        + '<span style="display:flex;align-items:center;gap:4px;font-size:.5rem;color:#888"><span style="width:10px;height:10px;border-radius:2px;background:#e67e22;display:inline-block"></span>Concorrente 60–90d</span>'
+        + '<span style="display:flex;align-items:center;gap:4px;font-size:.5rem;color:#888"><span style="width:10px;height:10px;border-radius:2px;background:#c0392b;display:inline-block"></span>Concorrente &gt;90d (rejeitado)</span>'
+        + '</div></div>';
+    })();
 
-    var chartHtml = chartRows ? '<div style="margin-top:12px;padding:14px 16px;background:rgba(0,0,0,0.02);border-radius:12px;border:1px solid rgba(0,0,0,0.06)">'
-      + '<p style="font-size:.55rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1266CD;margin:0 0 10px">Comparativo de Valores · R$/m²</p>'
-      + chartRows
-      + '<div style="display:flex;gap:16px;margin-top:10px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.06)">'
-      + '<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:2px;background:#10b981"></div><span style="font-size:.55rem;color:#6b7280">Valores sugeridos Liberty</span></div>'
-      + '<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:2px;background:#94a3b8"></div><span style="font-size:.55rem;color:#6b7280">Concorrentes ativos</span></div>'
-      + '<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:2px;background:#6b7280"></div><span style="font-size:.55rem;color:#6b7280">Vendidos</span></div>'
-      + '</div></div>'
-      : '';
+    var s8Inner = rulerHtml + cardsHtml + justHtml + alertasHtml + barsHtml;
 
-    s8PrecHtml = '<div style="display:flex;gap:12px;margin-bottom:12px">' + faixaCards + '</div>'
-      + (p.justificativa ? '<div style="background:rgba(0,0,0,0.03);border-radius:10px;padding:12px 16px;font-size:.68rem;color:#3a3a3c;line-height:1.6">'
-        + '<span style="font-size:.55rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1266CD;display:block;margin-bottom:4px">Análise de mercado</span>'
-        + e(p.justificativa) + '</div>' : '')
-      + chartHtml
-      + alertasHtml;
-  } else {
-    s8PrecHtml = '<div class="s8-body">'
-      + '<div class="s8-l">'
-      + '<div class="s8-vcard s8-vc-div"><div class="s8-vc-lbl">Valor de divulgação</div><div class="s8-vc-val">'+e(d.vl_div)+'</div><div class="s8-vc-note">Valor de entrada nos portais e anúncios</div></div>'
-      + '<div class="s8-vcard s8-vc-fec"><div class="s8-vc-lbl">Expectativa de fechamento</div><div class="s8-vc-val">'+e(d.vl_fec)+'</div><div class="s8-vc-note">Ou algo próximo — com margem técnica de negociação</div></div>'
-      + '<div class="s8-vcard s8-vc-med"><div class="s8-vc-lbl">Referência · Últimos fechamentos</div><div class="s8-vc-val">'+e(d.vl_med)+'</div><div class="s8-vc-note">Média real de negócios em imóveis similares</div></div>'
+    slides.push('<div class="slide" id="s8">'
+      + '<div class="s-head">'
+      + '<div><div class="s-tag s-tag-blue">Sugest\u00e3o de valor</div><div class="s-title">Onde seu im\u00f3vel precisa estar</div></div>'
+      + '<div class="s-sub">Para ser a melhor escolha dentre tudo que o comprador est\u00e1 vendo.</div>'
       + '</div>'
-      + '<div class="s8-r"></div>'
-      + '</div>';
-  }
-  slides.push(s8PrecHtml.startsWith('<div class="slide"') ? s8PrecHtml : `<div class="slide" id="s8">
-  <div class="s-head">
-    <div><div class="s-tag s-tag-blue">Precificação</div><div class="s-title">Sugestão de valores</div></div>
-    <div class="s-sub">Baseada em dados reais de mercado</div>
-  </div>
-  <div style="padding:0 40px 32px">${s8PrecHtml}</div>
-</div>`);
+      + '<div style="padding:0 40px 24px">'+s8Inner+'</div>'
+      + '</div>');
+  })();
+
 
 // S9 — FASE 1: FUNDAÇÃO (Apple white)
   // ============================
   
   // S9 — PERFIL DO COMPRADOR
-  slides.push(`<div class="slide" id="s9">
-  <div class="s-head" style="display:flex;justify-content:space-between;align-items:flex-end">
-    <div>
-      <div class="s-tag s-tag-blue">Perfil</div>
-      <div class="s-title">Quem é o comprador ideal</div>
-    </div>
-    <div class="s-sub">Entender o perfil direciona toda a estratégia de comunicação e canais</div>
-  </div>
-  <div style="flex:1;display:grid;grid-template-columns:repeat(2,1fr);gap:16px;padding:0 56px 40px;align-content:stretch;min-height:0">
-    ${(d.comps&&d.comps.length?d.comps:[{t:'Perfil não informado',d:''}]).map(function(comp,i){
-      var icons = [
-        '<svg width="34" height="34" viewBox="0 0 34 34" fill="none" stroke="#1266CD" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M24 31v-3a6 6 0 00-6-6H8a6 6 0 00-6 6v3"/><circle cx="13" cy="10" r="6"/><path d="M28 11c2 .8 3 2.5 3 4.5v2"/><path d="M22 4c2 .8 3.5 2.8 3.5 5S24 12.5 22 13"/></svg>',
-        '<svg width="34" height="34" viewBox="0 0 34 34" fill="none" stroke="#1266CD" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M31 15c0 10.5-14 18-14 18S3 25.5 3 15a14 14 0 0128 0z"/><circle cx="17" cy="15" r="5"/></svg>',
-        '<svg width="34" height="34" viewBox="0 0 34 34" fill="none" stroke="#1266CD" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="10" width="28" height="20" rx="3"/><path d="M23 10V8a6 6 0 00-12 0v2"/><circle cx="17" cy="20" r="3"/><path d="M17 23v3"/></svg>'
-      ];
-      return '<div style="display:flex;align-items:flex-start;gap:20px;padding:24px 28px;border:1px solid #e8e8ed;border-radius:12px;background:#fafafa;transition:border-color .2s;height:100%;box-sizing:border-box" onmouseenter="this.style.borderColor=\'#1266CD\';this.style.background=\'#f0f6ff\'" onmouseleave="this.style.borderColor=\'#e8e8ed\';this.style.background=\'#fafafa\'">' +
-        '<div style="width:56px;height:56px;border-radius:16px;background:#eef4fd;display:flex;align-items:center;justify-content:center;flex-shrink:0">' +
-          (icons[i%3]||icons[0]) +
-        '</div>' +
-        '<div style="padding-top:2px;flex:1">' +
-          '<div style="font-size:.95rem;font-weight:800;color:#1d1d1f;margin-bottom:6px">' + e(comp.t||comp) + '</div>' +
-          '<div style="font-size:.76rem;color:#6e6e73;line-height:1.6">' + e(comp.d||'') + '</div>' +
-        '</div>' +
-      '</div>';
-    }).join('')}
-  </div>
-</div>
+  (function() {
+    var comps = (d.comps && d.comps.length) ? d.comps : [{t:'Perfil não informado', d:''}];
+    var icons = [
+      '<svg width="34" height="34" viewBox="0 0 34 34" fill="none" stroke="#1266CD" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M24 31v-3a6 6 0 00-6-6H8a6 6 0 00-6 6v3"/><circle cx="13" cy="10" r="6"/><path d="M28 11c2 .8 3 2.5 3 4.5v2"/><path d="M22 4c2 .8 3.5 2.8 3.5 5S24 12.5 22 13"/></svg>',
+      '<svg width="34" height="34" viewBox="0 0 34 34" fill="none" stroke="#1266CD" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M31 15c0 10.5-14 18-14 18S3 25.5 3 15a14 14 0 0128 0z"/><circle cx="17" cy="15" r="5"/></svg>',
+      '<svg width="34" height="34" viewBox="0 0 34 34" fill="none" stroke="#1266CD" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="10" width="28" height="20" rx="3"/><path d="M23 10V8a6 6 0 00-12 0v2"/><circle cx="17" cy="20" r="3"/><path d="M17 23v3"/></svg>'
+    ];
+    var cardsHtml = comps.map(function(comp, i) {
+      return '<div style="display:flex;align-items:flex-start;gap:20px;padding:24px 28px;border:1px solid #e8e8ed;border-radius:12px;background:#fafafa;height:100%;box-sizing:border-box">'
+        + '<div style="width:56px;height:56px;border-radius:16px;background:#eef4fd;display:flex;align-items:center;justify-content:center;flex-shrink:0">'
+        + (icons[i%3] || icons[0])
+        + '</div>'
+        + '<div style="padding-top:2px;flex:1">'
+        + '<div style="font-size:.95rem;font-weight:800;color:#1d1d1f;margin-bottom:6px">' + e(comp.t || comp) + '</div>'
+        + '<div style="font-size:.76rem;color:#6e6e73;line-height:1.6">' + e(comp.d || '') + '</div>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+    slides.push(
+      '<div class="slide" id="s9">'
+      + '<div class="s-head" style="display:flex;justify-content:space-between;align-items:flex-end">'
+      + '<div>'
+      + '<div class="s-tag s-tag-blue">Perfil</div>'
+      + '<div class="s-title">Quem \u00e9 o comprador ideal</div>'
+      + '</div>'
+      + '<div class="s-sub">Entender o perfil direciona toda a estrat\u00e9gia de comunica\u00e7\u00e3o e canais</div>'
+      + '</div>'
+      + '<div style="flex:1;display:grid;grid-template-columns:repeat(2,1fr);gap:16px;padding:0 56px 40px;align-content:stretch;min-height:0">'
+      + cardsHtml
+      + '</div>'
+      + '</div>'
+    );
+  })();
 
-<!-- ═══ S10 SOBRE A LIBERTY ═══ -->`);
 
 slides.push(`<div class="slide" id="s10">
   <div style="width:100%;height:100%;display:grid;grid-template-columns:1fr 1fr">
