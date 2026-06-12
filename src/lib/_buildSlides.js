@@ -817,16 +817,18 @@ export function buildSlides(d, slides=[]){
     }
   }
 
-  slides.push(s8PrecHtml.startsWith('<div class="slide"') ? s8PrecHtml : `<div class="slide" id="s8">
-  <div class="s-head">
-    <div><div class="s-tag s-tag-blue">Sugestão de valor</div><div class="s-title">Onde seu imóvel precisa estar</div></div>
-    <div class="s-sub">Para ser a melhor escolha dentre tudo que o comprador está vendo.</div>
-  </div>
-  <div style="padding:0 40px 24px">
-    ${s8ReguaHtml ? '<div style="padding:16px 0 8px">' + s8ReguaHtml + '</div>' : ''}
-    ${s8PrecHtml}
-  </div>
-</div>`);
+  var s8SlideHtml = s8PrecHtml.startsWith('<div class="slide"') ? s8PrecHtml :
+    '<div class="slide" id="s8">' +
+    '<div class="s-head">' +
+      '<div><div class="s-tag s-tag-blue">Sugestão de valor</div><div class="s-title">Onde seu imóvel precisa estar</div></div>' +
+      '<div class="s-sub">Para ser a melhor escolha dentre tudo que o comprador está vendo.</div>' +
+    '</div>' +
+    '<div style="padding:0 40px 24px">' +
+      (s8ReguaHtml ? '<div style="padding:16px 0 8px">' + s8ReguaHtml + '</div>' : '') +
+      s8PrecHtml +
+    '</div>' +
+    '</div>';
+  slides.push(s8SlideHtml);
 
 // S9 — FASE 1: FUNDAÇÃO (Apple white)
   // ============================
