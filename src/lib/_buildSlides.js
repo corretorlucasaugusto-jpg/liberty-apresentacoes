@@ -726,12 +726,106 @@ export function buildSlides(d, slides=[]){
       + '<div class="s8-r"></div>'
       + '</div>';
   }
+  // ── S8: régua de posicionamento + cards de valor ──
+  var s8ReguaHtml = '';
+  if (hasPric) {
+    var allItems = [];
+    // Valores sugeridos Liberty
+    [
+      { key: 'competitivo', label: 'Comp.', color: '#2563eb', isSug: false },
+      { key: 'mercado',     label: 'Merc.', color: '#059669', isSug: true  },
+      { key: 'otimista',    label: 'Otim.', color: '#d97706', isSug: false },
+    ].forEach(function(cfg) {
+      var faixa = p[cfg.key];
+      if (!faixa || !faixa.total) return;
+      var adj = (d.precAdj && d.precAdj[cfg.key]) || 0;
+      var total = Math.round(faixa.total * (1 + adj/100) / 1000) * 1000;
+      allItems.push({ val: total, label: cfg.label, color: cfg.color, isSug: cfg.isSug, tipo: 'sug', dias: 0 });
+    });
+    // Concorrentes
+    (d.nv||[]).forEach(function(r) {
+      var val = parseVal(r.v); var dias = parseInt((r.d||'').replace(/[^0-9]/g,''))||0;
+      var nome = (r.n || r.c || 'Conc.').split(' ').slice(0,2).join(' ');
+      if (val > 0) allItems.push({ val: val, label: nome, color: dias>=90?'#c0392b':dias>=60?'#ea580c':dias>=30?'#f59e0b':'#64748b', isSug: false, tipo: 'nv', dias: dias });
+    });
+    // Vendidos
+    (d.v||[]).forEach(function(r) {
+      var val = parseVal(r.v);
+      var nome = (r.n || r.c || 'Vend.').split(' ').slice(0,2).join(' ');
+      if (val > 0) allItems.push({ val: val, label: nome, color: '#27ae60', isSug: false, tipo: 'v', dias: 0 });
+    });
+
+    if (allItems.length >= 2) {
+      var vals = allItems.map(function(i){ return i.val; });
+      var minV = Math.min.apply(null, vals);
+      var maxV = Math.max.apply(null, vals);
+      var range = maxV - minV || 1;
+      var pad = range * 0.08;
+      minV -= pad; maxV += pad; range = maxV - minV;
+
+      var fmtK = function(n){ return 'R$ ' + (n >= 1000000 ? (n/1000000).toFixed(2).replace('.',',')+' M' : Math.round(n/1000).toLocaleString('pt-BR')+'k'); };
+
+      // Linha da régua
+      var ticks = '';
+      for (var t = 0; t <= 4; t++) {
+        var tv = minV + (range * t / 4);
+        ticks += '<div style="position:absolute;left:'+(t*25)+'%;transform:translateX(-50%);text-align:center">'+
+          '<div style="width:1px;height:8px;background:#e8e8ed;margin:0 auto"></div>'+
+          '<div style="font-size:.58rem;color:#a1a1a6;margin-top:2px;white-space:nowrap">'+fmtK(tv)+'</div>'+
+        '</div>';
+      }
+
+      // Sugerido faixa verde
+      var sugItems = allItems.filter(function(i){ return i.tipo==='sug'; });
+      var sugMin = sugItems.length ? Math.min.apply(null, sugItems.map(function(i){return i.val;})) : 0;
+      var sugMax = sugItems.length ? Math.max.apply(null, sugItems.map(function(i){return i.val;})) : 0;
+      var sugFaixa = '';
+      if (sugItems.length >= 2) {
+        var sl = (sugMin - minV) / range * 100;
+        var sw = (sugMax - sugMin) / range * 100;
+        sugFaixa = '<div style="position:absolute;top:50%;transform:translateY(-50%);left:'+sl+'%;width:'+sw+'%;height:6px;background:rgba(5,150,105,.18);border-radius:3px;pointer-events:none"></div>';
+      }
+
+      // Bolhas
+      var bubbles = '';
+      allItems.forEach(function(item) {
+        var pct = (item.val - minV) / range * 100;
+        var size = item.tipo === 'sug' ? 52 : item.tipo === 'v' ? 38 : 38;
+        var fs   = item.tipo === 'sug' ? '.58rem' : '.52rem';
+        bubbles += '<div style="position:absolute;left:'+pct+'%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px">'+
+          '<div style="font-size:.55rem;font-weight:700;color:'+item.color+';white-space:nowrap;max-width:80px;overflow:hidden;text-overflow:ellipsis;text-align:center">'+e(item.label)+'</div>'+
+          '<div style="width:'+size+'px;height:'+size+'px;border-radius:50%;background:'+item.color+';display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.18);cursor:default">'+
+            '<div style="font-size:'+fs+';font-weight:800;color:#fff;line-height:1.1;text-align:center">'+fmtK(item.val)+'</div>'+
+            (item.dias>0?'<div style="font-size:.45rem;color:rgba(255,255,255,.85);font-weight:600">'+item.dias+'d</div>':'') +
+          '</div>'+
+        '</div>';
+      });
+
+      // Legenda
+      var legenda = '<div style="display:flex;gap:16px;margin-top:8px;flex-wrap:wrap">'+
+        '<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:50%;background:#64748b"></div><span style="font-size:.6rem;color:#6e6e73">Bairro</span></div>'+
+        '<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:50%;background:#f59e0b"></div><span style="font-size:.6rem;color:#6e6e73">Mercado amplo</span></div>'+
+        '<div style="display:flex;align-items:center;gap:5px"><div style="width:20px;height:6px;border-radius:3px;background:rgba(5,150,105,.3)"></div><span style="font-size:.6rem;color:#6e6e73">Faixa sugerida</span></div>'+
+      '</div>';
+
+      s8ReguaHtml =
+        '<div style="position:relative;height:110px;margin:0 0 16px">' +
+          '<div style="position:absolute;top:50%;left:0;right:0;height:2px;background:#e8e8ed;transform:translateY(-50%)"></div>' +
+          sugFaixa + bubbles +
+          '<div style="position:absolute;bottom:0;left:0;right:0">'+ticks+'</div>'+
+        '</div>' + legenda;
+    }
+  }
+
   slides.push(s8PrecHtml.startsWith('<div class="slide"') ? s8PrecHtml : `<div class="slide" id="s8">
   <div class="s-head">
-    <div><div class="s-tag s-tag-blue">Precificação</div><div class="s-title">Sugestão de valores</div></div>
-    <div class="s-sub">Baseada em dados reais de mercado</div>
+    <div><div class="s-tag s-tag-blue">Sugestão de valor</div><div class="s-title">Onde seu imóvel precisa estar</div></div>
+    <div class="s-sub">Para ser a melhor escolha dentre tudo que o comprador está vendo.</div>
   </div>
-  <div style="padding:0 40px 32px">${s8PrecHtml}</div>
+  <div style="padding:0 40px 24px">
+    ${s8ReguaHtml ? '<div style="padding:16px 0 8px">' + s8ReguaHtml + '</div>' : ''}
+    ${s8PrecHtml}
+  </div>
 </div>`);
 
 // S9 — FASE 1: FUNDAÇÃO (Apple white)
