@@ -268,19 +268,80 @@ export function buildSlides(d, slides=[]){
     </div>
 
     <!-- 4 Depreciação -->
-    <div style="background:#fff;padding:32px 36px;display:flex;align-items:flex-start;gap:24px">
+    <div style="background:#fff;padding:28px 32px;display:flex;align-items:flex-start;gap:20px">
       <div style="display:flex;flex-direction:column;align-items:center;gap:10px;flex-shrink:0">
         <div style="width:76px;height:76px;border-radius:50%;background:linear-gradient(145deg,#52be80,#1e8449);box-shadow:0 8px 28px rgba(30,132,73,.25);display:flex;align-items:center;justify-content:center">
           <svg width="38" height="38" viewBox="0 0 40 40" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,10 6,34 34,34"/><polyline points="10,22 18,14 24,20 34,10"/><polyline points="28,10 34,10 34,16"/></svg>
         </div>
         <div style="font-size:.58rem;font-weight:700;letter-spacing:.1em;color:#a1a1a6">04</div>
       </div>
-      <div style="padding-top:4px">
-        <div style="font-size:.56rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#1e8449;margin-bottom:6px">Financeiro</div>
-        <div style="font-size:1.05rem;font-weight:800;color:#1d1d1f;line-height:1.15;margin-bottom:10px">Depreciação</div>
-        <div style="font-size:.76rem;color:#6e6e73;line-height:1.62">Cada mês parado é <strong style="color:#1d1d1f">custo de oportunidade real</strong>. Imóveis com longo tempo de anúncio são percebidos negativamente — compradores usam isso para pressionar descontos.</div>
+      <div style="padding-top:2px;flex:1;min-width:0">
+        <div style="font-size:.56rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#1e8449;margin-bottom:4px">Financeiro</div>
+        <div style="font-size:1rem;font-weight:800;color:#1d1d1f;line-height:1.15;margin-bottom:6px">Custo de oportunidade</div>
+        <div style="font-size:.72rem;color:#6e6e73;line-height:1.5;margin-bottom:10px">16 meses parado a <strong style="color:#1d1d1f">1% ao mês</strong> (juros compostos) — quanto o proprietário perde enquanto espera.</div>
+        <div style="background:#f8fdf9;border:1px solid rgba(30,132,73,.2);border-radius:12px;padding:14px 16px">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="s3-faixas">
+            <button onclick="s3Calc(300000,this)" style="padding:4px 10px;border-radius:20px;border:1.5px solid #1e8449;background:#1e8449;color:#fff;font-size:.6rem;font-weight:700;cursor:pointer">R$ 300k</button>
+            <button onclick="s3Calc(500000,this)" style="padding:4px 10px;border-radius:20px;border:1.5px solid #e8e8ed;background:#fff;color:#555;font-size:.6rem;font-weight:700;cursor:pointer">R$ 500k</button>
+            <button onclick="s3Calc(1000000,this)" style="padding:4px 10px;border-radius:20px;border:1.5px solid #e8e8ed;background:#fff;color:#555;font-size:.6rem;font-weight:700;cursor:pointer">R$ 1M</button>
+            <button onclick="s3Calc(2000000,this)" style="padding:4px 10px;border-radius:20px;border:1.5px solid #e8e8ed;background:#fff;color:#555;font-size:.6rem;font-weight:700;cursor:pointer">R$ 2M</button>
+            <button onclick="s3Calc(5000000,this)" style="padding:4px 10px;border-radius:20px;border:1.5px solid #e8e8ed;background:#fff;color:#555;font-size:.6rem;font-weight:700;cursor:pointer">R$ 5M</button>
+            <button onclick="s3Calc(10000000,this)" style="padding:4px 10px;border-radius:20px;border:1.5px solid #e8e8ed;background:#fff;color:#555;font-size:.6rem;font-weight:700;cursor:pointer">R$ 10M</button>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <div style="text-align:center;padding:8px;background:#fff;border-radius:8px;border:1px solid #e8e8ed">
+              <div style="font-size:.52rem;color:#888;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Imóvel hoje</div>
+              <div id="s3-val" style="font-size:.88rem;font-weight:800;color:#1d1d1f">R$ 300.000</div>
+            </div>
+            <div style="text-align:center;padding:8px;background:#fff0f4;border-radius:8px;border:1px solid rgba(192,57,43,.2)">
+              <div style="font-size:.52rem;color:#c0392b;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Custo total 16 meses</div>
+              <div id="s3-perda" style="font-size:.88rem;font-weight:800;color:#c0392b">R$ 67.290</div>
+            </div>
+            <div style="text-align:center;padding:8px;background:#f0fff4;border-radius:8px;border:1px solid rgba(30,132,73,.2)">
+              <div style="font-size:.52rem;color:#1e8449;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Poderia ter</div>
+              <div id="s3-final" style="font-size:.88rem;font-weight:800;color:#1e8449">R$ 351.690</div>
+            </div>
+          </div>
+          <div id="s3-det" style="margin-top:6px;font-size:.57rem;color:#888;text-align:center;line-height:1.7"></div>
+          <div style="margin-top:2px;font-size:.55rem;color:#bbb;text-align:center">Estimativas mensais para o perfil do imóvel · 16 meses · juros compostos 1% a.m.</div>
+        </div>
       </div>
     </div>
+    <script>
+    function s3Calc(val, btn) {
+      var btns = document.getElementById('s3-faixas').querySelectorAll('button');
+      btns.forEach(function(b){ b.style.background='#fff';b.style.color='#555';b.style.borderColor='#e8e8ed'; });
+      btn.style.background='#1e8449';btn.style.color='#fff';btn.style.borderColor='#1e8449';
+      var custos = {
+        300000:  { cond:600,  iptu:150, manut:200 },
+        500000:  { cond:900,  iptu:220, manut:300 },
+        1000000: { cond:1500, iptu:400, manut:500 },
+        2000000: { cond:1700, iptu:700, manut:800 },
+        5000000: { cond:3000, iptu:1500,manut:1500},
+        10000000:{ cond:4000, iptu:3000,manut:2500}
+      };
+      var c = custos[val] || { cond:900, iptu:220, manut:300 };
+      var meses = 16;
+      var juros = val * (Math.pow(1.01, meses) - 1);
+      var custoTotal = (c.cond + c.iptu + c.manut) * meses;
+      var perda = juros + custoTotal;
+      var fmt = function(n) {
+        if(n>=1000000) return 'R$ '+(n/1000000).toFixed(2).replace('.',',')+' M';
+        return 'R$ '+Math.round(n).toLocaleString('pt-BR');
+      };
+      document.getElementById('s3-val').textContent   = fmt(val);
+      document.getElementById('s3-perda').textContent = fmt(perda);
+      document.getElementById('s3-final').textContent = fmt(val + juros);
+      var det = document.getElementById('s3-det');
+      if(det){
+        det.innerHTML =
+          '<span>Juros 1%/mês × 16: <strong>'+fmt(juros)+'</strong></span>' +
+          ' &nbsp;·&nbsp; <span>Cond: <strong>'+fmt(c.cond*meses)+'</strong></span>' +
+          ' &nbsp;·&nbsp; <span>IPTU: <strong>'+fmt(c.iptu*meses)+'</strong></span>' +
+          ' &nbsp;·&nbsp; <span>Manut: <strong>'+fmt(c.manut*meses)+'</strong></span>';
+      }
+    }
+    </script>
 
   </div>
 </div>
