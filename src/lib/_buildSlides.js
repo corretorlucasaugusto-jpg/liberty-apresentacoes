@@ -288,13 +288,13 @@ export function buildSlides(d, slides=[]){
 <!-- BROWSER MODAL (S3) -->
 
 <!-- ═══ VIDEO MODALS ═══ -->
-<div id="vmodal" onclick="if(event.target.id==='vmodal')closeVid('vmodal','vphone','vmov')" style="position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;pointer-events:none;background:rgba(0,0,0,0)">
+<div id="vmodal" onclick="if(event.target.id==='vmodal')closeVideo('vmodal','vphone','vmov')" style="position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;pointer-events:none;background:rgba(0,0,0,0)">
   <div id="vphone" style="width:min(340px,88vw);border-radius:44px;overflow:hidden;background:#000;box-shadow:0 60px 120px rgba(0,0,0,.7);transform:scale(.7) translateY(40px);opacity:0;transition:transform .6s cubic-bezier(.16,1,.3,1),opacity .4s">
     <video id="vmov" src="liberty_video.mp4" playsinline webkit-playsinline style="width:100%;display:block;border-radius:44px" muted></video>
   </div>
 </div>
 
-<div id="vmodal2" onclick="if(event.target.id==='vmodal2')closeVid('vmodal2','vphone2','vmov2')" style="position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;pointer-events:none;background:rgba(0,0,0,0)">
+<div id="vmodal2" onclick="if(event.target.id==='vmodal2')closeVideo('vmodal2','vphone2','vmov2')" style="position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;pointer-events:none;background:rgba(0,0,0,0)">
   <div id="vphone2" style="width:min(340px,88vw);border-radius:44px;overflow:hidden;background:#000;box-shadow:0 60px 120px rgba(0,0,0,.7);transform:scale(.7) translateY(40px);opacity:0;transition:transform .6s cubic-bezier(.16,1,.3,1),opacity .4s">
     <video id="vmov2" src="liberty_trafego.mov" playsinline webkit-playsinline style="width:100%;display:block;border-radius:44px" muted></video>
   </div>
