@@ -730,6 +730,8 @@ export function buildSlides(d, slides=[]){
   var s8ReguaHtml = '';
   var hasPric = !!(d.prec && d.prec.competitivo && d.prec.mercado && d.prec.otimista);
   var p = d.prec || null;
+  var parseVal  = function(s){ return parseInt((s||'').replace(/[^0-9]/g,''))||0; };
+  var parseArea = function(s){ return parseFloat((s||'').replace(/[^0-9.,]/g,'').replace(',','.'))||0; };
   if (hasPric) {
     var allItems = [];
     // Valores sugeridos Liberty
