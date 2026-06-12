@@ -728,6 +728,8 @@ export function buildSlides(d, slides=[]){
   }
   // ── S8: régua de posicionamento + cards de valor ──
   var s8ReguaHtml = '';
+  var hasPric = !!(d.prec && d.prec.competitivo && d.prec.mercado && d.prec.otimista);
+  var p = d.prec || null;
   if (hasPric) {
     var allItems = [];
     // Valores sugeridos Liberty
