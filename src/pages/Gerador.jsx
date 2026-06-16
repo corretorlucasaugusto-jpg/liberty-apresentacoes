@@ -44,6 +44,13 @@ export default function Gerador() {
   const isCom  = tipoSel === 'Comercial'
   const isApt  = tipoSel === 'Apartamento' || tipoSel === 'Kitnet / Studio'
 
+  // Autosave quando nvCount ou vCount muda (usuário adiciona/remove concorrente)
+  useEffect(() => {
+    if (!editId && !draftIdRef.current) return
+    clearTimeout(autoSaveTimer.current)
+    autoSaveTimer.current = setTimeout(autoSave, 800)
+  }, [nvCount, vCount])
+
   // Busca Selic atual via Edge Function
   useEffect(() => {
     supabase.functions.invoke('gerar-apresentacao', { body: { data: { _selic: true } } })
@@ -489,7 +496,7 @@ export default function Gerador() {
       </div>
 
       <form ref={formRef} onSubmit={handleGerar} className="space-y-6"
-        onChange={() => { if(precData) setDataChanged(true) }}
+        onChange={() => { if(precData) setDataChanged(true); clearTimeout(autoSaveTimer.current); autoSaveTimer.current = setTimeout(autoSave, 1200) }}
         onBlur={handleFormBlur}>
 
         {/* ── Identificação ── */}
