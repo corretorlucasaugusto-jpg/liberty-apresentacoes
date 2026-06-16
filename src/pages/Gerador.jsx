@@ -44,7 +44,7 @@ export default function Gerador() {
   const isCom  = tipoSel === 'Comercial'
   const isApt  = tipoSel === 'Apartamento' || tipoSel === 'Kitnet / Studio'
 
-  // Autosave quando nvCount ou vCount muda (usuário adiciona/remove concorrente)
+  // Autosave quando nvCount ou vCount muda
   useEffect(() => {
     if (!editId && !draftIdRef.current) return
     clearTimeout(autoSaveTimer.current)
@@ -251,6 +251,11 @@ export default function Gerador() {
       alert('Extração falhou: ' + err.message)
     }
     setExtracting(prev => ({ ...prev, [idx]: false }))
+    // Força autosave após IA preencher os campos via DOM
+    setTimeout(() => {
+      clearTimeout(autoSaveTimer.current)
+      autoSaveTimer.current = setTimeout(autoSave, 800)
+    }, 300)
   }
 
   const parseCarac = (c) => {
