@@ -38,6 +38,10 @@ export default function Gerador() {
   const [precAdj, setPrecAdj] = useState({ competitivo: 0, mercado: 0, otimista: 0 })
   const [selic,   setSelic]   = useState('14,50%')
   const [tipoSel, setTipoSel] = useState('Apartamento')
+  const [modo,    setModo]    = useState('captacao') // 'captacao' | 'realinhamento'
+  const [visitas, setVisitas] = useState([{ data:'', qtd:'', feedback:'' }])
+  const [propostas, setPropostas] = useState([{ data:'', valor:'' }])
+  const isReal = modo === 'realinhamento'
 
   const isTer  = tipoSel === 'Terreno'
   const isCasa = tipoSel === 'Casa' || tipoSel === 'Cobertura'
@@ -167,6 +171,11 @@ export default function Gerador() {
           }
           if (d.prec) { setPrecData(d.prec); setPrecStatus('done') }
           if (d.precAdj) setPrecAdj(d.precAdj)
+          if (d.modo) setModo(d.modo)
+          if (d.visitas?.length)   setVisitas(d.visitas)
+          if (d.propostas?.length) setPropostas(d.propostas)
+          sv('p_data_inicio', d.data_inicio)
+          sv('p_preco_original', d.preco_original)
         }, 100)
       })
   }, [editId])
@@ -291,6 +300,13 @@ export default function Gerador() {
       vl_div: gv('vl_div')||'—', vl_fec: gv('vl_fec')||'—', vl_med: gv('vl_med')||'—',
       nv: [], v: [], pos: posItems.filter(Boolean), neg: negItems.filter(Boolean),
       comps: [1,2,3,4].map(i => ({ t: gv(`c${i}t`), d: '' })).filter(c => c.t),
+      modo: modo,
+    }
+    if (isReal) {
+      d.data_inicio    = gv('p_data_inicio')||''
+      d.preco_original = gv('p_preco_original')||''
+      d.visitas   = visitas.filter(v => v.data || v.qtd || v.feedback)
+      d.propostas = propostas.filter(p => p.data || p.valor)
     }
     for (let i = 1; i <= nvCount; i++) {
       const n     = gv(`nv_n_${i}`)
@@ -485,12 +501,134 @@ export default function Gerador() {
             ✓ Dados pré-preenchidos da V1
           </div>
         )}
-        <p className={`text-sm ${tmute} mt-2`}>Complete os dados de mercado. A IA gera as descrições.</p>
+
+        {/* Toggle Captação / Realinhamento */}
+        <div style={{ marginTop:'12px', display:'inline-flex', borderRadius:'10px', border:'1px solid var(--border2)', overflow:'hidden' }}>
+          <button type="button" onClick={() => { setModo('captacao'); if(precData) setDataChanged(true) }}
+            style={{
+              padding:'8px 18px', fontSize:'12px', fontWeight:600, border:'none', cursor:'pointer',
+              background: !isReal ? '#1266CD' : 'transparent',
+              color: !isReal ? '#fff' : 'var(--text2)',
+              transition:'background .15s',
+            }}>
+            Captação
+          </button>
+          <button type="button" onClick={() => { setModo('realinhamento'); if(precData) setDataChanged(true) }}
+            style={{
+              padding:'8px 18px', fontSize:'12px', fontWeight:600, border:'none', cursor:'pointer',
+              background: isReal ? '#1266CD' : 'transparent',
+              color: isReal ? '#fff' : 'var(--text2)',
+              transition:'background .15s',
+            }}>
+            Realinhamento
+          </button>
+        </div>
+
+        <p className={`text-sm ${tmute} mt-2`}>
+          {isReal
+            ? 'Apresentação para realinhar expectativa de preço com o proprietário, com base na campanha já em andamento.'
+            : 'Complete os dados de mercado. A IA gera as descrições.'}
+        </p>
       </div>
 
       <form ref={formRef} onSubmit={handleGerar} className="space-y-6"
         onChange={() => { if(precData) setDataChanged(true) }}
         onBlur={handleFormBlur}>
+
+        {/* ── Realinhamento: contexto da campanha ── */}
+        {isReal && (
+          <section className="card p-6 space-y-4">
+            <p className="section-title">Campanha em andamento</p>
+            <p className={`text-xs ${tmute} -mt-2`}>Dados de quando o imóvel entrou no mercado, para mostrar o que mudou.</p>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Data de início da campanha"><Input type="date" name="p_data_inicio" /></Field>
+              <Field label="Preço de divulgação original"><Input name="p_preco_original" placeholder="Ex: R$ 550.000" /></Field>
+            </div>
+          </section>
+        )}
+
+        {/* ── Realinhamento: histórico de visitas ── */}
+        {isReal && (
+          <section className="card p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="section-title mb-0">Histórico de visitas</p>
+                <p className={`text-xs ${tmute} mt-0.5`}>Data, quantidade de visitantes e feedback resumido</p>
+              </div>
+              {visitas.length < 10 && (
+                <button type="button" onClick={() => setVisitas(v => [...v, { data:'', qtd:'', feedback:'' }])}
+                  className="text-xs text-blue-500 font-medium hover:underline">+ Adicionar</button>
+              )}
+            </div>
+            {visitas.map((vi, i) => (
+              <div key={i} className="lv-row p-3 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-medium" style={{color:'var(--text3)'}}>Visita #{i+1}</span>
+                  {visitas.length > 1 && (
+                    <button type="button" onClick={() => setVisitas(v => v.filter((_,j) => j!==i))}
+                      className="text-sm transition" style={{color:'var(--text3)'}}>✕ Remover</button>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <Field label="Data">
+                    <input type="date" className="lv-input" value={vi.data}
+                      onChange={e => setVisitas(v => v.map((x,j) => j===i ? {...x, data:e.target.value} : x))}/>
+                  </Field>
+                  <Field label="Nº de visitantes">
+                    <input className="lv-input" placeholder="Ex: 2" value={vi.qtd}
+                      onChange={e => setVisitas(v => v.map((x,j) => j===i ? {...x, qtd:e.target.value} : x))}/>
+                  </Field>
+                  <div className="col-span-2 sm:col-span-2">
+                    <Field label="Feedback resumido">
+                      <input className="lv-input" placeholder="Ex: Acharam o preço acima do que viram em outros imóveis" value={vi.feedback}
+                        onChange={e => setVisitas(v => v.map((x,j) => j===i ? {...x, feedback:e.target.value} : x))}/>
+                    </Field>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </section>
+        )}
+
+        {/* ── Realinhamento: propostas recebidas ── */}
+        {isReal && (
+          <section className="card p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="section-title mb-0">Propostas recebidas</p>
+                <p className={`text-xs ${tmute} mt-0.5`}>Valores oferecidos durante a campanha</p>
+              </div>
+              {propostas.length < 8 && (
+                <button type="button" onClick={() => setPropostas(p => [...p, { data:'', valor:'' }])}
+                  className="text-xs text-blue-500 font-medium hover:underline">+ Adicionar</button>
+              )}
+            </div>
+            {propostas.map((pr, i) => (
+              <div key={i} className="lv-row p-3 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-medium" style={{color:'var(--text3)'}}>Proposta #{i+1}</span>
+                  {propostas.length > 1 && (
+                    <button type="button" onClick={() => setPropostas(p => p.filter((_,j) => j!==i))}
+                      className="text-sm transition" style={{color:'var(--text3)'}}>✕ Remover</button>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="Data">
+                    <input type="date" className="lv-input" value={pr.data}
+                      onChange={e => setPropostas(p => p.map((x,j) => j===i ? {...x, data:e.target.value} : x))}/>
+                  </Field>
+                  <Field label="Valor oferecido">
+                    <input className="lv-input" placeholder="Ex: R$ 420.000" value={pr.valor}
+                      onChange={e => setPropostas(p => p.map((x,j) => j===i ? {...x, valor:e.target.value} : x))}/>
+                  </Field>
+                </div>
+              </div>
+            ))}
+            {propostas.every(p => !p.valor) && (
+              <p className="text-xs" style={{color:'var(--text3)'}}>Nenhuma proposta recebida ainda? Deixe em branco — isso também é um dado relevante.</p>
+            )}
+          </section>
+        )}
 
         {/* ── Identificação ── */}
         <section className="card p-6 space-y-4">
@@ -771,8 +909,10 @@ export default function Gerador() {
         <section className="card p-6 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="section-title mb-0">Concorrentes ativos</p>
-              <p className={`text-xs ${tmute} mt-0.5`}>Link + conteúdo colado → IA extrai os dados</p>
+              <p className="section-title mb-0">{isReal ? 'Concorrentes — o que já venceu o seu' : 'Concorrentes ativos'}</p>
+              <p className={`text-xs ${tmute} mt-0.5`}>
+                {isReal ? 'Links de imóveis similares que já venderam ou estão à venda — para comparar com o que está parado' : 'Link + conteúdo colado → IA extrai os dados'}
+              </p>
             </div>
             {nvCount < MAX_NV && (
               <button type="button" onClick={() => { setNvCount(n=>n+1); if(precData) setDataChanged(true) }}
@@ -860,7 +1000,7 @@ export default function Gerador() {
           <button type="submit" className="btn-primary flex items-center gap-2" disabled={status==='loading'}>
             {status==='loading'
               ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Gerando...</>
-              : (editId ? '✦ Atualizar Apresentação' : '✦ Gerar Apresentação')}
+              : (editId ? '✦ Atualizar Apresentação' : isReal ? '✦ Gerar Realinhamento' : '✦ Gerar Apresentação')}
           </button>
           {status==='done'  && <span className="text-sm text-green-500 font-medium">✓ Gerada e baixada!</span>}
           {status==='error' && <span className="text-sm text-red-400">{errorMsg}</span>}
