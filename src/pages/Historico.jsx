@@ -139,6 +139,22 @@ export default function Historico() {
                   >
                     ↓ Baixar
                   </button>
+                  {row.html && (
+                    <button
+                      onClick={() => {
+                        const url = `${window.location.origin}/ver/${row.id}`
+                        navigator.clipboard.writeText(url).then(() => alert('Link copiado! Cole no Safari do iPad.'))
+                      }}
+                      title="Abrir no iPad"
+                      style={{
+                        padding:'6px 10px', borderRadius:'8px', border:'none',
+                        background:'rgba(5,150,105,0.12)', color:'#059669',
+                        fontSize:'11px', fontWeight:600, cursor:'pointer',
+                      }}
+                    >
+                      📱 iPad
+                    </button>
+                  )}
                   <button
                     onClick={() => del(row.id)}
                     title="Excluir"
@@ -188,6 +204,17 @@ export default function Historico() {
                 >
                   ↓ Baixar
                 </button>
+                {preview.html && (
+                  <button
+                    onClick={() => {
+                      const url = `${window.location.origin}/ver/${preview.id}`
+                      navigator.clipboard.writeText(url).then(() => alert('Link copiado! Cole no Safari do iPad.'))
+                    }}
+                    style={{ padding:'7px 14px', borderRadius:'8px', border:'none', background:'rgba(5,150,105,0.12)', color:'#059669', fontSize:'12px', fontWeight:600, cursor:'pointer' }}
+                  >
+                    📱 iPad
+                  </button>
+                )}
                 <button onClick={() => setPreview(null)}
                   style={{ padding:'7px 10px', borderRadius:'8px', border:'none', background:'transparent', color:'var(--text3)', fontSize:'16px', cursor:'pointer' }}>
                   ✕

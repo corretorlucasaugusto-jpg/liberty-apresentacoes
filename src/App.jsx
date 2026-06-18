@@ -7,10 +7,20 @@ import V1Lista from './pages/V1Lista.jsx'
 import Gerador from './pages/Gerador.jsx'
 import Historico from './pages/Historico.jsx'
 import Login from './pages/Login.jsx'
+import VerApresentacao from './pages/VerApresentacao.jsx'
 import { useAuth } from './hooks/useAuth.js'
 
 export default function App() {
   const { user, loading } = useAuth()
+
+  // Rota pública — não exige login
+  if (window.location.pathname.startsWith('/ver/')) {
+    return (
+      <Routes>
+        <Route path="/ver/:id" element={<VerApresentacao />} />
+      </Routes>
+    )
+  }
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center page-bg">
