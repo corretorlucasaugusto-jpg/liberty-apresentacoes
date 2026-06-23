@@ -656,7 +656,7 @@ export default function Realinhamento() {
                         </div>
                       )}
                       {/* Sliders de ajuste */}
-                      <input type="range" min="-15" max="15" step="1" value={adj}
+                      <input type="range" min="-30" max="30" step="1" value={adj}
                         onChange={e => { setPrecAdj(prev => ({ ...prev, [key]: Number(e.target.value) })); setDataChanged(false) }}
                         style={{ width: '100%', marginTop: '8px', accentColor: color }}
                       />
