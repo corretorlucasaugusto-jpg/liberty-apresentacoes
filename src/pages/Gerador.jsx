@@ -799,7 +799,7 @@ export default function Gerador() {
             )}
           </div>
           {nvIds.map((id, i) => (
-            <NVRow key={id} idx={i+1}
+            <NVRow key={id} idx={i+1} total={nvIds.length}
               onRemove={() => { setNvIds(ids=>ids.filter(x=>x!==id)); if(precData) setDataChanged(true) }}
               onExtract={(idx) => extractFromContent('nv', idx)}
               extracting={!!extractingNV[i+1]}
@@ -823,7 +823,7 @@ export default function Gerador() {
             )}
           </div>
           {vIds.map((id, i) => (
-            <VRow key={id} idx={i+1}
+            <VRow key={id} idx={i+1} total={vIds.length}
               onRemove={() => { setVIds(ids=>ids.filter(x=>x!==id)); if(precData) setDataChanged(true) }}
               onExtract={(idx) => extractFromContent('v', idx)}
               extracting={!!extractingV[i+1]}
