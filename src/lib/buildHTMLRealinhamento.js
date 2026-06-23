@@ -17,6 +17,8 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;backgr
 .nc{font-size:.6rem;color:#6e6e73;letter-spacing:.1em;min-width:34px;text-align:center;font-weight:500}
 `
 
+const MODAL_ANUNCIO_HTML = `<div id="modal-anuncio" onclick="if(event.target.id==='modal-anuncio')closeAnuncio()" style="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0);backdrop-filter:blur(0px);display:flex;align-items:center;justify-content:center;pointer-events:none;transition:background .4s,backdrop-filter .4s"><div id="shell-anuncio" style="width:min(1000px,94vw);height:min(680px,88vh);background:#1e1e1e;border-radius:14px;overflow:hidden;box-shadow:0 48px 120px rgba(0,0,0,.55);transform:scale(.88) translateY(24px);opacity:0;transition:transform .52s cubic-bezier(.16,1,.3,1),opacity .38s;display:flex;flex-direction:column"><div style="background:#2a2a2a;padding:10px 14px;display:flex;align-items:center;gap:12px;flex-shrink:0"><div style="display:flex;gap:6px"><span style="width:12px;height:12px;border-radius:50%;background:#ff5f57;display:block;cursor:pointer" onclick="closeAnuncio()"></span><span style="width:12px;height:12px;border-radius:50%;background:#febc2e;display:block"></span><span style="width:12px;height:12px;border-radius:50%;background:#28c840;display:block"></span></div><div style="flex:1;background:#3a3a3a;border-radius:7px;padding:5px 12px;font-size:.66rem;color:#a1a1a6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span id="anuncio-url-bar"></span></div><button onclick="closeAnuncio()" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.1);border:none;color:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0">&#x2715;</button></div><iframe id="frame-anuncio" src="" style="flex:1;border:none;background:#fff" sandbox="allow-scripts allow-same-origin allow-popups"></iframe></div></div>`
+
 const NAVJS_REALINHAMENTO = `
 var cur=0,slides=document.querySelectorAll('.slide'),dots=[];
 function init(){
@@ -38,7 +40,30 @@ function upd(){
 }
 function go(n){go2(cur+n);}
 function go2(n){cur=Math.max(0,Math.min(slides.length-1,n));upd();}
-document.addEventListener('keydown',function(e){if(e.key==='ArrowRight')go(1);if(e.key==='ArrowLeft')go(-1);});
+function openAnuncio(url){
+  var m=document.getElementById('modal-anuncio');
+  var s=document.getElementById('shell-anuncio');
+  var f=document.getElementById('frame-anuncio');
+  var bar=document.getElementById('anuncio-url-bar');
+  if(!m)return;
+  if(bar)bar.textContent=url;
+  if(f)f.src=url;
+  m.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.72);backdrop-filter:blur(28px);display:flex;align-items:center;justify-content:center;pointer-events:all;transition:background .4s,backdrop-filter .4s';
+  if(s){s.style.transform='scale(1) translateY(0)';s.style.opacity='1';}
+}
+function closeAnuncio(){
+  var m=document.getElementById('modal-anuncio');
+  var s=document.getElementById('shell-anuncio');
+  var f=document.getElementById('frame-anuncio');
+  if(m){m.style.background='rgba(0,0,0,0)';m.style.backdropFilter='blur(0px)';m.style.pointerEvents='none';}
+  if(s){s.style.transform='scale(.88) translateY(24px)';s.style.opacity='0';}
+  if(f)setTimeout(function(){try{f.src='';}catch(e){}},400);
+}
+document.addEventListener('keydown',function(e){
+  if(e.key==='ArrowRight')go(1);
+  if(e.key==='ArrowLeft')go(-1);
+  if(e.key==='Escape')closeAnuncio();
+});
 init();
 `
 
@@ -76,9 +101,9 @@ ${slideDivs}
   <span class="nc" id="nc">1 / ${N}</span>
   <button class="nb" id="next" onclick="go(1)"${N <= 1 ? ' disabled' : ''}><svg viewBox="0 0 13 13"><polyline points="5,2 10,6.5 5,11"/></svg></button>
 </nav>
+${MODAL_ANUNCIO_HTML}
 <${"scr"}ipt>
 ${NAVJS_REALINHAMENTO}
-function openAnuncio(url){ if(url) window.open(url,'_blank'); }
 </${"scr"}ipt>
 </body>
 </html>`
