@@ -476,7 +476,24 @@ export default function Realinhamento() {
         }
       }
 
-      const html = buildHTMLRealinhamento(finalData)
+      // Gerar descrições das ações via IA
+      let acoesDesc = {}
+      if (finalData.acoes && finalData.acoes.length > 0) {
+        try {
+          const { data: iaData } = await supabase.functions.invoke('gerar-apresentacao', {
+            body: {
+              data: {
+                _acoes_desc: true,
+                acoes: finalData.acoes,
+              }
+            }
+          })
+          if (iaData?.acoesDesc) acoesDesc = iaData.acoesDesc
+        } catch (err) {
+          console.warn('Descrições IA falhou, seguindo sem:', err.message)
+        }
+      }
+      const html = buildHTMLRealinhamento({ ...finalData, acoesDesc })
 
       // Salvar no Supabase (insert ou update)
       let saveErr
