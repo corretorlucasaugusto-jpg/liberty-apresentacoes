@@ -8,6 +8,7 @@ import Gerador from './pages/Gerador.jsx'
 import Historico from './pages/Historico.jsx'
 import Login from './pages/Login.jsx'
 import VerApresentacao from './pages/VerApresentacao.jsx'
+import Realinhamento from './pages/Realinhamento.jsx'
 import { useAuth } from './hooks/useAuth.js'
 
 export default function App() {
@@ -33,14 +34,15 @@ export default function App() {
   return (
     <Layout>
       <Routes>
-        <Route path="/"            element={<Home />} />
-        <Route path="/v1"          element={<V1Lista />} />
-        <Route path="/v1/nova"     element={<V1Form />} />
-        <Route path="/v1/:id"      element={<V1Form />} />
-        <Route path="/v2"          element={<Gerador />} />
-        <Route path="/v2/:v1id"    element={<Gerador />} />
-        <Route path="/historico"   element={<Historico />} />
-        <Route path="*"            element={<Navigate to="/" />} />
+        <Route path="/"               element={<Home />} />
+        <Route path="/v1"             element={<V1Lista />} />
+        <Route path="/v1/nova"        element={<V1Form />} />
+        <Route path="/v1/:id"         element={<V1Form />} />
+        <Route path="/v2"             element={<Gerador />} />
+        <Route path="/v2/:v1id"       element={<Gerador />} />
+        <Route path="/historico"      element={<Historico />} />
+        <Route path="/realinhamento"  element={<Realinhamento />} />
+        <Route path="*"               element={<Navigate to="/" />} />
       </Routes>
     </Layout>
   )
