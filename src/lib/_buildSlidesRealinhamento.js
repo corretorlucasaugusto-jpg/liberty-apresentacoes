@@ -4,13 +4,18 @@ export function buildSlidesRealinhamento(d, slides = []) {
     if (!s) return '';
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
-  // Normaliza qualquer variante de R$ com espaço especial → R$ normal
+  // Normaliza R$ — reconstruindo quando o $ sumiu no banco
   function fixR(s) {
     if (!s) return '—';
-    return String(s)
-      .replace(/R\$[\u00a0\u202f\u2009\u0020]*/g, 'R$ ')
-      .replace(/R\s*\$\s*/g, 'R$ ')
-      .trim();
+    var str = String(s).replace(/\u00a0/g,' ').replace(/\u202f/g,' ').trim();
+    // Já está correto
+    if (/^R\$/.test(str)) return str.replace(/^R\$\s*/,'R$ ');
+    // Tem "R " ou "R" seguido de número — reconstrói R$
+    var m = str.match(/^R\s+([\.\d,]+(?:\/m[²2]?)?)(.*)$/);
+    if (m) return 'R$ ' + m[1] + (m[2]||'');
+    // Só número — prefixar R$
+    if (/^[\.\d,]/.test(str)) return 'R$ ' + str;
+    return str;
   }
 
   if (!d) d = {};
