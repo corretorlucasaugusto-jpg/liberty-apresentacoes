@@ -206,7 +206,8 @@ export function buildSlidesRealinhamento(d, slides = []) {
   events.forEach(function(ev,i){ (i%2===0?col1:col2).push(ev); });
 
   var renderEv = function(ev, isLast) {
-    return '<div style="display:flex;gap:14px;padding:16px 0;''+(isLast?'':'+\"border-bottom:1px solid '+C.border'+\"')+'">' +
+    var evBorder = isLast ? '' : 'border-bottom:1px solid '+C.border+';';
+    return '<div style="display:flex;gap:14px;padding:16px 0;"+evBorder+"">' +
       '<div style="width:34px;height:34px;border-radius:50%;background:'+ev.cor+'15;border:1.5px solid '+ev.cor+'35;display:flex;align-items:center;justify-content:center;font-size:.88rem;flex-shrink:0">'+ev.icon+'</div>' +
       '<div style="flex:1;min-width:0">' +
         (ev.iso?'<div style="font-size:.56rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:'+C.lgray+';margin-bottom:3px">'+fmtData(ev.iso)+'</div>':'') +
@@ -265,7 +266,8 @@ export function buildSlidesRealinhamento(d, slides = []) {
         '<div style="background:'+C.light+';border-radius:14px;padding:20px 22px">' +
           '<div style="font-size:.52rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:'+C.blue+';margin-bottom:14px">Ações realizadas ('+acoesFilt.length+')</div>' +
           acoesFilt.map(function(a,i){
-            return '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;''+(i>0?'+\"border-top:1px solid '+C.border+\"':'')+'">'+ // eslint-disable-line
+            var acaoBorder = i>0 ? 'border-top:1px solid '+C.border+';' : '';
+            return '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;'+acaoBorder+'">' +
               '<div style="width:18px;height:18px;border-radius:5px;background:'+C.blue+'20;display:flex;align-items:center;justify-content:center;flex-shrink:0">' +
                 '<svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="'+C.blue+'" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,4.5 3.2,7 8,2"/></svg>' +
               '</div>' +
@@ -305,9 +307,10 @@ export function buildSlidesRealinhamento(d, slides = []) {
       var vm2=area>0&&val>0?'R$ '+Math.round(val/area).toLocaleString('pt-BR')+'/m²':'—';
       var carac=r.c||[r.quartos?r.quartos+' qts':'',r.conservacao||''].filter(Boolean).join(' · ')||'—';
       var db=r.d?'<span style="font-size:.58rem;font-weight:700;padding:2px 7px;border-radius:20px;background:'+diasColor(r.d)+'18;color:'+diasColor(r.d)+'">'+e(r.d)+'</span>':'—';
-      var btn=isNV&&r.url?'<button onclick="openAnuncio(this.dataset.url)" data-url="''+(r.url||'').replace(/"/g,'&quot;')+'" style="font-size:.56rem;font-weight:700;padding:3px 8px;background:'+C.blue+';color:#fff;border:none;border-radius:5px;cursor:pointer">Ver</button>':'';';
+      var btn=isNV&&r.url?'<button onclick="openAnuncio(this.dataset.url)" data-url="'+(r.url||'').replace(/"/g,'&quot;')+'" style="font-size:.56rem;font-weight:700;padding:3px 8px;background:'+C.blue+';color:#fff;border:none;border-radius:5px;cursor:pointer">Ver</button>':'';
       var grid=isNV?'1.8fr .42fr 1.6fr .85fr .7fr .7fr .3fr':'1.8fr .42fr 1.6fr .85fr .7fr .7fr';
-      return '<div style="display:grid;grid-template-columns:'+grid+';align-items:center;padding:9px 14px;background:'+(i%2===0?C.white:C.light)+';''+(i>0?'+\"border-top:1px solid '+C.border+\"':'')+'">'+ // eslint-disable-line
+      var rowBorder = i>0 ? 'border-top:1px solid '+C.border+';' : '';
+      return '<div style="display:grid;grid-template-columns:'+grid+';align-items:center;padding:9px 14px;background:'+(i%2===0?C.white:C.light)+';'+rowBorder+'">' +
         '<div style="font-size:.72rem;font-weight:600;color:'+C.dark+'">'+e(r.n||'—')+'</div>' +
         '<div style="font-size:.66rem;color:'+C.gray+'">'+e(r.a||'—')+'m²</div>' +
         '<div style="font-size:.62rem;color:'+C.gray+'">'+e(carac)+'</div>' +
