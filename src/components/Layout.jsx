@@ -36,7 +36,10 @@ export default function Layout({ children }) {
             <NavLink to="/v2" className={({isActive}) => navCls(isActive || location.pathname.startsWith('/v2'))}>
               V2 · Apresentação
             </NavLink>
-            <NavLink to="/historico" className={({isActive}) => navCls(isActive)}>
+            <NavLink to="/realinhamento" className={({isActive}) => navCls(isActive)}>
+              Realinhamento
+            </NavLink>
+            <NavLink to="/historico" className={({isActive}) => navCls(isActive || location.pathname === '/historico')}>
               Histórico
             </NavLink>
           </nav>

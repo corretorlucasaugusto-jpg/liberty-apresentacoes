@@ -8,38 +8,54 @@ export default function Historico() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const dark = useDark()
-  const [rows,    setRows]    = useState([])
+  const [tab,     setTab]     = useState('v2')       // 'v2' | 'realinhamento'
+  const [rowsV2,  setRowsV2]  = useState([])
+  const [rowsRe,  setRowsRe]  = useState([])
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState('')
-  const [preview, setPreview] = useState(null) // row being previewed
+  const [preview, setPreview] = useState(null)
 
   useEffect(() => {
     if (!user?.id) { setLoading(false); return }
-    supabase
-      .from('apresentacoes')
-      .select('id, cliente, residencial, bairro, created_at, updated_at, html, raw_data, v1_id')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(100)
-      .then(({ data, error }) => {
-        if (error) setError(error.message)
-        setRows(data || [])
-        setLoading(false)
-      })
+    Promise.all([
+      supabase
+        .from('apresentacoes')
+        .select('id, cliente, residencial, bairro, created_at, updated_at, html, raw_data, v1_id, tipo')
+        .eq('user_id', user.id)
+        .or('tipo.is.null,tipo.eq.v2')
+        .order('created_at', { ascending: false })
+        .limit(100),
+      supabase
+        .from('apresentacoes')
+        .select('id, cliente, residencial, bairro, created_at, updated_at, html, raw_data, tipo')
+        .eq('user_id', user.id)
+        .eq('tipo', 'realinhamento')
+        .order('created_at', { ascending: false })
+        .limit(100),
+    ]).then(([r1, r2]) => {
+      if (r1.error) setError(r1.error.message)
+      if (r2.error && !r2.error.message.includes('0 rows')) setError(r2.error.message)
+      setRowsV2(r1.data || [])
+      setRowsRe(r2.data || [])
+      setLoading(false)
+    })
   }, [user])
+
+  const rows = tab === 'v2' ? rowsV2 : rowsRe
 
   const download = (row) => {
     const blob = new Blob([row.html], { type: 'text/html' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
-    a.download = (row.residencial||'Liberty').replace(/[^a-zA-Z0-9\s]/g,'').trim().replace(/\s+/g,'_') + '.html'
+    a.download = (row.residencial||'Liberty').replace(/[^a-zA-Z0-9\s]/g,'').trim().replace(/\s+/g,'_') + (tab==='realinhamento'?'-realinhamento':'') + '.html'
     a.click()
   }
 
   const del = async (id) => {
     if (!confirm('Excluir esta apresentação?')) return
     await supabase.from('apresentacoes').delete().eq('id', id)
-    setRows(r => r.filter(x => x.id !== id))
+    if (tab === 'v2') setRowsV2(r => r.filter(x => x.id !== id))
+    else setRowsRe(r => r.filter(x => x.id !== id))
     if (preview?.id === id) setPreview(null)
   }
 
@@ -58,23 +74,52 @@ export default function Historico() {
     <div style={{ maxWidth:'900px', margin:'0 auto' }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
-      <div style={{ marginBottom:'28px' }}>
-        <h1 style={{ fontSize:'1.4rem', fontWeight:700, margin:0 }}>Histórico de V2</h1>
+      {/* Header */}
+      <div style={{ marginBottom:'24px' }}>
+        <h1 style={{ fontSize:'1.4rem', fontWeight:700, margin:0 }}>Histórico</h1>
         <p style={{ fontSize:'12px', color:'var(--text3)', marginTop:'4px' }}>
-          {rows.length} apresentações geradas — clique para ver, editar ou baixar
+          {rowsV2.length} apresentações V2 · {rowsRe.length} realinhamentos
         </p>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display:'flex', gap:'4px', marginBottom:'20px', background:'var(--section-bg)', border:'1px solid var(--border)', borderRadius:'12px', padding:'4px', width:'fit-content' }}>
+        {[
+          { key:'v2',            label:'V2 · Apresentações', count: rowsV2.length },
+          { key:'realinhamento', label:'Realinhamento',      count: rowsRe.length },
+        ].map(t => (
+          <button key={t.key} onClick={() => { setTab(t.key); setPreview(null) }}
+            style={{
+              padding:'7px 16px', borderRadius:'9px', border:'none', cursor:'pointer',
+              fontSize:'13px', fontWeight:600, transition:'all .15s',
+              background: tab === t.key ? (dark ? 'rgba(18,102,205,0.25)' : '#1266CD') : 'transparent',
+              color: tab === t.key ? (dark ? '#60a5fa' : '#fff') : 'var(--text3)',
+            }}>
+            {t.label}
+            <span style={{
+              marginLeft:'7px', fontSize:'11px', fontWeight:700,
+              background: tab === t.key ? 'rgba(255,255,255,0.2)' : (dark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'),
+              color: tab === t.key ? '#fff' : 'var(--text3)',
+              padding:'1px 7px', borderRadius:'20px',
+            }}>
+              {t.count}
+            </span>
+          </button>
+        ))}
       </div>
 
       {error && (
         <div style={{ padding:'12px 16px', borderRadius:'12px', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.2)', fontSize:'13px', color:'#f87171', marginBottom:'16px' }}>
-          Erro: {error} — <button style={{ background:'none', border:'none', color:'#f87171', cursor:'pointer', textDecoration:'underline' }} onClick={() => window.location.reload()}>tentar novamente</button>
+          Erro: {error}
         </div>
       )}
 
       {rows.length === 0 && !error && (
         <div className="lv-section" style={{ textAlign:'center', padding:'64px 24px' }}>
-          <div style={{ fontSize:'2.5rem', marginBottom:'12px' }}>🎯</div>
-          <p style={{ color:'var(--text3)', fontSize:'14px' }}>Nenhuma apresentação gerada ainda.</p>
+          <div style={{ fontSize:'2.5rem', marginBottom:'12px' }}>{tab === 'realinhamento' ? '📉' : '🎯'}</div>
+          <p style={{ color:'var(--text3)', fontSize:'14px' }}>
+            {tab === 'realinhamento' ? 'Nenhum realinhamento gerado ainda.' : 'Nenhuma apresentação gerada ainda.'}
+          </p>
         </div>
       )}
 
@@ -84,6 +129,7 @@ export default function Historico() {
         <div style={{ flex: preview ? '0 0 340px' : '1', display:'flex', flexDirection:'column', gap:'8px' }}>
           {rows.map(row => {
             const isActive = preview?.id === row.id
+            const isRe = tab === 'realinhamento'
             return (
               <div key={row.id}
                 onClick={() => setPreview(isActive ? null : row)}
@@ -98,8 +144,12 @@ export default function Historico() {
                 onMouseLeave={e => { if (!isActive) e.currentTarget.style.borderColor='var(--border)' }}
               >
                 {/* Icon */}
-                <div style={{ width:'38px', height:'38px', borderRadius:'10px', background:'rgba(18,102,205,0.1)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:'16px' }}>
-                  🎯
+                <div style={{
+                  width:'38px', height:'38px', borderRadius:'10px',
+                  background: isRe ? 'rgba(230,126,34,0.12)' : 'rgba(18,102,205,0.1)',
+                  display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:'16px'
+                }}>
+                  {isRe ? '📉' : '🎯'}
                 </div>
 
                 {/* Info */}
@@ -117,25 +167,19 @@ export default function Historico() {
 
                 {/* Actions */}
                 <div style={{ display:'flex', gap:'6px', flexShrink:0 }} onClick={e => e.stopPropagation()}>
-                  <button
-                    onClick={() => navigate(`/v2?edit=${row.id}`)}
-                    title="Editar e regenerar"
-                    style={{
-                      padding:'6px 10px', borderRadius:'8px', border:'none', cursor:'pointer',
-                      background:'rgba(18,102,205,0.12)', color:'#1266CD',
-                      fontSize:'11px', fontWeight:600,
-                    }}
-                  >
-                    ✎ Editar
-                  </button>
+                  {!isRe && (
+                    <button
+                      onClick={() => navigate(`/v2?edit=${row.id}`)}
+                      title="Editar e regenerar"
+                      style={{ padding:'6px 10px', borderRadius:'8px', border:'none', cursor:'pointer', background:'rgba(18,102,205,0.12)', color:'#1266CD', fontSize:'11px', fontWeight:600 }}
+                    >
+                      ✎ Editar
+                    </button>
+                  )}
                   <button
                     onClick={() => download(row)}
                     title="Baixar HTML"
-                    style={{
-                      padding:'6px 10px', borderRadius:'8px',
-                      border:'1px solid var(--border2)', background:'transparent',
-                      color:'var(--text2)', fontSize:'11px', fontWeight:500, cursor:'pointer',
-                    }}
+                    style={{ padding:'6px 10px', borderRadius:'8px', border:'1px solid var(--border2)', background:'transparent', color:'var(--text2)', fontSize:'11px', fontWeight:500, cursor:'pointer' }}
                   >
                     ↓ Baixar
                   </button>
@@ -146,11 +190,7 @@ export default function Historico() {
                         navigator.clipboard.writeText(url).then(() => alert('Link copiado! Cole no Safari do iPad.'))
                       }}
                       title="Abrir no iPad"
-                      style={{
-                        padding:'6px 10px', borderRadius:'8px', border:'none',
-                        background:'rgba(5,150,105,0.12)', color:'#059669',
-                        fontSize:'11px', fontWeight:600, cursor:'pointer',
-                      }}
+                      style={{ padding:'6px 10px', borderRadius:'8px', border:'none', background:'rgba(5,150,105,0.12)', color:'#059669', fontSize:'11px', fontWeight:600, cursor:'pointer' }}
                     >
                       📱 iPad
                     </button>
@@ -158,11 +198,7 @@ export default function Historico() {
                   <button
                     onClick={() => del(row.id)}
                     title="Excluir"
-                    style={{
-                      padding:'6px 8px', borderRadius:'8px', border:'none',
-                      background:'transparent', color:'var(--text3)',
-                      fontSize:'13px', cursor:'pointer',
-                    }}
+                    style={{ padding:'6px 8px', borderRadius:'8px', border:'none', background:'transparent', color:'var(--text3)', fontSize:'13px', cursor:'pointer' }}
                   >✕</button>
                 </div>
               </div>
@@ -180,11 +216,7 @@ export default function Historico() {
             maxHeight:'calc(100vh - 120px)',
             display:'flex', flexDirection:'column',
           }}>
-            {/* Preview header */}
-            <div style={{
-              padding:'12px 16px', display:'flex', alignItems:'center', justifyContent:'space-between',
-              borderBottom:'1px solid var(--border)', flexShrink:0,
-            }}>
+            <div style={{ padding:'12px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', borderBottom:'1px solid var(--border)', flexShrink:0 }}>
               <div>
                 <p style={{ fontSize:'13px', fontWeight:600, margin:0, color:'var(--text)' }}>{preview.residencial}</p>
                 <p style={{ fontSize:'11px', color:'var(--text3)', margin:'2px 0 0' }}>
@@ -192,12 +224,14 @@ export default function Historico() {
                 </p>
               </div>
               <div style={{ display:'flex', gap:'8px' }}>
-                <button
-                onClick={() => navigate(`/v2?edit=${preview.id}`)}
-                style={{ padding:'7px 14px', borderRadius:'8px', border:'none', cursor:'pointer', background:'linear-gradient(135deg,#1266CD,#1a7be8)', color:'#fff', fontSize:'12px', fontWeight:600 }}
-              >
-                ✎ Editar
-              </button>
+                {tab === 'v2' && (
+                  <button
+                    onClick={() => navigate(`/v2?edit=${preview.id}`)}
+                    style={{ padding:'7px 14px', borderRadius:'8px', border:'none', cursor:'pointer', background:'linear-gradient(135deg,#1266CD,#1a7be8)', color:'#fff', fontSize:'12px', fontWeight:600 }}
+                  >
+                    ✎ Editar
+                  </button>
+                )}
                 <button
                   onClick={() => download(preview)}
                   style={{ padding:'7px 14px', borderRadius:'8px', border:'1px solid var(--border2)', background:'transparent', color:'var(--text2)', fontSize:'12px', cursor:'pointer' }}
@@ -221,8 +255,6 @@ export default function Historico() {
                 </button>
               </div>
             </div>
-
-            {/* iframe preview */}
             <iframe
               srcDoc={preview.html}
               style={{ flex:1, border:'none', background:'#fff' }}
