@@ -21,8 +21,13 @@ export default function Gerador() {
   const autoSaveTimer = useRef(null)
   const [autoSaveStatus, setAutoSaveStatus] = useState(null)
   const [v1loaded, setV1loaded] = useState(false)
-  const [nvCount,  setNvCount]  = useState(2)
-  const [vCount,   setVCount]   = useState(1)
+  const [nvIds, setNvIds] = useState(() => [1, 2])
+  const [vIds,  setVIds]  = useState(() => [1])
+  const nvNextId = React.useRef(3)
+  const vNextId  = React.useRef(2)
+  // compat aliases
+  const nvCount = nvIds.length
+  const vCount  = vIds.length
   const [posItems, setPosItems] = useState(['', ''])
   const [negItems, setNegItems] = useState([''])
   const [status,   setStatus]   = useState(null)
@@ -49,7 +54,7 @@ export default function Gerador() {
     if (!editId && !draftIdRef.current) return
     clearTimeout(autoSaveTimer.current)
     autoSaveTimer.current = setTimeout(autoSave, 800)
-  }, [nvCount, vCount])
+  }, [nvIds.length, vIds.length])
 
   // Busca Selic atual via Edge Function
   useEffect(() => {
@@ -136,7 +141,8 @@ export default function Gerador() {
           if (d.pos?.length) setPosItems(d.pos)
           if (d.neg?.length) setNegItems(d.neg)
           if (d.nv?.length) {
-            setNvCount(d.nv.length)
+            setNvIds(Array.from({length:d.nv.length},(_,i)=>i+1))
+          nvNextId.current = d.nv.length + 1
             d.nv.forEach((r, i) => {
               setTimeout(() => {
                 sv(`nv_n_${i+1}`, r.n)
@@ -153,7 +159,8 @@ export default function Gerador() {
             })
           }
           if (d.v?.length) {
-            setVCount(d.v.length)
+            setVIds(Array.from({length:d.v.length},(_,i)=>i+1))
+          vNextId.current = d.v.length + 1
             d.v.forEach((r, i) => {
               setTimeout(() => {
                 sv(`v_n_${i+1}`, r.n)
@@ -786,21 +793,21 @@ export default function Gerador() {
               <p className="section-title mb-0">Concorrentes ativos</p>
               <p className={`text-xs ${tmute} mt-0.5`}>Link + conteúdo colado → IA extrai os dados</p>
             </div>
-            {nvCount < MAX_NV && (
-              <button type="button" onClick={() => { setNvCount(n=>n+1); if(precData) setDataChanged(true) }}
+            {nvIds.length < MAX_NV && (
+              <button type="button" onClick={() => { const id=nvNextId.current++; setNvIds(ids=>[...ids,id]); if(precData) setDataChanged(true) }}
                 className="text-xs text-blue-500 font-medium hover:underline">+ Adicionar</button>
             )}
           </div>
-          {Array.from({length:nvCount},(_,i) => (
-            <NVRow key={i} idx={i+1}
-              onRemove={() => { setNvCount(n=>Math.max(1,n-1)); if(precData) setDataChanged(true) }}
+          {nvIds.map((id, i) => (
+            <NVRow key={id} idx={i+1}
+              onRemove={() => { setNvIds(ids=>ids.filter(x=>x!==id)); if(precData) setDataChanged(true) }}
               onExtract={(idx) => extractFromContent('nv', idx)}
               extracting={!!extractingNV[i+1]}
               tipoImovel={tipoSel}
               notFound={notFoundNV[i+1] || {}}
             />
           ))}
-          <p className={`text-xs ${tmute} text-right`}>{nvCount}/{MAX_NV}</p>
+          <p className={`text-xs ${tmute} text-right`}>{nvIds.length}/{MAX_NV}</p>
         </section>
 
         {/* ── Histórico de vendas reais ── */}
@@ -810,21 +817,21 @@ export default function Gerador() {
               <p className="section-title mb-0">Histórico de vendas reais</p>
               <p className={`text-xs ${tmute} mt-0.5`}>Conteúdo colado → IA extrai os dados</p>
             </div>
-            {vCount < MAX_V && (
-              <button type="button" onClick={() => { setVCount(n=>n+1); if(precData) setDataChanged(true) }}
+            {vIds.length < MAX_V && (
+              <button type="button" onClick={() => { const id=vNextId.current++; setVIds(ids=>[...ids,id]); if(precData) setDataChanged(true) }}
                 className="text-xs text-blue-500 font-medium hover:underline">+ Adicionar</button>
             )}
           </div>
-          {Array.from({length:vCount},(_,i) => (
-            <VRow key={i} idx={i+1}
-              onRemove={() => { setVCount(n=>Math.max(1,n-1)); if(precData) setDataChanged(true) }}
+          {vIds.map((id, i) => (
+            <VRow key={id} idx={i+1}
+              onRemove={() => { setVIds(ids=>ids.filter(x=>x!==id)); if(precData) setDataChanged(true) }}
               onExtract={(idx) => extractFromContent('v', idx)}
               extracting={!!extractingV[i+1]}
               tipoImovel={tipoSel}
               notFound={notFoundV[i+1] || {}}
             />
           ))}
-          <p className={`text-xs ${tmute} text-right`}>{vCount}/{MAX_V}</p>
+          <p className={`text-xs ${tmute} text-right`}>{vIds.length}/{MAX_V}</p>
         </section>
 
         {/* ── Análise Crítica ── */}
