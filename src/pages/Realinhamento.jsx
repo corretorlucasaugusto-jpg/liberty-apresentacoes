@@ -1,5 +1,6 @@
 // src/pages/Realinhamento.jsx
 import React, { useState, useRef, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import { Field, Input, NVRow, VRow } from '../components/FormFields.jsx'
 import { VisitaRow, PropostaRow, AcaoRow } from '../components/FormFieldsRealinhamento.jsx'
@@ -13,6 +14,8 @@ const MAX_V  = 6
 export default function Realinhamento() {
   const dark = useDark()
   const { user } = useAuth()
+  const [searchParams] = useSearchParams()
+  const editId = searchParams.get('edit')
   const formRef = useRef(null)
 
   // ── Contadores de linhas dinâmicas ──
@@ -54,6 +57,117 @@ export default function Realinhamento() {
       .then(({ data }) => { if (data?.selic) setSelic(data.selic) })
       .catch(() => {})
   }, [])
+
+  // Load apresentação existente para edição (?edit=ID)
+  useEffect(() => {
+    if (!editId) return
+    supabase
+      .from('apresentacoes')
+      .select('raw_data, cliente, residencial, bairro')
+      .eq('id', editId)
+      .single()
+      .then(({ data }) => {
+        if (!data) return
+        const d = data.raw_data || { nome: data.cliente, residencial: data.residencial, bairro: data.bairro }
+
+        const sv = (name, val) => {
+          if (val === undefined || val === null || val === '') return
+          const els = document.getElementsByName(name)
+          if (els.length) els[0].value = val
+        }
+
+        setTimeout(() => {
+          sv('p_nome',        d.nome)
+          sv('p_corretor',    d.corretor)
+          sv('p_residencial', d.residencial)
+          sv('p_endereco',    d.endereco)
+          sv('p_bairro',      d.bairro)
+          sv('p_quartos',     d.quartos)
+          sv('p_vagas',       d.vagas)
+          sv('p_area',        d.area)
+          sv('p_andar',       d.andar)
+          sv('data_inicio',   d.data_inicio)
+          sv('preco_original',d.preco_original)
+          sv('selic',         d.selic)
+
+          // NVs
+          if (d.nv?.length) {
+            setNvCount(d.nv.length)
+            d.nv.forEach((r, i) => {
+              setTimeout(() => {
+                sv(`nv_n_${i+1}`,     r.n)
+                sv(`nv_a_${i+1}`,     r.a)
+                sv(`nv_c_${i+1}`,     r.c)
+                sv(`nv_v_${i+1}`,     r.v)
+                sv(`nv_d_${i+1}`,     r.d)
+                sv(`lk_${i+1}`,       r.url)
+                sv(`nv_obs_${i+1}`,   r.obs)
+                sv(`nv_q_${i+1}`,     r.quartos)
+                sv(`nv_vagas_${i+1}`, r.vagas)
+                sv(`nv_cons_${i+1}`,  r.conservacao)
+                if (r.cat) {
+                  const radios = document.getElementsByName(`nv_cat_${i+1}`)
+                  for (const rb of radios) { if (rb.value === r.cat) rb.checked = true }
+                }
+              }, 200)
+            })
+          }
+
+          // Vendidos
+          if (d.v?.length) {
+            setVCount(d.v.length)
+            d.v.forEach((r, i) => {
+              setTimeout(() => {
+                sv(`v_n_${i+1}`,     r.n)
+                sv(`v_a_${i+1}`,     r.a)
+                sv(`v_c_${i+1}`,     r.c)
+                sv(`v_v_${i+1}`,     r.v)
+                sv(`v_obs_${i+1}`,   r.obs)
+                sv(`v_q_${i+1}`,     r.quartos)
+                sv(`v_vagas_${i+1}`, r.vagas)
+                sv(`v_cons_${i+1}`,  r.conservacao)
+              }, 200)
+            })
+          }
+
+          // Visitas
+          if (d.visitas?.length) {
+            setVisitaCount(d.visitas.length)
+            d.visitas.forEach((v, i) => {
+              setTimeout(() => {
+                sv(`vis_data_${i+1}`,     v.data)
+                sv(`vis_qtd_${i+1}`,      v.qtd)
+                sv(`vis_feedback_${i+1}`, v.feedback)
+              }, 200)
+            })
+          }
+
+          // Propostas
+          if (d.propostas?.length) {
+            setPropostaCount(d.propostas.length)
+            d.propostas.forEach((p, i) => {
+              setTimeout(() => {
+                sv(`prop_data_${i+1}`,  p.data)
+                sv(`prop_valor_${i+1}`, p.valor)
+              }, 200)
+            })
+          }
+
+          // Ações
+          if (d.acoes?.length) {
+            setAcaoCount(d.acoes.length)
+            d.acoes.forEach((a, i) => {
+              setTimeout(() => { sv(`acao_${i+1}`, a) }, 200)
+            })
+          }
+
+          // Precificação
+          if (d.prec) { setPrecData(d.prec); setPrecStatus('done') }
+          if (d.precAdj) setPrecAdj(d.precAdj)
+
+        }, 150)
+      })
+  }, [editId])
 
   // ── Helpers DOM ──────────────────────────────────────────────────
   const gv = (name) => {
@@ -364,22 +478,36 @@ export default function Realinhamento() {
 
       const html = buildHTMLRealinhamento(finalData)
 
-      // Salvar no Supabase
-      const { data: saved, error: saveErr } = await supabase
-        .from('apresentacoes')
-        .insert({
-          user_id:     user.id,
-          cliente:     finalData.nome,
-          residencial: finalData.residencial,
-          bairro:      finalData.bairro,
-          html,
-          raw_data:    finalData,
-          tipo:        'realinhamento',
-          draft:       false,
-        })
-        .select('id')
-        .single()
-
+      // Salvar no Supabase (insert ou update)
+      let saveErr
+      if (editId) {
+        const { error } = await supabase
+          .from('apresentacoes')
+          .update({
+            cliente:     finalData.nome,
+            residencial: finalData.residencial,
+            bairro:      finalData.bairro,
+            html,
+            raw_data:    finalData,
+            updated_at:  new Date().toISOString(),
+          })
+          .eq('id', editId)
+        saveErr = error
+      } else {
+        const { error } = await supabase
+          .from('apresentacoes')
+          .insert({
+            user_id:     user.id,
+            cliente:     finalData.nome,
+            residencial: finalData.residencial,
+            bairro:      finalData.bairro,
+            html,
+            raw_data:    finalData,
+            tipo:        'realinhamento',
+            draft:       false,
+          })
+        saveErr = error
+      }
       if (saveErr) console.warn('Supabase save:', saveErr.message)
 
       // Download automático
@@ -739,7 +867,7 @@ export default function Realinhamento() {
           >
             {status === 'loading'
               ? <><div style={{ width: '16px', height: '16px', border: '2px solid rgba(255,255,255,.3)', borderTop: '2px solid #fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />Gerando…</>
-              : '✦ Gerar Realinhamento'}
+              : editId ? '✦ Atualizar Alinhamento' : '✦ Gerar Alinhamento'}
           </button>
           {status === 'done'  && <span style={{ fontSize: '13px', color: '#27ae60', fontWeight: '600' }}>✓ Gerado e baixado!</span>}
           {status === 'error' && <span style={{ fontSize: '13px', color: '#ef4444' }}>{errorMsg}</span>}

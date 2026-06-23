@@ -59,24 +59,6 @@ export default function Historico() {
     if (preview?.id === id) setPreview(null)
   }
 
-  const duplicar = async (row) => {
-    if (!user?.id) return
-    const { data, error } = await supabase.from('apresentacoes').insert({
-      user_id: user.id,
-      cliente: (row.cliente || '') + ' (cópia)',
-      residencial: row.residencial,
-      bairro: row.bairro,
-      html: row.html || '',
-      raw_data: row.raw_data,
-      tipo: row.tipo || 'v2',
-      draft: true,
-    }).select('id').single()
-    if (error) { alert('Erro ao duplicar: ' + error.message); return }
-    if (tab === 'v2') setRowsV2(r => [{ ...row, id: data.id, cliente: (row.cliente||'') + ' (cópia)', created_at: new Date().toISOString(), updated_at: new Date().toISOString() }, ...r])
-    else setRowsRe(r => [{ ...row, id: data.id, cliente: (row.cliente||'') + ' (cópia)', created_at: new Date().toISOString(), updated_at: new Date().toISOString() }, ...r])
-    navigate(`/v2?edit=${data.id}`)
-  }
-
   const fmt = (iso) => iso ? new Date(iso).toLocaleDateString('pt-BR', {
     day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit'
   }) : '—'
@@ -185,24 +167,13 @@ export default function Historico() {
 
                 {/* Actions */}
                 <div style={{ display:'flex', gap:'6px', flexShrink:0 }} onClick={e => e.stopPropagation()}>
-                  {!isRe && (
-                    <button
-                      onClick={() => navigate(`/v2?edit=${row.id}`)}
-                      title="Editar e regenerar"
-                      style={{ padding:'6px 10px', borderRadius:'8px', border:'none', cursor:'pointer', background:'rgba(18,102,205,0.12)', color:'#1266CD', fontSize:'11px', fontWeight:600 }}
-                    >
-                      ✎ Editar
-                    </button>
-                  )}
-                  {!isRe && (
-                    <button
-                      onClick={() => duplicar(row)}
-                      title="Duplicar apresentação"
-                      style={{ padding:'6px 10px', borderRadius:'8px', border:'none', cursor:'pointer', background:'rgba(107,114,128,0.1)', color:'var(--text2)', fontSize:'11px', fontWeight:600 }}
-                    >
-                      ⎘ Duplicar
-                    </button>
-                  )}
+                  <button
+                    onClick={() => navigate(isRe ? `/realinhamento?edit=${row.id}` : `/v2?edit=${row.id}`)}
+                    title="Editar e regenerar"
+                    style={{ padding:'6px 10px', borderRadius:'8px', border:'none', cursor:'pointer', background:'rgba(18,102,205,0.12)', color:'#1266CD', fontSize:'11px', fontWeight:600 }}
+                  >
+                    ✎ Editar
+                  </button>
                   <button
                     onClick={() => download(row)}
                     title="Baixar HTML"
@@ -251,22 +222,12 @@ export default function Historico() {
                 </p>
               </div>
               <div style={{ display:'flex', gap:'8px' }}>
-                {tab === 'v2' && (
-                  <button
-                    onClick={() => navigate(`/v2?edit=${preview.id}`)}
-                    style={{ padding:'7px 14px', borderRadius:'8px', border:'none', cursor:'pointer', background:'linear-gradient(135deg,#1266CD,#1a7be8)', color:'#fff', fontSize:'12px', fontWeight:600 }}
-                  >
-                    ✎ Editar
-                  </button>
-                )}
-                {tab === 'v2' && (
-                  <button
-                    onClick={() => duplicar(preview)}
-                    style={{ padding:'7px 14px', borderRadius:'8px', border:'1px solid var(--border2)', background:'transparent', color:'var(--text2)', fontSize:'12px', cursor:'pointer' }}
-                  >
-                    ⎘ Duplicar
-                  </button>
-                )}
+                <button
+                  onClick={() => navigate(tab === 'realinhamento' ? `/realinhamento?edit=${preview.id}` : `/v2?edit=${preview.id}`)}
+                  style={{ padding:'7px 14px', borderRadius:'8px', border:'none', cursor:'pointer', background:'linear-gradient(135deg,#1266CD,#1a7be8)', color:'#fff', fontSize:'12px', fontWeight:600 }}
+                >
+                  ✎ Editar
+                </button>
                 <button
                   onClick={() => download(preview)}
                   style={{ padding:'7px 14px', borderRadius:'8px', border:'1px solid var(--border2)', background:'transparent', color:'var(--text2)', fontSize:'12px', cursor:'pointer' }}
