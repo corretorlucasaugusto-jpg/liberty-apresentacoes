@@ -249,15 +249,52 @@ export function buildSlidesRealinhamento(d, slides = []) {
     +'</div>';
   }).join('');
 
-  slides.push(slide('s3r',
-    sh('Campanha', BLUE, 'O que foi feito por você', 'Cada ação, um passo rumo ao fechamento.')
-    +'<div style="flex:1;overflow-y:auto;padding:20px 64px 40px">'
-      // align-content:start elimina lacunas
-      +'<div style="display:grid;grid-template-columns:repeat('+nCols+',1fr);gap:1px;background:'+BORD+';align-content:start">'
-        +acaoCards
+  // Liquid Glass S3 — fundo escuro, cards translúcidos com blur
+  var lgCols = na<=3?'repeat('+na+',1fr)':na<=6?'repeat(3,1fr)':na<=8?'repeat(4,1fr)':'repeat(5,1fr)';
+  var lgPad  = na<=3?'28px 24px':na<=6?'22px 20px':'18px 16px';
+  var lgIco  = na<=3?'52px':na<=6?'44px':'36px';
+  var lgTFs  = na<=3?'.88rem':na<=6?'.82rem':'.76rem';
+  var lgDFs  = na<=3?'.74rem':na<=6?'.7rem':'.65rem';
+
+  var lgCards = acoesFilt.map(function(acao) {
+    var desc = (d.acoesDesc && d.acoesDesc[acao]) || '';
+    return '<div style="'
+      +'background:rgba(255,255,255,.07);'
+      +'border:1px solid rgba(255,255,255,.13);'
+      +'backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);'
+      +'padding:'+lgPad+';'
+      +'display:flex;flex-direction:column;gap:14px;'
+      +'transition:background .2s">'
+      +'<div style="width:'+lgIco+';height:'+lgIco+';border-radius:14px;'
+        +'background:rgba(100,160,255,.18);'
+        +'border:1px solid rgba(100,160,255,.28);'
+        +'display:flex;align-items:center;justify-content:center;'
+        +'color:rgba(140,190,255,.95)">'
+        +getIcon(acao)
+      +'</div>'
+      +'<div>'
+        +'<div style="font-size:'+lgTFs+';font-weight:700;color:#fff;margin-bottom:'+(desc?'5px':'0')+';line-height:1.3">'+e(acao)+'</div>'
+        +(desc?'<div style="font-size:'+lgDFs+';color:rgba(255,255,255,.5);line-height:1.55">'+e(desc)+'</div>':'')
+      +'</div>'
+    +'</div>';
+  }).join('');
+
+  slides.push('<div class="slide" id="s3r" style="display:flex;flex-direction:column;height:100%;overflow:hidden;'
+    +'background:linear-gradient(135deg,#0d1b35 0%,#0f2347 45%,#1a3a6b 100%);'
+    +'font-family:-apple-system,BlinkMacSystemFont,Inter,sans-serif">'
+    // Header
+    +'<div style="padding:40px 64px 22px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;justify-content:space-between;align-items:flex-end;flex-shrink:0">'
+      +'<div><div style="font-size:.62rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(140,190,255,.8);margin-bottom:7px">Campanha</div>'
+      +'<div style="font-size:clamp(1.8rem,3vw,2.8rem);font-weight:700;color:#fff;line-height:1;letter-spacing:-.03em">O que foi feito por você</div></div>'
+      +'<div style="font-size:.78rem;color:rgba(255,255,255,.35);max-width:220px;text-align:right;line-height:1.5">Cada ação, um passo rumo ao fechamento.</div>'
+    +'</div>'
+    // Grid
+    +'<div style="flex:1;overflow-y:auto;padding:28px 64px 40px">'
+      +'<div style="display:grid;grid-template-columns:'+lgCols+';gap:12px;align-content:start">'
+        +lgCards
       +'</div>'
     +'</div>'
-  ));
+  +'</div>');
 
 
   // ══════════════════════════════════════════════════════
