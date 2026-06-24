@@ -249,52 +249,53 @@ export function buildSlidesRealinhamento(d, slides = []) {
     +'</div>';
   }).join('');
 
-  // Liquid Glass S3 — fundo escuro, cards translúcidos com blur
-  var lgCols = na<=3?'repeat('+na+',1fr)':na<=6?'repeat(3,1fr)':na<=8?'repeat(4,1fr)':'repeat(5,1fr)';
-  var lgPad  = na<=3?'28px 24px':na<=6?'22px 20px':'18px 16px';
-  var lgIco  = na<=3?'52px':na<=6?'44px':'36px';
-  var lgTFs  = na<=3?'.88rem':na<=6?'.82rem':'.76rem';
-  var lgDFs  = na<=3?'.74rem':na<=6?'.7rem':'.65rem';
+  // S3 — Ações com ícones Tabler, fundo branco, distribuição proporcional
+  // Colunas: 1 item=1col, 2=2, 3=3, 4=4, 5=5, 6=3, 7-8=4, 9+=5
+  var s3Cols = na===1?'1fr':na===2?'1fr 1fr':na===3?'repeat(3,1fr)':na===4?'repeat(4,1fr)':na===5?'repeat(5,1fr)':na===6?'repeat(3,1fr)':na<=8?'repeat(4,1fr)':'repeat(5,1fr)';
+  var s3Pad  = na<=3?'20px 18px':na<=6?'16px 14px':'14px 12px';
+  var s3Ico  = na<=3?'48px':na<=5?'38px':'32px';
+  var s3IcoF = na<=3?'22px':na<=5?'18px':'15px';
+  var s3TFs  = na<=3?'.88rem':na<=5?'.76rem':'.68rem';
+  var s3DFs  = na<=3?'.74rem':na<=5?'.66rem':'.6rem';
 
-  var lgCards = acoesFilt.map(function(acao) {
+  // Mapeamento de ícone Tabler por palavra-chave
+  var getTablerIcon = function(acao) {
+    var a = (acao||'').toLowerCase();
+    if (/foto|imagem|photo/.test(a))               return 'ti-camera';
+    if (/v[íi]deo|video|film/.test(a))             return 'ti-video';
+    if (/portal|zap|viva|imovel|site|anun/.test(a))return 'ti-world';
+    if (/tr[áa]fego|social|instagram|facebook|mídia|midia/.test(a)) return 'ti-chart-bar';
+    if (/placa|fachada|banner|outdoor/.test(a))    return 'ti-sign-right';
+    if (/vizinho|prospec|abordagem/.test(a))        return 'ti-users-group';
+    if (/whatsapp|mensagem|disparo|grupo/.test(a)) return 'ti-message-circle';
+    if (/drone|a[eé]reo/.test(a))                  return 'ti-drone';
+    if (/corretor|parceiro/.test(a))               return 'ti-id-badge';
+    if (/email|e-mail/.test(a))                    return 'ti-mail';
+    return 'ti-check';
+  };
+
+  var s3Cards = acoesFilt.map(function(acao) {
     var desc = (d.acoesDesc && d.acoesDesc[acao]) || '';
-    return '<div style="'
-      +'background:rgba(255,255,255,.07);'
-      +'border:1px solid rgba(255,255,255,.13);'
-      +'backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);'
-      +'padding:'+lgPad+';'
-      +'display:flex;flex-direction:column;gap:14px;'
-      +'transition:background .2s">'
-      +'<div style="width:'+lgIco+';height:'+lgIco+';border-radius:14px;'
-        +'background:rgba(100,160,255,.18);'
-        +'border:1px solid rgba(100,160,255,.28);'
-        +'display:flex;align-items:center;justify-content:center;'
-        +'color:rgba(140,190,255,.95)">'
-        +getIcon(acao)
+    var ico  = getTablerIcon(acao);
+    return '<div style="background:#f5f5f7;border:1px solid #e8e8ed;border-radius:12px;padding:'+s3Pad+';display:flex;flex-direction:column;gap:10px;min-width:0">'
+      +'<div style="width:'+s3Ico+';height:'+s3Ico+';min-width:'+s3Ico+';border-radius:10px;background:rgba(26,76,139,.1);border:1px solid rgba(26,76,139,.18);display:flex;align-items:center;justify-content:center">'
+        +'<i class="ti '+ico+'" style="font-size:'+s3IcoF+';color:#1A4C8B"></i>'
       +'</div>'
-      +'<div>'
-        +'<div style="font-size:'+lgTFs+';font-weight:700;color:#fff;margin-bottom:'+(desc?'5px':'0')+';line-height:1.3">'+e(acao)+'</div>'
-        +(desc?'<div style="font-size:'+lgDFs+';color:rgba(255,255,255,.5);line-height:1.55">'+e(desc)+'</div>':'')
+      +'<div style="min-width:0">'
+        +'<div style="font-size:'+s3TFs+';font-weight:700;color:#1d1d1f;margin-bottom:'+(desc?'4px':'0')+';line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+e(acao)+'</div>'
+        +(desc?'<div style="font-size:'+s3DFs+';color:#6e6e73;line-height:1.45;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">'+e(desc)+'</div>':'')
       +'</div>'
     +'</div>';
   }).join('');
 
-  slides.push('<div class="slide" id="s3r" style="display:flex;flex-direction:column;height:100%;overflow:hidden;'
-    +'background:linear-gradient(135deg,#0d1b35 0%,#0f2347 45%,#1a3a6b 100%);'
-    +'font-family:-apple-system,BlinkMacSystemFont,Inter,sans-serif">'
-    // Header
-    +'<div style="padding:40px 64px 22px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;justify-content:space-between;align-items:flex-end;flex-shrink:0">'
-      +'<div><div style="font-size:.62rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(140,190,255,.8);margin-bottom:7px">Campanha</div>'
-      +'<div style="font-size:clamp(1.8rem,3vw,2.8rem);font-weight:700;color:#fff;line-height:1;letter-spacing:-.03em">O que foi feito por você</div></div>'
-      +'<div style="font-size:.78rem;color:rgba(255,255,255,.35);max-width:220px;text-align:right;line-height:1.5">Cada ação, um passo rumo ao fechamento.</div>'
-    +'</div>'
-    // Grid
-    +'<div style="flex:1;overflow-y:auto;padding:28px 64px 40px">'
-      +'<div style="display:grid;grid-template-columns:'+lgCols+';gap:12px;align-content:start">'
-        +lgCards
+  slides.push(slide('s3r',
+    sh('Campanha', BLUE, 'O que foi feito por você', 'Cada ação, um passo rumo ao fechamento.')
+    +'<div style="flex:1;overflow-y:auto;padding:20px 64px 40px">'
+      +'<div style="display:grid;grid-template-columns:'+s3Cols+';gap:10px;align-content:start">'
+        +s3Cards
       +'</div>'
     +'</div>'
-  +'</div>');
+  ));
 
 
   // ══════════════════════════════════════════════════════
