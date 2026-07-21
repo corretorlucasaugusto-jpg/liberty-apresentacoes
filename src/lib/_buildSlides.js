@@ -293,13 +293,13 @@ export function buildSlides(d, slides=[]){
               <div style="font-size:.52rem;color:#888;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Imóvel hoje</div>
               <div id="s3-val" style="font-size:.88rem;font-weight:800;color:#1d1d1f">R$ 300.000</div>
             </div>
-            <div style="text-align:center;padding:8px;background:#fff0f4;border-radius:8px;border:1px solid rgba(192,57,43,.2)">
-              <div style="font-size:.52rem;color:#c0392b;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Custo total 16 meses</div>
-              <div id="s3-perda" style="font-size:.88rem;font-weight:800;color:#c0392b">R$ 67.290</div>
-            </div>
             <div style="text-align:center;padding:8px;background:#f0fff4;border-radius:8px;border:1px solid rgba(30,132,73,.2)">
               <div style="font-size:.52rem;color:#1e8449;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Poderia ter (principal + rendimentos)</div>
               <div id="s3-final" style="font-size:.88rem;font-weight:800;color:#1e8449">R$ 357.692</div>
+            </div>
+            <div style="text-align:center;padding:8px;background:#fff0f4;border-radius:8px;border:1px solid rgba(192,57,43,.2)">
+              <div style="font-size:.52rem;color:#c0392b;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Custo total 16 meses</div>
+              <div id="s3-perda" style="font-size:.88rem;font-weight:800;color:#c0392b">R$ 67.290</div>
             </div>
           </div>
           <div id="s3-det" style="margin-top:6px;font-size:.57rem;color:#888;text-align:center;line-height:1.7"></div>
