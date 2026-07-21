@@ -342,7 +342,7 @@ export function buildSlides(d, slides=[]){
       document.getElementById('s3-val').textContent    = fmt(val);
       document.getElementById('s3-perda').textContent  = fmt(perda);
       document.getElementById('s3-final').textContent  = fmt(val + juros);
-      document.getElementById('s3-liquido').textContent = fmt(val - juros);
+      document.getElementById('s3-liquido').textContent = fmt(val - perda);
       document.getElementById('s3-mensal').textContent  = fmt((juros + (c.cond+c.iptu+c.manut)*meses)/meses)+'/mês';
       var det = document.getElementById('s3-det');
       if(det){
