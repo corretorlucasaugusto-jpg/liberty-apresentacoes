@@ -307,11 +307,7 @@ export function buildSlides(d, slides=[]){
             </div>
           </div>
           <div id="s3-det" style="margin-top:6px;font-size:.57rem;color:#888;text-align:center;line-height:1.7"></div>
-          <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px">
-            <div style="padding:8px 10px;background:#fff0f4;border-radius:8px;border:1px solid rgba(192,57,43,.2)">
-              <div style="font-size:.5rem;color:#c0392b;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px">Valor real líquido</div>
-              <div id="s3-liquido" style="font-size:.82rem;font-weight:800;color:#c0392b">R$ 242.308</div>
-            </div>
+          <div style="margin-top:10px;display:grid;grid-template-columns:1fr;gap:6px">
             <div style="padding:8px 10px;background:#fff0f4;border-radius:8px;border:1px solid rgba(192,57,43,.2)">
               <div style="font-size:.5rem;color:#c0392b;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px">Custo mensal de esperar</div>
               <div id="s3-mensal" style="font-size:.82rem;font-weight:800;color:#c0392b">R$ 3.606/mês</div>
