@@ -295,7 +295,7 @@ export function buildSlides(d, slides=[]){
             </div>
             <div style="text-align:center;padding:8px;background:#fff0f4;border-radius:8px;border:1px solid rgba(192,57,43,.2)">
               <div style="font-size:.52rem;color:#c0392b;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Valor real líquido</div>
-              <div id="s3-liquido2" style="font-size:.88rem;font-weight:800;color:#c0392b">R$ 242.308</div>
+              <div id="s3-liquido" style="font-size:.88rem;font-weight:800;color:#c0392b">R$ 242.308</div>
             </div>
             <div style="text-align:center;padding:8px;background:#f0fff4;border-radius:8px;border:1px solid rgba(30,132,73,.2)">
               <div style="font-size:.52rem;color:#1e8449;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Poderia ter (principal + rendimentos)</div>
