@@ -298,11 +298,21 @@ export function buildSlides(d, slides=[]){
               <div id="s3-perda" style="font-size:.88rem;font-weight:800;color:#c0392b">R$ 67.290</div>
             </div>
             <div style="text-align:center;padding:8px;background:#f0fff4;border-radius:8px;border:1px solid rgba(30,132,73,.2)">
-              <div style="font-size:.52rem;color:#1e8449;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Poderia ter</div>
-              <div id="s3-final" style="font-size:.88rem;font-weight:800;color:#1e8449">R$ 351.690</div>
+              <div style="font-size:.52rem;color:#1e8449;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Poderia ter (principal + rendimentos)</div>
+              <div id="s3-final" style="font-size:.88rem;font-weight:800;color:#1e8449">R$ 357.692</div>
             </div>
           </div>
           <div id="s3-det" style="margin-top:6px;font-size:.57rem;color:#888;text-align:center;line-height:1.7"></div>
+          <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <div style="padding:8px 10px;background:#fff0f4;border-radius:8px;border:1px solid rgba(192,57,43,.2)">
+              <div style="font-size:.5rem;color:#c0392b;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px">Valor real líquido</div>
+              <div id="s3-liquido" style="font-size:.82rem;font-weight:800;color:#c0392b">R$ 242.308</div>
+            </div>
+            <div style="padding:8px 10px;background:#fff0f4;border-radius:8px;border:1px solid rgba(192,57,43,.2)">
+              <div style="font-size:.5rem;color:#c0392b;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px">Custo mensal de esperar</div>
+              <div id="s3-mensal" style="font-size:.82rem;font-weight:800;color:#c0392b">R$ 3.606/mês</div>
+            </div>
+          </div>
           <div style="margin-top:2px;font-size:.55rem;color:#bbb;text-align:center">Estimativas mensais para o perfil do imóvel · 16 meses · juros compostos 1% a.m.</div>
         </div>
       </div>
@@ -329,9 +339,11 @@ export function buildSlides(d, slides=[]){
         if(n>=1000000) return 'R$ '+(n/1000000).toFixed(2).replace('.',',')+' M';
         return 'R$ '+Math.round(n).toLocaleString('pt-BR');
       };
-      document.getElementById('s3-val').textContent   = fmt(val);
-      document.getElementById('s3-perda').textContent = fmt(perda);
-      document.getElementById('s3-final').textContent = fmt(val + juros);
+      document.getElementById('s3-val').textContent    = fmt(val);
+      document.getElementById('s3-perda').textContent  = fmt(perda);
+      document.getElementById('s3-final').textContent  = fmt(val + juros);
+      document.getElementById('s3-liquido').textContent = fmt(val - juros);
+      document.getElementById('s3-mensal').textContent  = fmt((juros + (c.cond+c.iptu+c.manut)*meses)/meses)+'/mês';
       var det = document.getElementById('s3-det');
       if(det){
         det.innerHTML =
