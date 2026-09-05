@@ -67,7 +67,7 @@ export function buildS5(d){
 
     var diasNum = parseInt((r.d||'').replace(/[^0-9]/g,''))||0;
     var diasBadge = r.d
-      ? '<span style="display:inline-block;background:'+diasColor(r.d)+';color:#fff;font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:20px">'+e2(r.d)+'</span>'
+      ? '<span style="display:inline-block;background:'+diasColor(r.d)+';color:#fff;font-size:.76rem;font-weight:700;padding:3px 9px;border-radius:20px">'+e2(r.d)+'</span>'
       : '\u2014';
     var prejuizoCel = '\u2014';
     if (isNV) {
@@ -80,7 +80,7 @@ export function buildS5(d){
     var aiRow = r.ai ? '<div style="padding:5px 16px 8px;background:#fff0f0;border-top:1px solid #ffc0c0;font-size:.65rem;color:#c0392b;font-style:italic">'+e2(r.ai)+'</div>' : '';
     var bg = isNV ? (diasNum>=180?'#fff0f0':diasNum>=90?'#fff8f0':'#fff') : '#f0fff4';
     var borderTop = i>0 ? 'border-top:1px solid #e8e8ed;' : '';
-    var grid = isNV ? '1.55fr .42fr 1.5fr .78fr .58fr .5fr .98fr .3fr' : '1.8fr .5fr 2fr .8fr .7fr .7fr';
+    var grid = isNV ? '1.45fr .38fr 1.3fr .78fr .52fr .62fr 1.1fr .3fr' : '1.8fr .5fr 2fr .8fr .7fr .7fr';
 
     return '<div style="display:grid;grid-template-columns:'+grid+';align-items:center;padding:8px 14px;background:'+bg+';'+borderTop+'">' +
       '<div style="font-size:.72rem;"><strong>'+e2(r.n||('Im\u00f3vel '+(i+1)))+'</strong></div>' +
@@ -89,13 +89,13 @@ export function buildS5(d){
       '<div style="font-size:.7rem;font-weight:700;color:'+(isNV?'#c0392b':'#27ae60')+'">'+e2(r.v||'\u2014')+'</div>' +
       '<div style="font-size:.62rem;color:#888">'+vm2+'</div>' +
       '<div>'+diasBadge+'</div>' +
-      (isNV ? '<div style="font-size:.7rem;font-weight:700;">'+prejuizoCel+'</div>' : '') +
+      (isNV ? '<div style="font-size:.8rem;font-weight:700;">'+prejuizoCel+'</div>' : '') +
       (isNV ? '<div>'+verBtn+'</div>' : '') +
     '</div>' + aiRow;
   };
 
   var tblHdr = function(isNV){
-    var grid = isNV ? '1.55fr .42fr 1.5fr .78fr .58fr .5fr .98fr .3fr' : '1.8fr .5fr 2fr .8fr .7fr .7fr';
+    var grid = isNV ? '1.45fr .38fr 1.3fr .78fr .52fr .62fr 1.1fr .3fr' : '1.8fr .5fr 2fr .8fr .7fr .7fr';
     return '<div style="display:grid;grid-template-columns:'+grid+';padding:6px 14px;background:#f5f5f7;font-size:.6rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#888">' +
       '<div>Im\u00f3vel</div><div>\u00c1rea</div><div>Caracter\u00edsticas</div>' +
       (isNV ? '<div>Valor anunciado</div>' : '<div>Valor negociado</div>') +
