@@ -1092,7 +1092,7 @@ slides.push(`<div class="slide" id="s11">
         <div class="s12-lbl">Mídia Física</div>
       </div>
 
-      <div class="s12-node" style="--r:155px;--speed:55s;animation-delay:-7.86s">
+      <div class="s12-node" style="--r:155px;--speed:55s;animation-delay:-7.86s;cursor:pointer" onclick="document.getElementById('modal-portais').style.display='flex'">
         <div class="s12-ico">
           <svg viewBox="0 0 28 28"><rect x="2" y="3" width="24" height="16" rx="2"/><path d="M2 11h24M8 22h12M14 19v3"/></svg>
         </div>
@@ -1106,7 +1106,7 @@ slides.push(`<div class="slide" id="s11">
         <div class="s12-lbl">Tráfego Pago</div>
       </div>
 
-      <div class="s12-node" style="--r:155px;--speed:55s;animation-delay:-23.57s">
+      <div class="s12-node" style="--r:155px;--speed:55s;animation-delay:-23.57s;cursor:pointer" onclick="document.getElementById('modal-base').style.display='flex'">
         <div class="s12-ico">
           <svg viewBox="0 0 28 28"><path d="M4 4h20c1.1 0 2 .9 2 2v13c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="26,4 14,14.5 2,4"/></svg>
         </div>
@@ -1135,6 +1135,9 @@ slides.push(`<div class="slide" id="s11">
       </div>
     </div>
   </div>
+
+  <div id="modal-portais" onclick="this.style.display='none'" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center"><img src="https://zpjfxzehiodjphxqacjx.supabase.co/storage/v1/object/public/apresentacoes-assets/wimoveis.png" style="max-width:90%;max-height:90%;border-radius:12px" onclick="event.stopPropagation()" /></div>
+  <div id="modal-base" onclick="this.style.display='none'" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center"><img src="https://zpjfxzehiodjphxqacjx.supabase.co/storage/v1/object/public/apresentacoes-assets/base.png" style="max-width:90%;max-height:90%;border-radius:12px" onclick="event.stopPropagation()" /></div>
 </div>
 `);
 
