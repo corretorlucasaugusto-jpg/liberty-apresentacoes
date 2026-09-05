@@ -41,7 +41,7 @@ export default function Gerador() {
   const [editData,      setEditData]      = useState(null)
   const [dataChanged,   setDataChanged]   = useState(false)
   const [precAdj, setPrecAdj] = useState({ competitivo: 0, mercado: 0, otimista: 0 })
-  const [selic,   setSelic]   = useState('14,50%')
+  const [selic,   setSelic]   = useState('')
   const [tipoSel, setTipoSel] = useState('Apartamento')
 
   const isTer  = tipoSel === 'Terreno'
@@ -300,7 +300,7 @@ export default function Gerador() {
       residencial: gv('p_residencial')||'Residencial', endereco: gv('p_endereco')||'',
       bairro: gv('p_bairro')||'', quartos: gv('p_quartos')||'—', vagas: gv('p_vagas')||'—',
       area: gv('p_area')||'—', terreno: gv('p_terreno')||'',
-      andar: gv('p_andar')||'—', selic: gv('selic')||'14,50%',
+      andar: gv('p_andar')||'—', selic: gv('selic')||'',
       tipo_imovel: tipoSel,
       posicao_solar: gv('p_posicao_solar')||'',
       situacao: gv('p_situacao')||'',
@@ -595,7 +595,7 @@ export default function Gerador() {
           )}
 
           <div className="grid grid-cols-3 gap-4">
-            <Field label="Selic"><Input name="selic" value={selic} onChange={e=>setSelic(e.target.value)} /></Field>
+            <Field label="Selic *"><Input name="selic" value={selic} onChange={e=>setSelic(e.target.value)} placeholder="Ex: 14,75%" required /></Field>
             <Field label="Valor divulgação"><Input name="vl_div" placeholder="Calculado pela IA ↓" /></Field>
             <Field label="Expectativa fechamento"><Input name="vl_fec" placeholder="Calculado pela IA ↓" /></Field>
           </div>
