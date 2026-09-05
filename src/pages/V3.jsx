@@ -1,17 +1,17 @@
-// src/pages/Realinhamento.jsx
+// src/pages/V3.jsx
 import React, { useState, useRef, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import { Field, Input, NVRow, VRow } from '../components/FormFields.jsx'
-import { VisitaRow, PropostaRow, AcaoRow } from '../components/FormFieldsRealinhamento.jsx'
-import { buildHTMLRealinhamento } from '../lib/buildHTMLRealinhamento.js'
+import { VisitaRow, PropostaRow, AcaoRow } from '../components/FormFieldsV3.jsx'
+import { buildHTMLV3 } from '../lib/buildHTMLV3.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { useDark } from '../hooks/useTheme.js'
 
 const MAX_NV = 8
 const MAX_V  = 6
 
-export default function Realinhamento() {
+export default function V3() {
   const dark = useDark()
   const { user } = useAuth()
   const [searchParams] = useSearchParams()
@@ -245,7 +245,7 @@ export default function Realinhamento() {
         if (d.precAdj) setPrecAdj(d.precAdj)
       }, 100)
 
-      alert('✓ Dados importados com sucesso! Preencha as informações da campanha (visitas, propostas, ações) e gere o realinhamento.')
+      alert('✓ Dados importados com sucesso! Preencha as informações da campanha (visitas, propostas, ações) e gere o v3.')
     } catch (err) {
       alert('Erro ao importar: ' + err.message)
     }
@@ -493,7 +493,7 @@ export default function Realinhamento() {
           console.warn('Descrições IA falhou, seguindo sem:', err.message)
         }
       }
-      const html = buildHTMLRealinhamento({ ...finalData, acoesDesc })
+      const html = buildHTMLV3({ ...finalData, acoesDesc })
 
       // Salvar no Supabase (insert ou update)
       let saveErr
@@ -520,7 +520,7 @@ export default function Realinhamento() {
             bairro:      finalData.bairro,
             html,
             raw_data:    finalData,
-            tipo:        'realinhamento',
+            tipo:        'v3',
             draft:       false,
           })
         saveErr = error
@@ -532,7 +532,7 @@ export default function Realinhamento() {
       const url  = URL.createObjectURL(blob)
       const a2   = document.createElement('a')
       a2.href    = url
-      a2.download = `realinhamento-${(finalData.residencial||'imovel').toLowerCase().replace(/\s+/g,'-')}.html`
+      a2.download = `v3-${(finalData.residencial||'imovel').toLowerCase().replace(/\s+/g,'-')}.html`
       a2.click()
       URL.revokeObjectURL(url)
 
@@ -562,7 +562,7 @@ export default function Realinhamento() {
               <path d="M13 4h3v3"/>
             </svg>
           </div>
-          <h1 className={`text-2xl font-bold ${ttl}`}>Realinhamento de Preço</h1>
+          <h1 className={`text-2xl font-bold ${ttl}`}>V3 de Preço</h1>
         </div>
         <p className={`text-sm ${tmute}`}>
           Apresentação para convencer o cliente a ajustar o preço com base em dados reais da campanha.

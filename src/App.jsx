@@ -8,7 +8,7 @@ import Gerador from './pages/Gerador.jsx'
 import Historico from './pages/Historico.jsx'
 import Login from './pages/Login.jsx'
 import VerApresentacao from './pages/VerApresentacao.jsx'
-import Realinhamento from './pages/Realinhamento.jsx'
+import V3 from './pages/V3.jsx'
 import { useAuth } from './hooks/useAuth.js'
 
 export default function App() {
@@ -41,7 +41,7 @@ export default function App() {
         <Route path="/v2"             element={<Gerador />} />
         <Route path="/v2/:v1id"       element={<Gerador />} />
         <Route path="/historico"      element={<Historico />} />
-        <Route path="/realinhamento"  element={<Realinhamento />} />
+        <Route path="/v3"  element={<V3 />} />
         <Route path="*"               element={<Navigate to="/" />} />
       </Routes>
     </Layout>

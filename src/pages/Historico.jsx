@@ -8,7 +8,7 @@ export default function Historico() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const dark = useDark()
-  const [tab,     setTab]     = useState('v2')       // 'v2' | 'realinhamento'
+  const [tab,     setTab]     = useState('v2')       // 'v2' | 'v3'
   const [rowsV2,  setRowsV2]  = useState([])
   const [rowsRe,  setRowsRe]  = useState([])
   const [loading, setLoading] = useState(true)
@@ -29,7 +29,7 @@ export default function Historico() {
         .from('apresentacoes')
         .select('id, cliente, residencial, bairro, created_at, updated_at, html, raw_data, tipo')
         .eq('user_id', user.id)
-        .eq('tipo', 'realinhamento')
+        .eq('tipo', 'v3')
         .order('created_at', { ascending: false })
         .limit(100),
     ]).then(([r1, r2]) => {
@@ -47,7 +47,7 @@ export default function Historico() {
     const blob = new Blob([row.html], { type: 'text/html' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
-    a.download = (row.residencial||'Liberty').replace(/[^a-zA-Z0-9\s]/g,'').trim().replace(/\s+/g,'_') + (tab==='realinhamento'?'-realinhamento':'') + '.html'
+    a.download = (row.residencial||'Liberty').replace(/[^a-zA-Z0-9\s]/g,'').trim().replace(/\s+/g,'_') + (tab==='v3'?'-v3':'') + '.html'
     a.click()
   }
 
@@ -78,7 +78,7 @@ export default function Historico() {
       <div style={{ marginBottom:'24px' }}>
         <h1 style={{ fontSize:'1.4rem', fontWeight:700, margin:0 }}>Histórico</h1>
         <p style={{ fontSize:'12px', color:'var(--text3)', marginTop:'4px' }}>
-          {rowsV2.length} apresentações V2 · {rowsRe.length} realinhamentos
+          {rowsV2.length} apresentações V2 · {rowsRe.length} v3s
         </p>
       </div>
 
@@ -86,7 +86,7 @@ export default function Historico() {
       <div style={{ display:'flex', gap:'4px', marginBottom:'20px', background:'var(--section-bg)', border:'1px solid var(--border)', borderRadius:'12px', padding:'4px', width:'fit-content' }}>
         {[
           { key:'v2',            label:'V2 · Apresentações', count: rowsV2.length },
-          { key:'realinhamento', label:'Realinhamento',      count: rowsRe.length },
+          { key:'v3', label:'V3',      count: rowsRe.length },
         ].map(t => (
           <button key={t.key} onClick={() => { setTab(t.key); setPreview(null) }}
             style={{
@@ -116,9 +116,9 @@ export default function Historico() {
 
       {rows.length === 0 && !error && (
         <div className="lv-section" style={{ textAlign:'center', padding:'64px 24px' }}>
-          <div style={{ fontSize:'2.5rem', marginBottom:'12px' }}>{tab === 'realinhamento' ? '📉' : '🎯'}</div>
+          <div style={{ fontSize:'2.5rem', marginBottom:'12px' }}>{tab === 'v3' ? '📉' : '🎯'}</div>
           <p style={{ color:'var(--text3)', fontSize:'14px' }}>
-            {tab === 'realinhamento' ? 'Nenhum realinhamento gerado ainda.' : 'Nenhuma apresentação gerada ainda.'}
+            {tab === 'v3' ? 'Nenhum v3 gerado ainda.' : 'Nenhuma apresentação gerada ainda.'}
           </p>
         </div>
       )}
@@ -129,7 +129,7 @@ export default function Historico() {
         <div style={{ flex: preview ? '0 0 340px' : '1', display:'flex', flexDirection:'column', gap:'8px' }}>
           {rows.map(row => {
             const isActive = preview?.id === row.id
-            const isRe = tab === 'realinhamento'
+            const isRe = tab === 'v3'
             return (
               <div key={row.id}
                 onClick={() => setPreview(isActive ? null : row)}
@@ -168,7 +168,7 @@ export default function Historico() {
                 {/* Actions */}
                 <div style={{ display:'flex', gap:'6px', flexShrink:0 }} onClick={e => e.stopPropagation()}>
                   <button
-                    onClick={() => navigate(isRe ? `/realinhamento?edit=${row.id}` : `/v2?edit=${row.id}`)}
+                    onClick={() => navigate(isRe ? `/v3?edit=${row.id}` : `/v2?edit=${row.id}`)}
                     title="Editar e regenerar"
                     style={{ padding:'6px 10px', borderRadius:'8px', border:'none', cursor:'pointer', background:'rgba(18,102,205,0.12)', color:'#1266CD', fontSize:'11px', fontWeight:600 }}
                   >
@@ -223,7 +223,7 @@ export default function Historico() {
               </div>
               <div style={{ display:'flex', gap:'8px' }}>
                 <button
-                  onClick={() => navigate(tab === 'realinhamento' ? `/realinhamento?edit=${preview.id}` : `/v2?edit=${preview.id}`)}
+                  onClick={() => navigate(tab === 'v3' ? `/v3?edit=${preview.id}` : `/v2?edit=${preview.id}`)}
                   style={{ padding:'7px 14px', borderRadius:'8px', border:'none', cursor:'pointer', background:'linear-gradient(135deg,#1266CD,#1a7be8)', color:'#fff', fontSize:'12px', fontWeight:600 }}
                 >
                   ✎ Editar

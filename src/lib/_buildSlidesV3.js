@@ -1,5 +1,5 @@
-// _buildSlidesRealinhamento.js
-export function buildSlidesRealinhamento(d, slides = []) {
+// _buildSlidesV3.js
+export function buildSlidesV3(d, slides = []) {
   function e(s) {
     if (!s) return '';
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');

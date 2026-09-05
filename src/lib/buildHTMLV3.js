@@ -1,5 +1,5 @@
-// src/lib/buildHTMLRealinhamento.js
-import { buildSlidesRealinhamento } from './_buildSlidesRealinhamento.js'
+// src/lib/buildHTMLV3.js
+import { buildSlidesV3 } from './_buildSlidesV3.js'
 
 const CSS_REALINHAMENTO = `
 *{box-sizing:border-box;margin:0;padding:0}
@@ -67,9 +67,9 @@ document.addEventListener('keydown',function(e){
 init();
 `
 
-export function buildHTMLRealinhamento(d) {
+export function buildHTMLV3(d) {
   const slideList = []
-  try { buildSlidesRealinhamento(d, slideList) } catch (err) { console.error('buildSlidesRealinhamento:', err) }
+  try { buildSlidesV3(d, slideList) } catch (err) { console.error('buildSlidesV3:', err) }
 
   const slideDivs = slideList.map((s, i) => {
     const tmp = document.createElement('div')
@@ -81,14 +81,14 @@ export function buildHTMLRealinhamento(d) {
   }).join('\n')
 
   const N = slideList.length
-  const title = (d.residencial || 'Realinhamento').replace(/</g, '&lt;')
+  const title = (d.residencial || 'V3').replace(/</g, '&lt;')
 
   return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${title} — Realinhamento de Preço</title>
+<title>${title} — V3 de Preço</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css"/>
 <style>${CSS_REALINHAMENTO}</style>
 </head>
