@@ -137,6 +137,29 @@ export function buildSlides(d, slides=[]){
   const rp=(d.residencial||'Residencial').split(' ');
   const r1=rp.slice(0,2).join(' '), r2=rp.slice(2).join(' ');
 
+  // Stats da capa (S1), adaptados por tipo de imóvel
+  const tipoLower  = String(d.tipo_imovel||'').toLowerCase();
+  const isTerCapa  = tipoLower.includes('terreno');
+  const isComCapa  = tipoLower.includes('comercial');
+  const isCasaPura = tipoLower === 'casa';
+
+  const s1Stats = [];
+  if (isTerCapa) {
+    s1Stats.push({ n: e(d.area)+'m²', l: 'Área do terreno' });
+  } else {
+    s1Stats.push({ n: e(d.area)+'m²', l: isComCapa ? 'Área total' : 'Área privativa' });
+    if (!isComCapa) s1Stats.push({ n: e(d.quartos), l: 'Quartos' });
+    s1Stats.push({ n: e(d.vagas)||'—', l: 'Vagas de garagem' });
+    s1Stats.push({
+      n: e(d.andar),
+      l: e(d.andar)==='Térrea' ? 'Casa térrea' : (isComCapa ? 'Andar / Localização' : 'Andar '+e(d.andar))
+    });
+    if (isCasaPura && d.terreno) s1Stats.push({ n: e(d.terreno)+'m²', l: 'Área do terreno' });
+  }
+  const s1StatsHtml = s1Stats.map(function(s){
+    return '<div class="s1-stat"><div class="s1-stat-n">'+s.n+'</div><div class="s1-stat-d"><strong>'+s.l+'</strong></div></div>';
+  }).join('');
+
   // S1 CAPA
   slides.push(`<div class="slide" id="s1">
   <div class="s1">
@@ -157,10 +180,7 @@ export function buildSlides(d, slides=[]){
         <div class="s1-prop-addr">${e(d.endereco)}<br>${e(d.bairro)}</div>
       </div>
       <div class="s1-stats">
-        <div class="s1-stat"><div class="s1-stat-n">${e(d.area)}m²</div><div class="s1-stat-d"><strong>Área privativa</strong></div></div>
-        <div class="s1-stat"><div class="s1-stat-n">${e(d.quartos)}</div><div class="s1-stat-d"><strong>Quartos</strong></div></div>
-        <div class="s1-stat"><div class="s1-stat-n">${e(d.vagas)||"—"}</div><div class="s1-stat-d"><strong>Vagas de garagem</strong></div></div>
-        <div class="s1-stat"><div class="s1-stat-n">${e(d.andar)}</div><div class="s1-stat-d"><strong>${e(d.andar)==="Térrea"?"Casa térrea":"Andar "+e(d.andar)}</strong></div></div>
+        ${s1StatsHtml}
       </div>
       <div class="s1-foot">Liberty Imóveis · 10 anos de mercado</div>
     </div>
