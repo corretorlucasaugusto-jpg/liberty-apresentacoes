@@ -800,11 +800,26 @@ export default function Realinhamento() {
                           </button>
                         </div>
                       )}
-                      {/* Sliders de ajuste */}
-                      <input type="range" min="-30" max="30" step="1" value={adj}
-                        onChange={e => { setPrecAdj(prev => ({ ...prev, [key]: Number(e.target.value) })); setDataChanged(false) }}
-                        style={{ width: '100%', marginTop: '8px', accentColor: color }}
-                      />
+                      {/* Botões ±1% */}
+                      <div style={{ display:'flex', alignItems:'center', gap:'6px', marginTop:'10px', justifyContent:'center' }}>
+                        <button type="button"
+                          onClick={() => { setPrecAdj(prev => ({ ...prev, [key]: (prev[key]||0) - 1 })); setDataChanged(false) }}
+                          style={{ width:'28px', height:'28px', borderRadius:'50%', border:'1px solid ' + color + '60',
+                            background: color + '18', color, fontSize:'16px', fontWeight:'700',
+                            cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                          {"-"}
+                        </button>
+                        <span style={{ fontSize:'12px', fontWeight:'700', color, minWidth:'32px', textAlign:'center' }}>
+                          {adj > 0 ? '+' + adj + '%' : adj < 0 ? adj + '%' : '±0%'}
+                        </span>
+                        <button type="button"
+                          onClick={() => { setPrecAdj(prev => ({ ...prev, [key]: (prev[key]||0) + 1 })); setDataChanged(false) }}
+                          style={{ width:'28px', height:'28px', borderRadius:'50%', border:'1px solid ' + color + '60',
+                            background: color + '18', color, fontSize:'16px', fontWeight:'700',
+                            cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                          {'+'}
+                        </button>
+                      </div>
                     </div>
                   )
                 })}
