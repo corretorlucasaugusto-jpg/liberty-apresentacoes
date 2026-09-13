@@ -1205,98 +1205,116 @@ slides.push(`<div class="slide" id="s11">
   slides.push(`<div class="slide" id="s13">
   <div class="s-head" style="display:flex;justify-content:space-between;align-items:flex-end">
     <div>
-      <div style="display:inline-flex;align-items:center;gap:8px;padding:5px 14px;border:1px solid #e8e8ed;border-radius:980px;margin-bottom:10px">
-        <div style="width:6px;height:6px;border-radius:50%;background:#1266CD"></div>
-        <div style="font-size:.56rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#1266CD">3ª Fase — Inteligência</div>
-      </div>
-      <div class="s-title">Análise<br>contínua</div>
+      <div class="s-tag s-tag-blue">Acompanhamento</div>
+      <div class="s-title">Acompanhamento<br>contínuo</div>
     </div>
-    <div class="s-sub">Monitoramento constante e transparência total até o fechamento</div>
+    <div class="s-sub">Da campanha até o fechamento, você sabe exatamente o que estamos fazendo</div>
   </div>
-  <!-- progress track -->
-  <div style="height:1px;background:#e8e8ed;margin:0 68px;flex-shrink:0;position:relative">
-    <div style="position:absolute;inset:0;background:linear-gradient(90deg,#1266CD,#2e80e0);width:100%"></div>
-  </div>
-  <!-- staircase -->
-  <div style="flex:1;display:flex;align-items:flex-end;gap:10px;padding:18px 68px 0;min-height:0">
-    <!-- step 1 -->
-    <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end">
-      <div style="border:1px solid #e8e8ed;padding:18px 16px;display:flex;flex-direction:column;gap:9px;min-height:130px;transition:border-color .2s;cursor:default" onmouseenter="this.style.borderColor='#1266CD'" onmouseleave="this.style.borderColor='#e8e8ed'">
-        <div style="width:32px;height:32px;border-radius:9px;background:#eef4fd;display:flex;align-items:center;justify-content:center">
-          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="#1266CD" stroke-width="1.8" stroke-linecap="round"><polyline points="1,11 4,7 8,9 12,4 14,6"/></svg>
-        </div>
-        <div style="font-size:.54rem;font-weight:700;letter-spacing:.14em;color:#1266CD;opacity:.7">01</div>
-        <div style="font-size:.82rem;font-weight:700;color:#1d1d1f;line-height:1.2">Análise de Dados</div>
-        <div style="font-size:.66rem;color:#6e6e73;line-height:1.55">Dashboard com cliques, visitas e perfil de leads</div>
+
+  <div style="flex:1;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr;gap:1px;background:#e8e8ed;min-height:0">
+
+    <!-- 1 — Relatório de execuções -->
+    <div style="background:#fff;padding:28px 28px 24px;display:flex;flex-direction:column;gap:14px;transition:background .2s;cursor:default;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#1266CD,#2e80e0)"></div>
+      <div style="width:60px;height:60px;border-radius:18px;background:#eef4fd;display:flex;align-items:center;justify-content:center">
+        <svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="#1266CD" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 4h14c1.1 0 2 .9 2 2v20c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <path d="M11 2h8v4h-8z"/>
+          <path d="M9 14h12M9 19h12M9 24h7"/>
+        </svg>
+      </div>
+      <div>
+        <div style="font-size:.54rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#1266CD;margin-bottom:5px">01</div>
+        <div style="font-size:.92rem;font-weight:800;color:#1d1d1f;line-height:1.2;margin-bottom:6px">Relatório de execuções</div>
+        <div style="font-size:.71rem;color:#6e6e73;line-height:1.55">Registro de tudo que foi feito — portais, tráfego pago, prospecção — pra você ter ciência do trabalho real.</div>
       </div>
     </div>
-    <!-- step 2 -->
-    <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end">
-      <div style="border:1px solid #e8e8ed;padding:18px 16px;display:flex;flex-direction:column;gap:9px;min-height:165px;transition:border-color .2s;cursor:default" onmouseenter="this.style.borderColor='#1266CD'" onmouseleave="this.style.borderColor='#e8e8ed'">
-        <div style="width:32px;height:32px;border-radius:9px;background:#eef4fd;display:flex;align-items:center;justify-content:center">
-          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="#1266CD" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="1" width="13" height="13" rx="1"/><path d="M4 8h7M4 5h4M4 11h3"/></svg>
-        </div>
-        <div style="font-size:.54rem;font-weight:700;letter-spacing:.14em;color:#1266CD;opacity:.7">02</div>
-        <div style="font-size:.82rem;font-weight:700;color:#1d1d1f;line-height:1.2">Análise Comparativa</div>
-        <div style="font-size:.66rem;color:#6e6e73;line-height:1.55">Benchmarking com imóveis similares em tempo real</div>
+
+    <!-- 2 — Grupo de WhatsApp -->
+    <div style="background:#fff;padding:28px 28px 24px;display:flex;flex-direction:column;gap:14px;transition:background .2s;cursor:default;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#16a34a,#22c55e)"></div>
+      <div style="width:60px;height:60px;border-radius:18px;background:#f0fdf4;display:flex;align-items:center;justify-content:center">
+        <svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="#16a34a" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 4C8.4 4 3 8.7 3 14.5c0 3 1.4 5.7 3.7 7.6L5 27l5.4-1.9c1.4.5 3 .8 4.6.8 6.6 0 12-4.7 12-10.5S21.6 4 15 4z"/>
+          <path d="M10.5 13.5c0 3.5 3 6.5 6.5 6.5"/>
+        </svg>
+      </div>
+      <div>
+        <div style="font-size:.54rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#16a34a;margin-bottom:5px">02</div>
+        <div style="font-size:.92rem;font-weight:800;color:#1d1d1f;line-height:1.2;margin-bottom:6px">Grupo de WhatsApp</div>
+        <div style="font-size:.71rem;color:#6e6e73;line-height:1.55">Feedback de cada visita chega direto pra você, sem esperar relatório.</div>
       </div>
     </div>
-    <!-- step 3 -->
-    <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end">
-      <div style="border:1px solid #e8e8ed;padding:18px 16px;display:flex;flex-direction:column;gap:9px;min-height:200px;transition:border-color .2s;cursor:default" onmouseenter="this.style.borderColor='#1266CD'" onmouseleave="this.style.borderColor='#e8e8ed'">
-        <div style="width:32px;height:32px;border-radius:9px;background:#eef4fd;display:flex;align-items:center;justify-content:center">
-          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="#1266CD" stroke-width="1.8" stroke-linecap="round"><circle cx="7.5" cy="7.5" r="5.5"/><path d="M7.5 5v3l2 2"/></svg>
-        </div>
-        <div style="font-size:.54rem;font-weight:700;letter-spacing:.14em;color:#1266CD;opacity:.7">03</div>
-        <div style="font-size:.82rem;font-weight:700;color:#1d1d1f;line-height:1.2">Revisão Estratégica</div>
-        <div style="font-size:.66rem;color:#6e6e73;line-height:1.55">Preço e abordagem ajustados a cada 30 dias conforme resultados</div>
+
+    <!-- 3 — Reunião de realinhamento mensal -->
+    <div style="background:#fff;padding:28px 28px 24px;display:flex;flex-direction:column;gap:14px;transition:background .2s;cursor:default;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#7c3aed,#a855f7)"></div>
+      <div style="width:60px;height:60px;border-radius:18px;background:#f5f3ff;display:flex;align-items:center;justify-content:center">
+        <svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="#7c3aed" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="5" width="24" height="22" rx="2"/>
+          <path d="M3 12h24"/>
+          <path d="M9 5V3M21 5V3"/>
+          <path d="M20 21a4.5 4.5 0 10-1.6-3.4M20 16v3h-3"/>
+        </svg>
+      </div>
+      <div>
+        <div style="font-size:.54rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#7c3aed;margin-bottom:5px">03</div>
+        <div style="font-size:.92rem;font-weight:800;color:#1d1d1f;line-height:1.2;margin-bottom:6px">Reunião de realinhamento mensal</div>
+        <div style="font-size:.71rem;color:#6e6e73;line-height:1.55">A cada 30 dias, revisamos preço e estratégia com base nos dados reais do mercado.</div>
       </div>
     </div>
-    <!-- step 4 -->
-    <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end">
-      <div style="border:1px solid #e8e8ed;padding:18px 16px;display:flex;flex-direction:column;gap:9px;min-height:235px;transition:border-color .2s;cursor:default" onmouseenter="this.style.borderColor='#1266CD'" onmouseleave="this.style.borderColor='#e8e8ed'">
-        <div style="width:32px;height:32px;border-radius:9px;background:#eef4fd;display:flex;align-items:center;justify-content:center">
-          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="#1266CD" stroke-width="1.8" stroke-linecap="round"><path d="M7.5 1l1.8 4.2h4.2l-3.4 2.5 1.3 4.3-3.9-2.7-3.9 2.7 1.3-4.3-3.4-2.5h4.2z"/></svg>
-        </div>
-        <div style="font-size:.54rem;font-weight:700;letter-spacing:.14em;color:#1266CD;opacity:.7">04</div>
-        <div style="font-size:.82rem;font-weight:700;color:#1d1d1f;line-height:1.2">Otimização de Conversão</div>
-        <div style="font-size:.66rem;color:#6e6e73;line-height:1.55">Testes A/B e maximização da taxa de fechamento</div>
+
+    <!-- 4 — Monitoramento da concorrência -->
+    <div style="background:#fff;padding:28px 28px 24px;display:flex;flex-direction:column;gap:14px;transition:background .2s;cursor:default;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#d97706,#f59e0b)"></div>
+      <div style="width:60px;height:60px;border-radius:18px;background:#fffbeb;display:flex;align-items:center;justify-content:center">
+        <svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="#d97706" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 26V4M4 26h22"/>
+          <path d="M9 22v-7M15 22v-11M21 22v-4M4 15l5-4 6 3 7-8"/>
+        </svg>
+      </div>
+      <div>
+        <div style="font-size:.54rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#d97706;margin-bottom:5px">04</div>
+        <div style="font-size:.92rem;font-weight:800;color:#1d1d1f;line-height:1.2;margin-bottom:6px">Monitoramento da concorrência</div>
+        <div style="font-size:.71rem;color:#6e6e73;line-height:1.55">Acompanhamento contínuo de preço e posicionamento dos concorrentes ativos na região.</div>
       </div>
     </div>
-    <!-- step 5 -->
-    <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end">
-      <div style="border:1px solid #e8e8ed;padding:18px 16px;display:flex;flex-direction:column;gap:9px;min-height:270px;transition:border-color .2s;cursor:default" onmouseenter="this.style.borderColor='#1266CD'" onmouseleave="this.style.borderColor='#e8e8ed'">
-        <div style="width:32px;height:32px;border-radius:9px;background:#eef4fd;display:flex;align-items:center;justify-content:center">
-          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="#1266CD" stroke-width="1.8" stroke-linecap="round"><path d="M2 4h11c.55 0 1 .45 1 1v5c0 .55-.45 1-1 1H2c-.55 0-1-.45-1-1V5c0-.55.45-1 1-1z"/><polyline points="13,4 7,8.5 1,4"/></svg>
-        </div>
-        <div style="font-size:.54rem;font-weight:700;letter-spacing:.14em;color:#1266CD;opacity:.7">05</div>
-        <div style="font-size:.82rem;font-weight:700;color:#1d1d1f;line-height:1.2">Feedback e Relatórios</div>
-        <div style="font-size:.66rem;color:#6e6e73;line-height:1.55">Relatório quinzenal direto — sem surpresas, total transparência</div>
+
+    <!-- 5 — Renovação de mídia -->
+    <div style="background:#fff;padding:28px 28px 24px;display:flex;flex-direction:column;gap:14px;transition:background .2s;cursor:default;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#0891b2,#06b6d4)"></div>
+      <div style="width:60px;height:60px;border-radius:18px;background:#ecfeff;display:flex;align-items:center;justify-content:center">
+        <svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="#0891b2" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 8l2.4-3h7.2L21 8h4a2 2 0 012 2v13a2 2 0 01-2 2H5a2 2 0 01-2-2V10a2 2 0 012-2h4z"/>
+          <circle cx="15" cy="17" r="5"/>
+        </svg>
+      </div>
+      <div>
+        <div style="font-size:.54rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#0891b2;margin-bottom:5px">05</div>
+        <div style="font-size:.92rem;font-weight:800;color:#1d1d1f;line-height:1.2;margin-bottom:6px">Renovação de mídia</div>
+        <div style="font-size:.71rem;color:#6e6e73;line-height:1.55">Se o imóvel ficar parado por muito tempo, refazemos fotos e vídeo pra dar novo fôlego ao anúncio.</div>
       </div>
     </div>
-    <!-- step 6 highlight -->
-    <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end">
-      <div style="border:1px solid rgba(18,102,205,.3);background:linear-gradient(160deg,#eef4fd,#fff);padding:18px 16px;display:flex;flex-direction:column;gap:9px;min-height:305px;cursor:default">
-        <div style="width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#1266CD,#2e80e0);display:flex;align-items:center;justify-content:center">
-          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><path d="M7.5 1l1.8 4.2h4.2l-3.4 2.5 1.3 4.3-3.9-2.7-3.9 2.7 1.3-4.3-3.4-2.5h4.2z"/></svg>
-        </div>
-        <div style="font-size:.54rem;font-weight:700;letter-spacing:.14em;color:#1266CD;opacity:.7">06</div>
-        <div style="font-size:.82rem;font-weight:700;color:#1d1d1f;line-height:1.2">Ações Futuras</div>
-        <div style="font-size:.66rem;color:#6e6e73;line-height:1.55">Novas rodadas de prospecção, ajustes e aceleração até o fechamento</div>
+
+    <!-- 6 — Juntos até vender (destaque final, sem fundo preto) -->
+    <div style="background:#f5f5f7;padding:28px 28px 24px;display:flex;flex-direction:column;gap:14px;cursor:default;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#1266CD,#2e80e0)"></div>
+      <div style="width:60px;height:60px;border-radius:18px;background:linear-gradient(135deg,#1266CD,#2e80e0);display:flex;align-items:center;justify-content:center">
+        <svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 14l6-6 4 3-4 4"/>
+          <path d="M27 14l-6-6-4 3 4 4"/>
+          <path d="M9 15l4 4a2 2 0 002.8 0l.2-.2a2 2 0 000-2.8L12 12"/>
+          <path d="M21 15l-4 4a2 2 0 01-2.8 0l-.2-.2"/>
+          <path d="M4 15l3 8h4M26 15l-3 8h-4"/>
+        </svg>
+      </div>
+      <div>
+        <div style="font-size:.54rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#1266CD;margin-bottom:5px">06</div>
+        <div style="font-size:.92rem;font-weight:800;color:#1d1d1f;line-height:1.2;margin-bottom:6px">Juntos até vender</div>
+        <div style="font-size:.71rem;color:#6e6e73;line-height:1.55">Corretor e proprietário ajustando juntos, passo a passo, até o imóvel ser vendido.</div>
       </div>
     </div>
-  </div>
-  <!-- footer -->
-  <div style="display:flex;gap:24px;padding:14px 68px 20px;border-top:1px solid #e8e8ed;margin-top:14px;flex-shrink:0">
-    <div style="display:flex;align-items:center;gap:7px;font-size:.66rem;color:#a1a1a6">
-      <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="#1266CD" stroke-width="2" stroke-linecap="round"><polyline points="1,5.5 4,9 10,2"/></svg>5 ciclos de análise
-    </div>
-    <div style="display:flex;align-items:center;gap:7px;font-size:.66rem;color:#a1a1a6">
-      <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="#1266CD" stroke-width="2" stroke-linecap="round"><rect x="1" y="2" width="9" height="7" rx="1"/><path d="M3 2V1M8 2V1M1 5h9"/></svg>Relatório quinzenal
-    </div>
-    <div style="display:flex;align-items:center;gap:7px;font-size:.66rem;color:#a1a1a6">
-      <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="#1266CD" stroke-width="2" stroke-linecap="round"><path d="M5.5 1v9M1 5.5h9"/></svg>Contínuo até a venda
-    </div>
+
   </div>
 </div>`);
 
