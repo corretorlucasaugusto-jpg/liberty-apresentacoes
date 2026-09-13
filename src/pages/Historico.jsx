@@ -14,20 +14,24 @@ export default function Historico() {
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState('')
   const [preview, setPreview] = useState(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
 
   useEffect(() => {
     if (!user?.id) { setLoading(false); return }
+    // Lista "leve": sem html/raw_data (podem ser vários MB por apresentação
+    // por causa das imagens em base64 — trazer isso pra 100 linhas de uma vez
+    // é o que estava estourando o statement_timeout do Supabase).
     Promise.all([
       supabase
         .from('apresentacoes')
-        .select('id, cliente, residencial, bairro, created_at, updated_at, html, raw_data, v1_id, tipo')
+        .select('id, cliente, residencial, bairro, created_at, updated_at, v1_id, tipo')
         .eq('user_id', user.id)
         .or('tipo.is.null,tipo.eq.v2')
         .order('created_at', { ascending: false })
         .limit(100),
       supabase
         .from('apresentacoes')
-        .select('id, cliente, residencial, bairro, created_at, updated_at, html, raw_data, tipo')
+        .select('id, cliente, residencial, bairro, created_at, updated_at, tipo')
         .eq('user_id', user.id)
         .eq('tipo', 'v3')
         .order('created_at', { ascending: false })
@@ -43,8 +47,25 @@ export default function Historico() {
 
   const rows = tab === 'v2' ? rowsV2 : rowsRe
 
-  const download = (row) => {
-    const blob = new Blob([row.html], { type: 'text/html' })
+  // Busca o HTML completo sob demanda (só quando o usuário realmente vai usar:
+  // abrir preview, baixar, ou o link do iPad).
+  const fetchHtml = async (id) => {
+    const { data, error } = await supabase
+      .from('apresentacoes')
+      .select('html')
+      .eq('id', id)
+      .single()
+    if (error) { alert('Erro ao carregar apresentação: ' + error.message); return null }
+    return data?.html || null
+  }
+
+  const download = async (row) => {
+    let html = row.html
+    if (!html) {
+      html = await fetchHtml(row.id)
+      if (!html) return
+    }
+    const blob = new Blob([html], { type: 'text/html' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
     a.download = (row.residencial||'Liberty').replace(/[^a-zA-Z0-9\s]/g,'').trim().replace(/\s+/g,'_') + (tab==='v3'?'-v3':'') + '.html'
@@ -57,6 +78,15 @@ export default function Historico() {
     if (tab === 'v2') setRowsV2(r => r.filter(x => x.id !== id))
     else setRowsRe(r => r.filter(x => x.id !== id))
     if (preview?.id === id) setPreview(null)
+  }
+
+  const openPreview = async (row) => {
+    if (preview?.id === row.id) { setPreview(null); return }
+    setPreview({ ...row, html: null })
+    setPreviewLoading(true)
+    const html = await fetchHtml(row.id)
+    setPreviewLoading(false)
+    setPreview(p => (p && p.id === row.id) ? { ...p, html } : p)
   }
 
   const fmt = (iso) => iso ? new Date(iso).toLocaleDateString('pt-BR', {
@@ -132,7 +162,7 @@ export default function Historico() {
             const isRe = tab === 'v3'
             return (
               <div key={row.id}
-                onClick={() => setPreview(isActive ? null : row)}
+                onClick={() => openPreview(row)}
                 style={{
                   borderRadius:'14px', padding:'14px 16px',
                   border: isActive ? '1px solid rgba(18,102,205,0.5)' : '1px solid var(--border)',
@@ -181,18 +211,16 @@ export default function Historico() {
                   >
                     ↓ Baixar
                   </button>
-                  {row.html && (
-                    <button
-                      onClick={() => {
-                        const url = `${window.location.origin}/ver/${row.id}`
-                        navigator.clipboard.writeText(url).then(() => alert('Link copiado! Cole no Safari do iPad.'))
-                      }}
-                      title="Abrir no iPad"
-                      style={{ padding:'6px 10px', borderRadius:'8px', border:'none', background:'rgba(5,150,105,0.12)', color:'#059669', fontSize:'11px', fontWeight:600, cursor:'pointer' }}
-                    >
-                      📱 iPad
-                    </button>
-                  )}
+                  <button
+                    onClick={() => {
+                      const url = `${window.location.origin}/ver/${row.id}`
+                      navigator.clipboard.writeText(url).then(() => alert('Link copiado! Cole no Safari do iPad.'))
+                    }}
+                    title="Abrir no iPad"
+                    style={{ padding:'6px 10px', borderRadius:'8px', border:'none', background:'rgba(5,150,105,0.12)', color:'#059669', fontSize:'11px', fontWeight:600, cursor:'pointer' }}
+                  >
+                    📱 iPad
+                  </button>
                   <button
                     onClick={() => del(row.id)}
                     title="Excluir"
@@ -234,32 +262,37 @@ export default function Historico() {
                 >
                   ↓ Baixar
                 </button>
-                {preview.html && (
-                  <button
-                    onClick={() => {
-                      const url = `${window.location.origin}/ver/${preview.id}`
-                      navigator.clipboard.writeText(url).then(() => alert('Link copiado! Cole no Safari do iPad.'))
-                    }}
-                    style={{ padding:'7px 14px', borderRadius:'8px', border:'none', background:'rgba(5,150,105,0.12)', color:'#059669', fontSize:'12px', fontWeight:600, cursor:'pointer' }}
-                  >
-                    📱 iPad
-                  </button>
-                )}
+                <button
+                  onClick={() => {
+                    const url = `${window.location.origin}/ver/${preview.id}`
+                    navigator.clipboard.writeText(url).then(() => alert('Link copiado! Cole no Safari do iPad.'))
+                  }}
+                  style={{ padding:'7px 14px', borderRadius:'8px', border:'none', background:'rgba(5,150,105,0.12)', color:'#059669', fontSize:'12px', fontWeight:600, cursor:'pointer' }}
+                >
+                  📱 iPad
+                </button>
                 <button onClick={() => setPreview(null)}
                   style={{ padding:'7px 10px', borderRadius:'8px', border:'none', background:'transparent', color:'var(--text3)', fontSize:'16px', cursor:'pointer' }}>
                   ✕
                 </button>
               </div>
             </div>
-            <iframe
-              srcDoc={preview.html}
-              style={{ flex:1, border:'none', background:'#fff' }}
-              title="Preview da apresentação"
-              sandbox="allow-scripts"
-            />
+            {(!preview.html || previewLoading) ? (
+              <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <div style={{ width:'24px', height:'24px', borderRadius:'50%', border:'3px solid #1266CD', borderTopColor:'transparent', animation:'spin .7s linear infinite' }}/>
+              </div>
+            ) : (
+              <iframe
+                srcDoc={preview.html}
+                style={{ flex:1, border:'none', background:'#fff' }}
+                title="Preview da apresentação"
+                sandbox="allow-scripts"
+              />
+            )}
           </div>
         )}
       </div>
     </div>
   )
 }
+
