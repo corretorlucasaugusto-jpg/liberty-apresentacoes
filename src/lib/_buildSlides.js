@@ -97,9 +97,11 @@ export function buildS5(d){
       if (prejVal > 0) {
         prejuizoCel = '<strong style="color:'+diasColor(r.d)+'">'+fmtMoneyCurta(prejVal)+'</strong>';
       }
-      var iniEstVal = inicialEstimado(val, diasNum);
-      if (iniEstVal > 0) {
-        iniEstCel = '<span style="color:#6e6e73">'+fmtMoneyCurta(iniEstVal)+'</span>';
+      if (diasNum >= 45) {
+        var iniEstVal = inicialEstimado(val, diasNum);
+        if (iniEstVal > 0) {
+          iniEstCel = '<span style="color:#6e6e73">'+fmtMoneyCurta(iniEstVal)+'</span>';
+        }
       }
       if (val > 0) {
         var liqVal = val - prejVal;
