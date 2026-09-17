@@ -87,7 +87,7 @@ export function buildS5(d){
 
     var diasNum = parseInt((r.d||'').replace(/[^0-9]/g,''))||0;
     var diasBadge = r.d
-      ? '<span style="display:inline-block;background:'+diasColor(r.d)+';color:#fff;font-size:.76rem;font-weight:700;padding:3px 9px;border-radius:20px">'+e2(r.d)+'</span>'
+      ? '<span style="display:inline-block;background:'+diasColor(r.d)+';color:#fff;font-size:.88rem;font-weight:700;padding:4px 11px;border-radius:20px">'+e2(r.d)+'</span>'
       : '\u2014';
     var prejuizoCel = '\u2014';
     var iniEstCel   = '\u2014';
@@ -106,29 +106,29 @@ export function buildS5(d){
         liqCel = '<strong style="color:'+liquidoColor(prejVal, val)+'">'+fmtMoneyCurta(liqVal)+'</strong>';
       }
     }
-    var verBtn = (isNV && r.url) ? '<button onclick="openAnuncio(this.dataset.url)" data-url="'+(r.url||'').replace(/"/g,'&quot;')+'" style="background:#1266CD;border:none;color:#fff;border-radius:5px;padding:3px 7px;font-size:.58rem;font-weight:700;cursor:pointer">Ver \u2197</button>' : '';
+    var verBtn = (isNV && r.url) ? '<button onclick="openAnuncio(this.dataset.url)" data-url="'+(r.url||'').replace(/"/g,'&quot;')+'" style="background:#1266CD;border:none;color:#fff;border-radius:5px;padding:3px 7px;font-size:.7rem;font-weight:700;cursor:pointer">Ver \u2197</button>' : '';
     var aiRow = r.ai ? '<div style="padding:5px 16px 8px;background:#fff0f0;border-top:1px solid #ffc0c0;font-size:.65rem;color:#c0392b;font-style:italic">'+e2(r.ai)+'</div>' : '';
     var bg = isNV ? (diasNum>=180?'#fff0f0':diasNum>=90?'#fff8f0':'#fff') : '#f0fff4';
     var borderTop = i>0 ? 'border-top:1px solid #e8e8ed;' : '';
-    var grid = isNV ? '1.1fr .32fr .95fr .78fr .68fr .48fr .58fr .85fr .78fr .28fr' : '1.8fr .5fr 2fr .8fr .7fr .7fr';
+    var grid = isNV ? '1.1fr .32fr 1.15fr .78fr .68fr .48fr .58fr .65fr .78fr .28fr' : '1.8fr .5fr 2fr .8fr .7fr .7fr';
 
     return '<div style="display:grid;grid-template-columns:'+grid+';align-items:center;padding:8px 14px;background:'+bg+';'+borderTop+'">' +
-      '<div style="font-size:.72rem;"><strong>'+e2(r.n||('Im\u00f3vel '+(i+1)))+'</strong></div>' +
-      '<div style="font-size:.68rem;color:#444">'+e2(r.a||'\u2014')+'m\u00b2</div>' +
-      '<div style="font-size:.65rem;color:#555">'+carac+'</div>' +
-      (isNV ? '<div style="font-size:.72rem;font-weight:700;">'+iniEstCel+'</div>' : '') +
-      '<div style="font-size:.7rem;font-weight:700;color:'+(isNV?'#c0392b':'#27ae60')+'">'+e2(r.v||'\u2014')+'</div>' +
-      '<div style="font-size:.62rem;color:#888">'+vm2+'</div>' +
+      '<div style="font-size:.86rem;"><strong>'+e2(r.n||('Im\u00f3vel '+(i+1)))+'</strong></div>' +
+      '<div style="font-size:.82rem;color:#444">'+e2(r.a||'\u2014')+'m\u00b2</div>' +
+      '<div style="font-size:.78rem;color:#555">'+carac+'</div>' +
+      (isNV ? '<div style="font-size:.86rem;font-weight:700;">'+iniEstCel+'</div>' : '') +
+      '<div style="font-size:.86rem;font-weight:700;color:'+(isNV?'#c0392b':'#27ae60')+'">'+e2(r.v||'\u2014')+'</div>' +
+      '<div style="font-size:.76rem;color:#888">'+vm2+'</div>' +
       '<div>'+diasBadge+'</div>' +
-      (isNV ? '<div style="font-size:.8rem;font-weight:700;">'+prejuizoCel+'</div>' : '') +
-      (isNV ? '<div style="font-size:.72rem;font-weight:700;">'+liqCel+'</div>' : '') +
+      (isNV ? '<div style="font-size:.94rem;font-weight:700;">'+prejuizoCel+'</div>' : '') +
+      (isNV ? '<div style="font-size:.86rem;font-weight:700;">'+liqCel+'</div>' : '') +
       (isNV ? '<div>'+verBtn+'</div>' : '') +
     '</div>' + aiRow;
   };
 
   var tblHdr = function(isNV){
-    var grid = isNV ? '1.1fr .32fr .95fr .78fr .68fr .48fr .58fr .85fr .78fr .28fr' : '1.8fr .5fr 2fr .8fr .7fr .7fr';
-    return '<div style="display:grid;grid-template-columns:'+grid+';padding:6px 14px;background:#f5f5f7;font-size:.6rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#888">' +
+    var grid = isNV ? '1.1fr .32fr 1.15fr .78fr .68fr .48fr .58fr .65fr .78fr .28fr' : '1.8fr .5fr 2fr .8fr .7fr .7fr';
+    return '<div style="display:grid;grid-template-columns:'+grid+';padding:6px 14px;background:#f5f5f7;font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#888">' +
       '<div>Im\u00f3vel</div><div>\u00c1rea</div><div>Caracter\u00edsticas</div>' +
       (isNV ? '<div>Inicial Estimado</div>' : '') +
       (isNV ? '<div>Valor anunciado</div>' : '<div>Valor negociado</div>') +
